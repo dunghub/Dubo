@@ -1,0 +1,13 @@
+{
+  "name": "dubo-bot",
+  "version": "1.0.0",
+  "description": "Bot Discord Dubo",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5"
+  }
+}
