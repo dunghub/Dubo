@@ -9,16 +9,20 @@ const client = new Client({
     ]
 });
 
-// 1. ĐỊNH NGHĨA LỆNH SLASH
+// 1. ĐỊNH NGHĨA LỆNH SLASH (Đã thêm ô nhập URL)
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
         .setDescription('Lệnh bypass hệ thống')
+        .addStringOption(option => 
+            option.setName('url')
+                .setDescription('Nhập đường link cần bypass (Ví dụ: link Delta)')
+                .setRequired(true)) // Bắt buộc phải nhập link mới chạy được lệnh
 ];
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
-// 2. ĐĂNG KÝ LỆNH VỚI DISCORD (Chạy khi khởi động)
+// 2. ĐĂNG KÝ LỆNH VỚI DISCORD
 (async () => {
     try {
         console.log('Đang đăng ký lệnh...');
@@ -36,7 +40,7 @@ client.once('ready', () => {
     console.log(`Bot đã online: ${client.user.tag}`);
 });
 
-// 3. CODE CŨ (Nhận tin nhắn chat thường - ví dụ: gõ "ping" bot trả lời "pong")
+// 3. CODE CŨ (Nhận tin nhắn chat thường)
 client.on('messageCreate', (message) => {
     if (message.author.bot) return;
     if (message.content === 'ping') {
@@ -44,14 +48,20 @@ client.on('messageCreate', (message) => {
     }
 });
 
-// 4. CODE MỚI (Xử lý lệnh /bypass)
+// 4. CODE MỚI (Xử lý lệnh /bypass kèm theo link)
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === 'bypass') {
-        await interaction.reply('Đang thực hiện lệnh bypass...');
+        // Lấy đường link mà người dùng đã nhập vào
+        const url = interaction.options.getString('url');
+        
+        // Phản hồi lại kèm theo link để bạn biết bot đã nhận đúng dữ liệu
+        await interaction.reply(`Đang thực hiện lệnh bypass cho URL: ${url}`);
     }
 });
+
+// 5. GIỮ CHO BOT LUÔN CHẠY (Web Server cho Render)
 const http = require('http');
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
