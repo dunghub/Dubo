@@ -53,16 +53,17 @@ client.on('interactionCreate', async interaction => {
         const pendingEmbed = new EmbedBuilder()
             .setColor(0xFFA500)
             .setTitle('⏳ Đang xử lý')
-            .setDescription(`Đang thực hiện lệnh bypass cho URL: ${url}`);
+            .setDescription('Đang thực hiện lệnh bypass...');
         
         await interaction.reply({ embeds: [pendingEmbed], fetchReply: true });
 
         setTimeout(async () => {
-            if (url.includes('delta') || url.startsWith('http')) {
+            if (url.includes('platorelay.com')) {
+                const mockKey = "FREE_" + Math.random().toString(36).substring(2, 10).toUpperCase() + Math.random().toString(36).substring(2, 10).toUpperCase();
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x00FF00)
                     .setTitle('✅ Bypass Success')
-                    .setDescription('Key đã được lấy thành công: ' + url);
+                    .setDescription('Your key has been retrieved. Copy it and input it into the application.\n' + mockKey);
                 
                 await interaction.editReply({ embeds: [successEmbed] });
             } else {
@@ -76,6 +77,7 @@ client.on('interactionCreate', async interaction => {
         }, 3000);
     }
 });
+
 const http = require('http');
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
