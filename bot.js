@@ -1,6 +1,4 @@
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const http = require('http');
-const axios = require('axios');
 require('dotenv').config();
 
 const client = new Client({
@@ -14,7 +12,7 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass link')
+        .setDescription('Lệnh bypass get key')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link cần bypass')
@@ -40,65 +38,59 @@ client.once('ready', () => {
     console.log(`Bot đã online: ${client.user.tag}`);
 });
 
+client.on('messageCreate', (message) => {
+    if (message.author.bot) return;
+    if (message.content === 'ping') {
+        message.reply('ping pong!');
+    }
+});
+
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === 'bypass') {
-        const urlInput = interaction.options.getString('url');
+        const url = interaction.options.getString('url');
 
-        // Tạo trạng thái chờ ban đầu
         const pendingEmbed = new EmbedBuilder()
             .setColor(0xFFA500)
             .setTitle('⏳ Đang xử lý')
             .setDescription('Đang thực hiện lệnh bypass...');
-
+        
         await interaction.reply({ embeds: [pendingEmbed], fetchReply: true });
 
-        try {
-            // Thay thế bằng link API thực tế của bạn
-            const apiEndpoint = `https://api.example.com/bypass?url=${encodeURIComponent(urlInput)}`;
-            const response = await axios.get(apiEndpoint);
-            
-            // Lấy link kết quả (tùy thuộc vào cấu trúc API của bạn)
-            const finalLink = response.data.result; 
+        setTimeout(async () => {
+            try {
+                if (url.includes('platorelay.com')) {
+                    // Trả về Embed màu xanh lá chứa duy nhất đường link đã nhập để ấn vào
+                    const successEmbed = new EmbedBuilder()
+                        .setColor(0x00FF00)
+                        .setTitle('✅ Bypass Success')
+                        .setDescription(`${url}`);
 
-            if (finalLink) {
-                // Nhúng liên kết trực tiếp vào Embed thành công màu xanh lá
-                const successEmbed = new EmbedBuilder()
-                    .setColor(0x00FF00)
-                    .setTitle('✅ Bypass Success')
-                    .setDescription(`Nhấn vào liên kết sau để lấy key:\n${finalLink}`);
-
-                await interaction.editReply({ embeds: [successEmbed] });
-            } else {
-                const noLinkEmbed = new EmbedBuilder()
-                    .setColor(0xFF0000)
-                    .setTitle('❌ Thất bại')
-                    .setDescription('Không thể tìm thấy link kết quả từ hệ thống.');
-
-                await interaction.editReply({ embeds: [noLinkEmbed] });
+                    await interaction.editReply({ embeds: [successEmbed] });
+                } else {
+                    const errorEmbed = new EmbedBuilder()
+                        .setColor(0xFF0000)
+                        .setTitle('❌ Gặp sự cố')
+                        .setDescription('Đây không phải là link get key hợp lệ.');
+                    
+                    await interaction.editReply({ embeds: [errorEmbed] });
+                }
+            } catch (error) {
+                console.error('Lỗi khi chỉnh sửa phản hồi:', error);
             }
-
-        } catch (error) {
-            console.error('Lỗi khi gọi API:', error.message);
-            const errorEmbed = new EmbedBuilder()
-                .setColor(0xFF0000)
-                .setTitle('❌ Gặp sự cố')
-                .setDescription('Đã xảy ra lỗi trong quá trình kết nối hoặc xử lý liên kết.');
-
-            await interaction.editReply({ embeds: [errorEmbed] });
-        }
+        }, 3000);
     }
 });
 
+const http = require('http');
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Bot is running!');
 });
-
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server đang chạy tại port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
 
 client.login(process.env.DISCORD_TOKEN);
