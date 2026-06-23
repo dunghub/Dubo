@@ -52,5 +52,14 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply('Đang thực hiện lệnh bypass...');
     }
 });
-https://render.com/docs/web-services#port-binding
+const http = require('http');
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Bot is running!');
+});
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
 client.login(process.env.DISCORD_TOKEN);
