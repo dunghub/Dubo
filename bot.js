@@ -1,4 +1,6 @@
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const http = require('http');
+const axios = require('axios');
 require('dotenv').config();
 
 const client = new Client({
@@ -12,7 +14,7 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass hệ thống')
+        .setDescription('Lệnh bypass link')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link cần bypass')
@@ -38,54 +40,65 @@ client.once('ready', () => {
     console.log(`Bot đã online: ${client.user.tag}`);
 });
 
-client.on('messageCreate', (message) => {
-    if (message.author.bot) return;
-    if (message.content === 'ping') {
-        message.reply('ping pong!');
-    }
-});
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === 'bypass') {
-        const url = interaction.options.getString('url');
-        
+        const urlInput = interaction.options.getString('url');
+
+        // Tạo trạng thái chờ ban đầu
         const pendingEmbed = new EmbedBuilder()
             .setColor(0xFFA500)
             .setTitle('⏳ Đang xử lý')
             .setDescription('Đang thực hiện lệnh bypass...');
-        
+
         await interaction.reply({ embeds: [pendingEmbed], fetchReply: true });
 
-        setTimeout(async () => {
-            if (url.includes('platorelay.com')) {
-                const mockKey = "FREE_" + Math.random().toString(36).substring(2, 10).toUpperCase() + Math.random().toString(36).substring(2, 10).toUpperCase();
+        try {
+            // Thay thế bằng link API thực tế của bạn
+            const apiEndpoint = `https://api.example.com/bypass?url=${encodeURIComponent(urlInput)}`;
+            const response = await axios.get(apiEndpoint);
+            
+            // Lấy link kết quả (tùy thuộc vào cấu trúc API của bạn)
+            const finalLink = response.data.result; 
+
+            if (finalLink) {
+                // Nhúng liên kết trực tiếp vào Embed thành công màu xanh lá
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x00FF00)
                     .setTitle('✅ Bypass Success')
-                    .setDescription('Your key has been retrieved. Copy it and input it into the application.\n' + mockKey);
-                
+                    .setDescription(`Nhấn vào liên kết sau để lấy key:\n${finalLink}`);
+
                 await interaction.editReply({ embeds: [successEmbed] });
             } else {
-                const errorEmbed = new EmbedBuilder()
+                const noLinkEmbed = new EmbedBuilder()
                     .setColor(0xFF0000)
-                    .setTitle('❌ Gặp sự cố')
-                    .setDescription('Đây không phải là link get key hợp lệ.');
-                
-                await interaction.editReply({ embeds: [errorEmbed] });
+                    .setTitle('❌ Thất bại')
+                    .setDescription('Không thể tìm thấy link kết quả từ hệ thống.');
+
+                await interaction.editReply({ embeds: [noLinkEmbed] });
             }
-        }, 3000);
+
+        } catch (error) {
+            console.error('Lỗi khi gọi API:', error.message);
+            const errorEmbed = new EmbedBuilder()
+                .setColor(0xFF0000)
+                .setTitle('❌ Gặp sự cố')
+                .setDescription('Đã xảy ra lỗi trong quá trình kết nối hoặc xử lý liên kết.');
+
+            await interaction.editReply({ embeds: [errorEmbed] });
+        }
     }
 });
 
-const http = require('http');
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Bot is running!');
 });
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server đang chạy tại port ${PORT}`);
 });
 
 client.login(process.env.DISCORD_TOKEN);
