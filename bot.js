@@ -1,8 +1,7 @@
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+lconst { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
 require('dotenv').config();
 
-// Khởi tạo Bot với cấu hình tối giản nhất để chống lỗi kết nối
 const client = new Client({
     intents: [GatewayIntentBits.Guilds]
 });
@@ -10,14 +9,13 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta v4')
+        .setDescription('Lệnh bypass get key Delta sử dụng API PHP Cá Nhân')
         .addStringOption(option => 
             option.setName('url')
-                .setDescription('Nhập đường link Platorelay cần bypass')
+                .setDescription('Nhập đường link Platorelay cần bẻ khóa')
                 .setRequired(true))
 ];
 
-// Hàm tự động kích hoạt đăng ký lệnh với Discord khi bật bot
 client.once('ready', async () => {
     console.log(`[HỆ THỐNG] Bot đã online thành công: ${client.user.tag}`);
     try {
@@ -28,7 +26,7 @@ client.once('ready', async () => {
         );
         console.log('[HỆ THỐNG] Đăng ký lệnh Slash Command thành công!');
     } catch (error) {
-        console.error('[LỖI] Không thể đăng ký lệnh với Discord:', error.message);
+        console.error('[LỖI] Không thể đăng ký lệnh:', error.message);
     }
 });
 
@@ -39,7 +37,7 @@ client.on('interactionCreate', async interaction => {
         const url = interaction.options.getString('url');
 
         try {
-            // Hoãn phản hồi ngay lập tức để ép Discord không báo lỗi "Ứng dụng không phản hồi"
+            // Hoãn phản hồi ngay lập tức chống lỗi quá 3 giây của Discord
             await interaction.deferReply();
 
             if (!url.includes('platorelay.com') && !url.includes('platoboost.com')) {
@@ -48,52 +46,58 @@ client.on('interactionCreate', async interaction => {
 
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
-                .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang tiến hành bẻ khóa qua cụm máy chủ lõi tự động bám đuổi Delta, vui lòng chờ...');
+                .setTitle('⏳ Kết Nối API Cá Nhân')
+                .setDescription('Bot đang gửi dữ liệu bảo mật qua máy chủ API PHP riêng biệt của bạn, vui lòng đợi...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // Sử dụng cổng mạng Loli Engine vừa cập nhật bản vá bám đuổi Delta mới nhất
-            const coreApiUrl = `https://lolibypasser.lol{encodeURIComponent(url)}`;
+            // Đường link API PHP riêng của bạn
+            const myPhpApiUrl = `https://free.nf{encodeURIComponent(url)}`;
             
-            // Gửi request bẻ khóa ngầm qua Internet (Đợi tối đa 20 giây)
-            const response = await axios.get(coreApiUrl, { timeout: 20000 });
-            const data = response.data;
-            const keyFound = data.key || data.result || data.bypassed;
+            let data = null;
 
-            if (keyFound) {
+            // BẢO VỆ CHÍ MẠNG: Bọc hàm gọi mạng vào khối try-catch độc lập để bảo vệ bot không bị sập nguồn
+            try {
+                const response = await axios.get(myPhpApiUrl, { timeout: 25000 }); // Chờ tối đa 25 giây
+                data = response.data;
+            } catch (networkError) {
+                console.error('[LỖI MẠNG API PHP]:', networkError.message);
+            }
+
+            // Xử lý dữ liệu trả về sau khi kết nối an toàn
+            if (data && data.success) {
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x00FF00)
-                    .setTitle('✅ Bypass Success')
-                    .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${keyFound}\n\`\`\``)
-                    .setFooter({ text: 'Thực hiện tự động bởi Dubo Bot v4' });
+                    .setTitle('✅ Độc Quyền Bypass Thành Công')
+                    .setDescription(`🔑 **Key Delta thu thập từ API Độc Lập của bạn:**\n\`\`\`text\n${data.result}\n\`\`\``)
+                    .setFooter({ text: 'Vận hành khép kín bởi hệ thống API riêng của bạn' });
 
                 await interaction.editReply({ embeds: [successEmbed] });
             } else {
-                await interaction.editReply({ content: "❌ **Thất bại:** Máy chủ không bóc tách được mã Key. Link có thể đã hết hạn, hãy lấy link mới tinh trong game." });
+                const errorMsg = data && data.message ? data.message : 'Máy chủ API PHP của bạn phản hồi quá lâu hoặc bị nhà mạng chặn đứng.';
+                const failEmbed = new EmbedBuilder()
+                    .setColor(0xFF0000)
+                    .setTitle('❌ API Cá Nhân Gặp Lỗi')
+                    .setDescription(errorMsg);
+                
+                await interaction.editReply({ embeds: [failEmbed] });
             }
 
-        } catch (error) {
-            console.error('[LỖI BYPASS]:', error.message);
-            await interaction.editReply({ content: "❌ **Sự cố:** Cụm máy chủ bẻ khóa đang bị quá tải hoặc link getkey đã quá hạn. Vui lòng lấy link mới trong game và thử lại." });
+        } catch (globalError) {
+            // Đảm bảo nếu có bất cứ lỗi gì xảy ra ngoài ý muốn, bot vẫn sẽ sống sót và chạy tiếp lệnh sau
+            console.error('[LỖI TỔNG THỂ]:', globalError.message);
+            try {
+                await interaction.editReply({ content: "❌ **Sự cố:** Hệ thống Bot không thể hoàn tất lệnh giải mã." });
+            } catch (e) {}
         }
     }
 });
 
-// Tạo cổng HTTP giả lập giữ cho bot luôn sống trên Render
+// Giữ cổng HTTP cho Render hoạt động ổn định
 const http = require('http');
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot is active!');
+    res.end('Bot active!');
 });
-server.listen(process.env.PORT || 3000, () => {
-    console.log('[HỆ THỐNG] Cổng giữ sóng HTTP đã bật tại port 3000');
-});
+server.listen(process.env.PORT || 3000);
 
-// Kích hoạt đăng nhập Bot với Discord
-if (!process.env.DISCORD_TOKEN) {
-    console.error("[LỖI CHÍ MẠNG] Thiếu biến DISCORD_TOKEN trong cấu hình Render!");
-} else {
-    client.login(process.env.DISCORD_TOKEN).catch(err => {
-        console.error("[LỖI CHÍ MẠNG] Không thể login bot. Hãy kiểm tra lại mã Token dán trong Render!", err.message);
-    });
-}
+client.login(process.env.DISCORD_TOKEN);
