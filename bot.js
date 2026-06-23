@@ -13,7 +13,7 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta qua Zen API')
+        .setDescription('Lệnh bypass get key Delta đa máy chủ (Auto-Update)')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay cần bypass')
@@ -48,64 +48,65 @@ client.on('interactionCreate', async interaction => {
         const pendingEmbed = new EmbedBuilder()
             .setColor(0xFFA500)
             .setTitle('⏳ Hệ Thống Đang Xử Lý')
-            .setDescription('Đang kết nối qua cụm máy chủ Zen Bypass, vui lòng đợi...');
+            .setDescription('Đang quét link qua các cụm máy chủ bẻ khóa cập nhật liên tục, vui lòng đợi...');
         
         await interaction.reply({ embeds: [pendingEmbed], fetchReply: true });
 
         if (!url.includes('platorelay.com') && !url.includes('platoboost.com')) {
             const invalidEmbed = new EmbedBuilder()
                 .setColor(0xFF0000)
-                .setTitle('❌ Đường Link Không Hợp Lệ')
-                .setDescription('Đây không phải link Get Key chính thức của Delta.');
+                .setTitle('❌ Link Không Hợp Lệ')
+                .setDescription('Đây không phải đường link Get Key chính thức của Delta.');
             return await interaction.editReply({ embeds: [invalidEmbed] });
         }
 
-        try {
-            // Cấu hình API của Zen Bypass (izen.lol)
-            const zenApiUrl = `https://izen.lol{encodeURIComponent(url)}`;
-            
-            const response = await axios.get(zenApiUrl, { 
-                timeout: 25000, // Đợi Zen xử lý trong tối đa 25 giây
-                headers: {
-                    // Bạn cần cấu hình thêm biến ZEN_API_KEY ở mục nâng cao (Advanced) của Render giống như làm với Token
-                    'Authorization': `Bearer ${process.env.ZEN_API_KEY || 'YOUR_ZEN_API_KEY'}`
-                }
-            });
-            
-            const data = response.data;
+        // 3 cụm máy chủ lớn độc lập, luôn tự động code bám đuổi thuật toán của Delta
+        const apiEndpoints = [
+            { name: "Cụm Lõi 1 (Loli Engine)", url: `https://lolibypasser.lol{encodeURIComponent(url)}` },
+            { name: "Cụm Lõi 2 (Bypass VIP)", url: `https://bypass.vip{encodeURIComponent(url)}` },
+            { name: "Cụm Lõi 3 (Bypass Tech)", url: `https://bypass.tech{encodeURIComponent(url)}` }
+        ];
 
-            // Kiểm tra kết quả trả về từ cấu hình chuẩn của Zen API
-            if (data && data.success && data.result) {
-                const successEmbed = new EmbedBuilder()
-                    .setColor(0x00FF00)
-                    .setTitle('✅ Zen Bypass Success')
-                    .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${data.result}\n\`\`\``)
-                    .setFooter({ text: 'Vận hành dựa trên lõi cao cấp Zen API' });
+        let bypassSuccess = false;
+        let finalKey = "";
+        let usedServer = "";
 
-                await interaction.editReply({ embeds: [successEmbed] });
-            } else {
-                const failEmbed = new EmbedBuilder()
-                    .setColor(0xFF0000)
-                    .setTitle('❌ Giải mã thất bại')
-                    .setDescription(data.message || 'Mã lỗi từ máy chủ Zen: Link không hợp lệ hoặc đã hết hạn sử dụng.');
+        // Chạy vòng lặp quét qua từng máy chủ, thằng nào cập nhật xong trước sẽ cứu bot
+        for (const api of apiEndpoints) {
+            try {
+                console.log(`Đang thử gọi: ${api.name}`);
+                const response = await axios.get(api.url, { timeout: 15000 }); // Đợi tối đa 15s mỗi server
+                const data = response.data;
                 
-                await interaction.editReply({ embeds: [failEmbed] });
-            }
+                // Trích xuất mã key dựa theo định dạng trả về của các bên
+                const keyFound = data.key || data.result || data.bypassed;
 
-        } catch (error) {
-            console.error('Lỗi kết nối Zen API:', error.message);
-            
-            let errorMsg = 'Cụm máy chủ Zen đang bảo trì hoặc tài khoản API của bạn đã hết lượt credits.';
-            if (error.response && error.response.data && error.response.data.message) {
-                errorMsg = error.response.data.message;
+                if (keyFound) {
+                    finalKey = keyFound;
+                    usedServer = api.name;
+                    bypassSuccess = true;
+                    break; // Thành công thì ngắt vòng lặp ngay để trả kết quả nhanh
+                }
+            } catch (err) {
+                console.log(`[Bận/Chặn] ${api.name} chưa cập nhật thuật toán mới, đang chuyển cụm tiếp theo...`);
             }
+        }
 
-            const errorEmbed = new EmbedBuilder()
+        if (bypassSuccess) {
+            const successEmbed = new EmbedBuilder()
+                .setColor(0x00FF00)
+                .setTitle('✅ Bypass Success')
+                .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
+                .setFooter({ text: `Giải mã thành công qua ${usedServer}` });
+
+            await interaction.editReply({ embeds: [successEmbed] });
+        } else {
+            const allFailEmbed = new EmbedBuilder()
                 .setColor(0xFF0000)
-                .setTitle('❌ Lỗi kết nối API')
-                .setDescription(errorMsg);
-            
-            await interaction.editReply({ embeds: [errorEmbed] });
+                .setTitle('❌ Tất Cả Máy Chủ Đang Cập Nhật')
+                .setDescription('Delta vừa đổi lớp mã hóa link getkey mới. Toàn bộ các cụm máy chủ lõi đang trong quá trình bám đuổi viết lại mã nguồn vá lỗi. Vui lòng lấy link mới từ game và thử lại sau ít phút.');
+
+            await interaction.editReply({ embeds: [allFailEmbed] });
         }
     }
 });
