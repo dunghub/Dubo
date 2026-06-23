@@ -9,7 +9,7 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh tự bypass get key Delta qua API PHP Cá Nhân')
+        .setDescription('Lệnh bypass get key Delta qua API PHP Cá Nhân')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay cần bẻ khóa')
@@ -26,7 +26,7 @@ client.once('ready', async () => {
         );
         console.log('[HỆ THỐNG] Đăng ký lệnh Slash Command thành công!');
     } catch (error) {
-        console.error('[LỖI] Không thể đăng ký lệnh:', error.message);
+        console.error('[LỖI CHÍ MẠNG] Không thể đăng ký lệnh:', error.message);
     }
 });
 
@@ -37,7 +37,7 @@ client.on('interactionCreate', async interaction => {
         const url = interaction.options.getString('url');
 
         try {
-            // SỬA LỖI ỨNG DỤNG KHÔNG PHẢN HỒI: Hoãn phản hồi lập tức để Discord cho Bot thêm thời gian chờ
+            // SỬA LỖI PHẢN HỒI: Ép Discord nhận lệnh ngay từ mili-giây đầu tiên
             await interaction.deferReply().catch(err => console.error("Lỗi deferReply:", err.message));
 
             if (!url.includes('platorelay.com') && !url.includes('platoboost.com')) {
@@ -47,20 +47,20 @@ client.on('interactionCreate', async interaction => {
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Kết Nối API Cá Nhân')
-                .setDescription('Bot đang thực hiện gửi yêu cầu bẻ khóa qua máy chủ API PHP riêng biệt của bạn (`dubobypass.free.nf`), vui lòng đợi...');
+                .setDescription('Bot đang chuyển gói tin qua máy chủ API PHP riêng biệt (`dubobypass.free.nf`), vui lòng đợi...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // Đường link API PHP riêng của bạn trên InfinityFree
+            // Đường link API PHP riêng của bạn
             const myPhpApiUrl = `https://free.nf{encodeURIComponent(url)}`;
             
             let data = null;
 
             try {
-                // Gửi request lấy dữ liệu (Giới hạn đợi tối đa 15 giây)
+                // Gọi sang API PHP của bạn (Hạn định chờ 15 giây)
                 const response = await axios.get(myPhpApiUrl, { timeout: 15000 });
                 data = response.data;
             } catch (netError) {
-                console.error('Lỗi gọi API PHP:', netError.message);
+                console.error('Lỗi kết nối API PHP:', netError.message);
             }
 
             if (data && data.success) {
@@ -82,7 +82,7 @@ client.on('interactionCreate', async interaction => {
         } catch (globalError) {
             console.error('[LỖI TỔNG THỂ]:', globalError.message);
             try {
-                await interaction.editReply({ content: "❌ **Sự cố:** Hệ thống không thể hoàn tất lệnh giải mã." });
+                await interaction.editReply({ content: "❌ **Sự cố:** Hệ thống bot không thể hoàn tất lệnh giải mã." });
             } catch (e) {}
         }
     }
@@ -95,4 +95,6 @@ const server = http.createServer((req, res) => {
 });
 server.listen(process.env.PORT || 3000);
 
-client.login(process.env.DISCORD_TOKEN);
+client.login(process.env.DISCORD_TOKEN).catch(err => {
+    console.error("[LỖI CHÍ MẠNG] Không thể đăng nhập Token Bot:", err.message);
+});
