@@ -13,7 +13,7 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta đa máy chủ (Sửa lỗi phản hồi)')
+        .setDescription('Lệnh bypass get key Delta v3 - Auto Bám Đuổi Thuật Toán')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay cần bypass')
@@ -46,85 +46,84 @@ client.on('interactionCreate', async interaction => {
         const url = interaction.options.getString('url');
 
         try {
-            // SỬA LỖI CỐT LÕI: Hoãn phản hồi ngay lập tức để Discord không báo lỗi "Ứng dụng không phản hồi" sau 3 giây
+            // Hoãn phản hồi để tránh lỗi ứng dụng không phản hồi sau 3 giây
             await interaction.deferReply();
 
-            // Gửi ô thông báo chờ xử lý đầu tiên sau khi đã hoãn phản hồi thành công
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang quét link qua các cụm máy chủ bẻ khóa cập nhật liên tục, vui lòng đợi...');
+                .setDescription('Đang quét qua các mạng lưới máy chủ bẻ khóa chuyên biệt, vui lòng chờ...');
             
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // Kiểm tra link đầu vào
             if (!url.includes('platorelay.com') && !url.includes('platoboost.com')) {
                 const invalidEmbed = new EmbedBuilder()
                     .setColor(0xFF0000)
                     .setTitle('❌ Link Không Hợp Lệ')
-                    .setDescription('Đây không phải đường link Get Key chính thức của Delta.');
+                    .setDescription('Đây không phải đường link Get Key chính thức của hệ thống Delta.');
                 return await interaction.editReply({ embeds: [invalidEmbed] });
             }
 
-            // Danh sách các máy chủ lõi bám đuổi thuật toán Delta
+            // Danh sách các API bẻ khóa lõi liên tục bám đuổi mã hóa mới của Delta
             const apiEndpoints = [
-                { name: "Cụm Lõi 1 (Loli Engine)", url: `https://lolibypasser.lol{encodeURIComponent(url)}` },
-                { name: "Cụm Lõi 2 (Bypass VIP)", url: `https://bypass.vip{encodeURIComponent(url)}` },
-                { name: "Cụm Lõi 3 (Bypass Tech)", url: `https://bypass.tech{encodeURIComponent(url)}` }
+                { name: "Cụm Máy Chủ Lõi 1 (Bypass VIP)", url: `https://bypass.vip{encodeURIComponent(url)}` },
+                { name: "Cụm Máy Chủ Lõi 2 (Loli Bypasser)", url: `https://lolibypasser.lol{encodeURIComponent(url)}` },
+                { name: "Cụm Máy Chủ Dự Phòng 3 (Bypass Tech)", url: `https://bypass.tech{encodeURIComponent(url)}` },
+                { name: "Mạng Lưới Phân Phối Đa Tầng", url: `https://bypass.city{encodeURIComponent(url)}` }
             ];
 
             let bypassSuccess = false;
             let finalKey = "";
             let usedServer = "";
 
-            // Chạy vòng lặp quét qua từng máy chủ
+            // Quét luân phiên qua từng cụm máy chủ gốc
             for (const api of apiEndpoints) {
                 try {
-                    console.log(`Đang thử gọi: ${api.name}`);
-                    const response = await axios.get(api.url, { timeout: 15000 }); // Đợi tối đa 15s mỗi server
+                    console.log(`Đang kết nối đến: ${api.name}`);
+                    const response = await axios.get(api.url, { timeout: 18000 }); // Chờ tối đa 18 giây mỗi cụm
                     const data = response.data;
                     
-                    const keyFound = data.key || data.result || data.bypassed;
+                    // Trích xuất mã Key linh hoạt dựa theo cấu trúc dữ liệu trả về của các bên
+                    const keyFound = data.key || data.result || data.bypassed || (typeof data === 'string' && data.length < 100 ? data : null);
 
-                    if (keyFound) {
+                    if (keyFound && !keyFound.includes('error') && !keyFound.includes('fail')) {
                         finalKey = keyFound;
                         usedServer = api.name;
                         bypassSuccess = true;
-                        break; 
+                        break; // Đã tìm thấy Key sạch thì dừng quét ngay lập tức
                     }
                 } catch (err) {
-                    console.log(`[Bận/Chặn] ${api.name} chưa cập nhật thuật toán mới, đang chuyển cụm tiếp theo...`);
+                    console.log(`[Bận/Chặn] ${api.name} đang nâng cấp thuật toán, tự động chuyển tiếp...`);
                 }
             }
 
             if (bypassSuccess) {
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x00FF00)
-                    .setTitle('✅ Bypass Success')
-                    .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
-                    .setFooter({ text: `Giải mã thành công qua ${usedServer}` });
+                    .setTitle('✅ Bypass Delta Success')
+                    .setDescription(`🔑 **Key Delta của bạn đã bẻ khóa thành công:**\n\`\`\`text\n${finalKey}\n\`\`\``)
+                    .setFooter({ text: `Xử lý thành công qua hệ thống: ${usedServer}` });
 
                 await interaction.editReply({ embeds: [successEmbed] });
             } else {
                 const allFailEmbed = new EmbedBuilder()
                     .setColor(0xFF0000)
-                    .setTitle('❌ Tất Cả Máy Chủ Đang Cập Nhật')
-                    .setDescription('Delta vừa đổi lớp mã hóa link getkey mới. Toàn bộ các cụm máy chủ lõi đang trong quá trình bám đuổi viết lại mã nguồn vá lỗi. Vui lòng lấy link mới từ game và thử lại sau ít phút.');
+                    .setTitle('❌ Hệ Thống Đang Đồng Bộ Bản Vá')
+                    .setDescription('Delta vừa cập nhật lớp mã hóa mới cho hệ thống Platorelay. Toàn bộ các cụm máy chủ lõi đang tự động cấu hình lại mã nguồn bám đuổi. Vui lòng lấy link mới trong game và thử lại sau ít phút.');
 
                 await interaction.editReply({ embeds: [allFailEmbed] });
             }
 
         } catch (globalError) {
-            console.error('Lỗi tổng thể hệ thống:', globalError.message);
-            // Phòng hờ nếu có lỗi hệ thống nặng xảy ra ngoài ý muốn
+            console.error('Lỗi vận hành hệ thống bot:', globalError.message);
             try {
                 const systemErrorEmbed = new EmbedBuilder()
                     .setColor(0xFF0000)
-                    .setTitle('❌ Lỗi Hệ Thống Bot')
-                    .setDescription('Bot gặp sự cố khi xử lý lệnh. Vui lòng thử lại sau.');
+                    .setTitle('❌ Lỗi Kết Nối')
+                    .setDescription('Bot gặp sự cố nghẽn mạng tạm thời khi gửi tín hiệu. Vui lòng thực hiện lại lệnh.');
                 await interaction.editReply({ embeds: [systemErrorEmbed] });
             } catch (e) {
-                console.error('Không thể editReply:', e.message);
+                console.error('Không thể cập nhật phản hồi lỗi:', e.message);
             }
         }
     }
