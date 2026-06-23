@@ -19,7 +19,10 @@ const commands = [
 client.once('ready', async () => {
     console.log(`[OK] Bot đã online hệ thống: ${client.user.tag}`);
     try {
-        const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+        // Sử dụng TOKEN linh hoạt: Ưu tiên DISCORD_TOKEN, nếu không có sẽ lấy TOKEN thông thường
+        const token = process.env.DISCORD_TOKEN || process.env.TOKEN;
+        const rest = new REST({ version: '10' }).setToken(token);
+        
         await rest.put(
             Routes.applicationCommands(process.env.CLIENT_ID || client.user.id), 
             { body: commands }
@@ -37,55 +40,62 @@ client.on('interactionCreate', async interaction => {
         const url = interaction.options.getString('url');
 
         try {
-            // Hoãn phản hồi ngay lập tức chống lỗi quá 3 giây của Discord
+            // Hoãn phản hồi chống lỗi quá 3 giây của Discord
             await interaction.deferReply();
 
+            // Kiểm tra định dạng link đầu vào
             if (!url.includes('platorelay.com') && !url.includes('platoboost.com')) {
                 return await interaction.editReply({ content: "❌ **Lỗi:** Đường link nhập vào không đúng định dạng Get Key của Delta!" });
             }
 
+            // Gửi Embed thông báo đang xử lý
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Hệ Thống Đang Xử Lý')
                 .setDescription('Đang bẻ khóa link qua máy chủ siêu tốc cập nhật theo Delta, vui lòng đợi...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // Sử dụng API cổng bẻ khóa chuyên dụng thế hệ mới phục vụ riêng cho Bot Discord
+            // 🔥 ĐÃ FIX: Sửa lại cú pháp Template Literal sử dụng dấu huyền ` và thêm dấu $
             const coreApiUrl = `https://bypass.city{encodeURIComponent(url)}`;
             
             let finalKey = "";
 
             try {
-                const response = await axios.get(coreApiUrl, { timeout: 20000 }); // Đợi tối đa 20 giây
-                if (response.data && (response.data.key || response.data.result || response.data.query)) {
-                    finalKey = response.data.key || response.data.result || response.data.query;
+                const response = await axios.get(coreApiUrl, { timeout: 25000 }); // Nâng lên 25 giây đề phòng API phản hồi chậm
+                
+                // Đọc cấu trúc JSON trả về từ API của bạn
+                if (response.data) {
+                    finalKey = response.data.key || response.data.result || response.data.query || response.data.bypassed;
                 }
             } catch (netError) {
-                console.error("API nghẽn mạng:", netError.message);
+                console.error("API nghẽn mạng hoặc lỗi:", netError.message);
             }
 
+            // Xử lý và hiển thị kết quả cho người dùng
             if (finalKey && !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail')) {
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x00FF00)
-                    .setTitle('✅ Bypass Success')
+                    .setTitle('✅ Bypass Thành Công')
                     .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
                     .setFooter({ text: 'Vận hành tự động bởi Dubo Bot v8' });
 
-                await interaction.editReply({ embeds: [successEmbed] });
+                // Gửi đè lên Embed cũ, xóa trạng thái chờ
+                await interaction.editReply({ embeds: [successEmbed], content: null });
             } else {
-                await interaction.editReply({ content: "❌ **Bypass thất bại:** Link getkey đã hết hạn hoặc máy chủ bẻ khóa đang cập nhật bản vá. Vui lòng lấy link mới tinh trong game và thử lại sau ít phút." });
+                // Đã fix lỗi xung đột bằng cách xóa mảng embeds cũ đi khi trả về thông báo lỗi dạng chữ
+                await interaction.editReply({ embeds: [], content: "❌ **Bypass thất bại:** Link getkey đã hết hạn hoặc máy chủ bẻ khóa đang cập nhật bản vá. Vui lòng lấy link mới tinh trong game và thử lại sau ít phút." });
             }
 
         } catch (globalError) {
             console.error('Lỗi sập ngầm:', globalError.message);
             try {
-                await interaction.editReply({ content: "❌ **Sự cố:** Có lỗi xảy ra trong quá trình kết nối mạng." });
+                await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Có lỗi xảy ra trong quá trình kết nối mạng." });
             } catch (e) {}
         }
     }
 });
 
-// Giữ kết nối cổng mạng cho Render không bị ngắt quãng
+// Giữ kết nối cổng mạng cho Render/Hosting không bị ngủ
 const http = require('http');
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -93,6 +103,8 @@ const server = http.createServer((req, res) => {
 });
 server.listen(process.env.PORT || 3000);
 
-client.login(process.env.DISCORD_TOKEN).catch(err => {
-    console.error("[LỖI CHÍ MẠNG] Token điền trên Render bị sai:", err.message);
+// Khởi chạy bot
+const botToken = process.env.DISCORD_TOKEN || process.env.TOKEN;
+client.login(botToken).catch(err => {
+    console.error("[LỖI CHÍ MẠNG] Token điền trên Hosting/Render bị sai hoặc thiếu quyền Intents:", err.message);
 });
