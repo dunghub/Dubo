@@ -1,4 +1,5 @@
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const axios = require('axios'); // Gọi thư viện lõi kết nối mạng
 require('dotenv').config();
 
 const client = new Client({
@@ -12,10 +13,10 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key')
+        .setDescription('Lệnh bypass get key Delta')
         .addStringOption(option => 
             option.setName('url')
-                .setDescription('Nhập đường link cần bypass')
+                .setDescription('Nhập đường link Platorelay cần bypass')
                 .setRequired(true))
 ];
 
@@ -51,38 +52,65 @@ client.on('interactionCreate', async interaction => {
     if (interaction.commandName === 'bypass') {
         const url = interaction.options.getString('url');
 
+        // 1. Tạo giao diện chờ xử lý gửi cho người dùng
         const pendingEmbed = new EmbedBuilder()
             .setColor(0xFFA500)
             .setTitle('⏳ Đang xử lý')
-            .setDescription('Đang thực hiện lệnh bypass...');
+            .setDescription('Đang thực hiện giải mã link Delta, vui lòng chờ giây lát...');
         
         await interaction.reply({ embeds: [pendingEmbed], fetchReply: true });
 
-        setTimeout(async () => {
+        // 2. Kiểm tra định dạng link xem có phải của Delta hệ thống mới không
+        if (url.includes('platorelay.com') || url.includes('platoboost.com')) {
             try {
-                if (url.includes('platorelay.com')) {
-                    // Trả về Embed màu xanh lá chứa duy nhất đường link đã nhập để ấn vào
+                // Định nghĩa link gửi lên API lõi bẻ khóa
+                const coreApiUrl = `https://bypass.vip{encodeURIComponent(url)}`;
+                
+                // Bot gửi request ngầm đến máy chủ bẻ khóa (Đợi tối đa 20 giây)
+                const response = await axios.get(coreApiUrl, { timeout: 20000 });
+                const data = response.data;
+
+                // Nếu máy chủ lõi bẻ khóa thành công và trả về chuỗi kết quả
+                if (data && data.result) {
                     const successEmbed = new EmbedBuilder()
                         .setColor(0x00FF00)
                         .setTitle('✅ Bypass Success')
-                        .setDescription(`${url}`);
+                        .setDescription(`🔑 **Key Delta của bạn là:**\n\`\`\`text\n${data.result}\n\`\`\``)
+                        .setFooter({ text: 'Thực hiện bởi Dubo Bot' });
 
                     await interaction.editReply({ embeds: [successEmbed] });
                 } else {
-                    const errorEmbed = new EmbedBuilder()
+                    // Trường hợp link lỗi hoặc máy chủ bẻ khóa không phân tích được
+                    const failEmbed = new EmbedBuilder()
                         .setColor(0xFF0000)
-                        .setTitle('❌ Gặp sự cố')
-                        .setDescription('Đây không phải là link get key hợp lệ.');
+                        .setTitle('❌ Thất bại')
+                        .setDescription('Không thể bẻ khóa liên kết này. Link có thể đã hết hạn hoặc bị lỗi.');
                     
-                    await interaction.editReply({ embeds: [errorEmbed] });
+                    await interaction.editReply({ embeds: [failEmbed] });
                 }
+
             } catch (error) {
-                console.error('Lỗi khi chỉnh sửa phản hồi:', error);
+                console.error('Lỗi bẻ khóa từ API lõi:', error.message);
+                const errorEmbed = new EmbedBuilder()
+                    .setColor(0xFF0000)
+                    .setTitle('❌ Hệ thống bận')
+                    .setDescription('Máy chủ bẻ khóa đang quá tải hoặc gặp sự cố kết nối. Vui lòng thử lại sau.');
+                
+                await interaction.editReply({ embeds: [errorEmbed] });
             }
-        }, 3000);
+        } else {
+            // Trường hợp người dùng nhập bừa link khác
+            const invalidEmbed = new EmbedBuilder()
+                .setColor(0xFF0000)
+                .setTitle('❌ Gặp sự cố')
+                .setDescription('Đây không phải là link get key hợp lệ của Delta (Phải chứa platorelay.com).');
+            
+            await interaction.editReply({ embeds: [invalidEmbed] });
+        }
     }
 });
 
+// Giữ cho bot luôn chạy khi treo trên các hosting như Render
 const http = require('http');
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
