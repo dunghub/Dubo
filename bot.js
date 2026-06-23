@@ -52,5 +52,5 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply('Đang thực hiện lệnh bypass...');
     }
 });
-
+https://render.com/docs/web-services#port-binding
 client.login(process.env.DISCORD_TOKEN);
