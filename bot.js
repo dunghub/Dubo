@@ -13,7 +13,7 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta đa máy chủ (Auto-Update)')
+        .setDescription('Lệnh bypass get key Delta đa máy chủ (Sửa lỗi phản hồi)')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay cần bypass')
@@ -45,68 +45,87 @@ client.on('interactionCreate', async interaction => {
     if (interaction.commandName === 'bypass') {
         const url = interaction.options.getString('url');
 
-        const pendingEmbed = new EmbedBuilder()
-            .setColor(0xFFA500)
-            .setTitle('⏳ Hệ Thống Đang Xử Lý')
-            .setDescription('Đang quét link qua các cụm máy chủ bẻ khóa cập nhật liên tục, vui lòng đợi...');
-        
-        await interaction.reply({ embeds: [pendingEmbed], fetchReply: true });
+        try {
+            // SỬA LỖI CỐT LÕI: Hoãn phản hồi ngay lập tức để Discord không báo lỗi "Ứng dụng không phản hồi" sau 3 giây
+            await interaction.deferReply();
 
-        if (!url.includes('platorelay.com') && !url.includes('platoboost.com')) {
-            const invalidEmbed = new EmbedBuilder()
-                .setColor(0xFF0000)
-                .setTitle('❌ Link Không Hợp Lệ')
-                .setDescription('Đây không phải đường link Get Key chính thức của Delta.');
-            return await interaction.editReply({ embeds: [invalidEmbed] });
-        }
+            // Gửi ô thông báo chờ xử lý đầu tiên sau khi đã hoãn phản hồi thành công
+            const pendingEmbed = new EmbedBuilder()
+                .setColor(0xFFA500)
+                .setTitle('⏳ Hệ Thống Đang Xử Lý')
+                .setDescription('Đang quét link qua các cụm máy chủ bẻ khóa cập nhật liên tục, vui lòng đợi...');
+            
+            await interaction.editReply({ embeds: [pendingEmbed] });
 
-        // 3 cụm máy chủ lớn độc lập, luôn tự động code bám đuổi thuật toán của Delta
-        const apiEndpoints = [
-            { name: "Cụm Lõi 1 (Loli Engine)", url: `https://lolibypasser.lol{encodeURIComponent(url)}` },
-            { name: "Cụm Lõi 2 (Bypass VIP)", url: `https://bypass.vip{encodeURIComponent(url)}` },
-            { name: "Cụm Lõi 3 (Bypass Tech)", url: `https://bypass.tech{encodeURIComponent(url)}` }
-        ];
-
-        let bypassSuccess = false;
-        let finalKey = "";
-        let usedServer = "";
-
-        // Chạy vòng lặp quét qua từng máy chủ, thằng nào cập nhật xong trước sẽ cứu bot
-        for (const api of apiEndpoints) {
-            try {
-                console.log(`Đang thử gọi: ${api.name}`);
-                const response = await axios.get(api.url, { timeout: 15000 }); // Đợi tối đa 15s mỗi server
-                const data = response.data;
-                
-                // Trích xuất mã key dựa theo định dạng trả về của các bên
-                const keyFound = data.key || data.result || data.bypassed;
-
-                if (keyFound) {
-                    finalKey = keyFound;
-                    usedServer = api.name;
-                    bypassSuccess = true;
-                    break; // Thành công thì ngắt vòng lặp ngay để trả kết quả nhanh
-                }
-            } catch (err) {
-                console.log(`[Bận/Chặn] ${api.name} chưa cập nhật thuật toán mới, đang chuyển cụm tiếp theo...`);
+            // Kiểm tra link đầu vào
+            if (!url.includes('platorelay.com') && !url.includes('platoboost.com')) {
+                const invalidEmbed = new EmbedBuilder()
+                    .setColor(0xFF0000)
+                    .setTitle('❌ Link Không Hợp Lệ')
+                    .setDescription('Đây không phải đường link Get Key chính thức của Delta.');
+                return await interaction.editReply({ embeds: [invalidEmbed] });
             }
-        }
 
-        if (bypassSuccess) {
-            const successEmbed = new EmbedBuilder()
-                .setColor(0x00FF00)
-                .setTitle('✅ Bypass Success')
-                .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
-                .setFooter({ text: `Giải mã thành công qua ${usedServer}` });
+            // Danh sách các máy chủ lõi bám đuổi thuật toán Delta
+            const apiEndpoints = [
+                { name: "Cụm Lõi 1 (Loli Engine)", url: `https://lolibypasser.lol{encodeURIComponent(url)}` },
+                { name: "Cụm Lõi 2 (Bypass VIP)", url: `https://bypass.vip{encodeURIComponent(url)}` },
+                { name: "Cụm Lõi 3 (Bypass Tech)", url: `https://bypass.tech{encodeURIComponent(url)}` }
+            ];
 
-            await interaction.editReply({ embeds: [successEmbed] });
-        } else {
-            const allFailEmbed = new EmbedBuilder()
-                .setColor(0xFF0000)
-                .setTitle('❌ Tất Cả Máy Chủ Đang Cập Nhật')
-                .setDescription('Delta vừa đổi lớp mã hóa link getkey mới. Toàn bộ các cụm máy chủ lõi đang trong quá trình bám đuổi viết lại mã nguồn vá lỗi. Vui lòng lấy link mới từ game và thử lại sau ít phút.');
+            let bypassSuccess = false;
+            let finalKey = "";
+            let usedServer = "";
 
-            await interaction.editReply({ embeds: [allFailEmbed] });
+            // Chạy vòng lặp quét qua từng máy chủ
+            for (const api of apiEndpoints) {
+                try {
+                    console.log(`Đang thử gọi: ${api.name}`);
+                    const response = await axios.get(api.url, { timeout: 15000 }); // Đợi tối đa 15s mỗi server
+                    const data = response.data;
+                    
+                    const keyFound = data.key || data.result || data.bypassed;
+
+                    if (keyFound) {
+                        finalKey = keyFound;
+                        usedServer = api.name;
+                        bypassSuccess = true;
+                        break; 
+                    }
+                } catch (err) {
+                    console.log(`[Bận/Chặn] ${api.name} chưa cập nhật thuật toán mới, đang chuyển cụm tiếp theo...`);
+                }
+            }
+
+            if (bypassSuccess) {
+                const successEmbed = new EmbedBuilder()
+                    .setColor(0x00FF00)
+                    .setTitle('✅ Bypass Success')
+                    .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
+                    .setFooter({ text: `Giải mã thành công qua ${usedServer}` });
+
+                await interaction.editReply({ embeds: [successEmbed] });
+            } else {
+                const allFailEmbed = new EmbedBuilder()
+                    .setColor(0xFF0000)
+                    .setTitle('❌ Tất Cả Máy Chủ Đang Cập Nhật')
+                    .setDescription('Delta vừa đổi lớp mã hóa link getkey mới. Toàn bộ các cụm máy chủ lõi đang trong quá trình bám đuổi viết lại mã nguồn vá lỗi. Vui lòng lấy link mới từ game và thử lại sau ít phút.');
+
+                await interaction.editReply({ embeds: [allFailEmbed] });
+            }
+
+        } catch (globalError) {
+            console.error('Lỗi tổng thể hệ thống:', globalError.message);
+            // Phòng hờ nếu có lỗi hệ thống nặng xảy ra ngoài ý muốn
+            try {
+                const systemErrorEmbed = new EmbedBuilder()
+                    .setColor(0xFF0000)
+                    .setTitle('❌ Lỗi Hệ Thống Bot')
+                    .setDescription('Bot gặp sự cố khi xử lý lệnh. Vui lòng thử lại sau.');
+                await interaction.editReply({ embeds: [systemErrorEmbed] });
+            } catch (e) {
+                console.error('Không thể editReply:', e.message);
+            }
         }
     }
 });
