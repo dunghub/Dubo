@@ -1,5 +1,6 @@
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
+const http = require('http'); // Gọi thư viện tạo cổng cho Render
 require('dotenv').config();
 
 const client = new Client({
@@ -20,18 +21,21 @@ const commands = [
                 .setRequired(true))
 ];
 
-const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
-
-(async () => {
+client.once('ready', async () => {
+    console.log(`Bot đã online hệ thống: ${client.user.tag}`);
+    
+    // ĐƯA ĐĂNG KÝ LỆNH VÀO ĐÂY ĐỂ TRÁNH BỊ DISCORD CHẶN TREO LOG
+    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     try {
-        console.log('Đang đăng ký lệnh...');
-        await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
-        console.log('Đăng ký lệnh thành công!');
-    } catch (error) { console.error(error); }
-})();
-
-client.once('ready', () => {
-    console.log(`Bot đã online: ${client.user.tag}`);
+        console.log('Đang đăng ký lệnh Slash Command với Discord...');
+        await rest.put(
+            Routes.applicationCommands(process.env.CLIENT_ID), 
+            { body: commands }
+        );
+        console.log('Đăng ký lệnh Slash Command THÀNH CÔNG!');
+    } catch (error) {
+        console.error('Lỗi khi đăng ký lệnh:', error);
+    }
 });
 
 client.on('interactionCreate', async interaction => {
@@ -41,13 +45,13 @@ client.on('interactionCreate', async interaction => {
         const url = interaction.options.getString('url');
 
         try {
-            // Hoãn phản hồi để tránh lỗi "Ứng dụng không phản hồi" quá 3 giây của Discord
+            // Hoãn phản hồi ngay lập tức chống lỗi Quá 3 giây
             await interaction.deferReply();
 
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
-                .setTitle('⏳ Kết Nối API Riêng')
-                .setDescription('Bot đang gửi yêu cầu giải mã qua máy chủ API PHP riêng của bạn, vui lòng đợi...');
+                .setTitle('⏳ Kết Nối Hệ Thống')
+                .setDescription('Bot đang chuyển gói tin qua máy chủ API riêng của bạn, vui lòng đợi...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
             if (!url.includes('platorelay.com') && !url.includes('platoboost.com')) {
@@ -55,37 +59,71 @@ client.on('interactionCreate', async interaction => {
                 return await interaction.editReply({ embeds: [invalidEmbed] });
             }
 
-            // KẾT NỐI ĐẾN ĐƯỜNG LINK API PHP RIÊNG CỦA BẠN VỪA TẠO
+            // Gọi đến link API PHP của bạn và cấu hình luồng đảo lỗi tự động sang Loli Engine nếu Host PHP nghẽn
             const myPhpApiUrl = `https://free.nf{encodeURIComponent(url)}`;
+            const backupApiUrl = `https://lolibypasser.lol{encodeURIComponent(url)}`;
             
-            // Gửi request lấy dữ liệu với thời gian chờ tối đa 25 giây
-            const response = await axios.get(myPhpApiUrl, { timeout: 25000 });
-            const data = response.data;
+            let finalKey = "";
+            let serverName = "";
 
-            if (data && data.success) {
+            try {
+                // Thử quét bằng API PHP riêng (Đợi trong 10 giây)
+                const response = await axios.get(myPhpApiUrl, { timeout: 10000 });
+                if (response.data && response.data.success) {
+                    finalKey = response.data.result;
+                    serverName = "API PHP Cá Nhân";
+                }
+            } catch (e) {
+                console.log("Mạng InfinityFree bận, tự động kích hoạt lõi dự phòng...");
+            }
+
+            // Nếu cụm PHP bận, kích hoạt ngay luồng dự phòng Loli Engine mới cập nhật
+            if (!finalKey) {
+                try {
+                    const backupResponse = await axios.get(backupApiUrl, { timeout: 15000 });
+                    if (backupResponse.data && (backupResponse.data.key || backupResponse.data.result)) {
+                        finalKey = backupResponse.data.key || backupResponse.data.result;
+                        serverName = "Cụm Máy Chủ Dự Phòng (Auto-Update)";
+                    }
+                } catch (err) {
+                    console.error("Cả hai cổng giải mã đều bận.");
+                }
+            }
+
+            if (finalKey) {
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x00FF00)
                     .setTitle('✅ Bypass Thành Công')
-                    .setDescription(`🔑 **Key Delta thu thập từ API PHP của bạn:**\n\`\`\`text\n${data.result}\n\`\`\``)
-                    .setFooter({ text: 'Vận hành bởi hệ thống API độc lập' });
+                    .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
+                    .setFooter({ text: `Xử lý an toàn qua: ${serverName}` });
                 await interaction.editReply({ embeds: [successEmbed] });
             } else {
                 const failEmbed = new EmbedBuilder()
                     .setColor(0xFF0000)
-                    .setTitle('❌ Xử Lý Thất Bại')
-                    .setDescription(data.message || 'Mã lỗi không xác định từ API PHP.');
+                    .setTitle('❌ Thất Bại')
+                    .setDescription('Không thể bóc tách mã Key. Hãy lấy đường link mới tinh từ trong game và thực hiện lại.');
                 await interaction.editReply({ embeds: [failEmbed] });
             }
 
-        } catch (error) {
-            console.error('Lỗi kết nối API PHP:', error.message);
-            const errorEmbed = new EmbedBuilder()
-                .setColor(0xFF0000)
-                .setTitle('❌ Sự Cố Máy Chủ API')
-                .setDescription('Không thể kết nối đến máy chủ Web Host cá nhân hoặc API đang gặp lỗi hàng đợi.');
-            await interaction.editReply({ embeds: [errorEmbed] });
+        } catch (globalError) {
+            console.error('Lỗi tổng thể:', globalError.message);
+            try {
+                const errEmbed = new EmbedBuilder().setColor(0xFF0000).setTitle('❌ Lỗi').setDescription('Hệ thống gặp sự cố nghẽn luồng.');
+                await interaction.editReply({ embeds: [errEmbed] });
+            } catch (e) {}
         }
     }
+});
+
+// SỬA LỖI CỐT LÕI: Mở cổng HTTP Port 3000 để Render nhận diện không bị hủy Deploy
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Dubo Bot is online and healthy!');
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Máy chủ tạo cổng thành công tại Port: ${PORT}`);
 });
 
 client.login(process.env.DISCORD_TOKEN);
