@@ -13,7 +13,7 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta đa máy chủ')
+        .setDescription('Lệnh bypass get key Delta qua Zen API')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay cần bypass')
@@ -48,7 +48,7 @@ client.on('interactionCreate', async interaction => {
         const pendingEmbed = new EmbedBuilder()
             .setColor(0xFFA500)
             .setTitle('⏳ Hệ Thống Đang Xử Lý')
-            .setDescription('Đang kết nối qua các cụm máy chủ bẻ khóa, vui lòng đợi...');
+            .setDescription('Đang kết nối qua cụm máy chủ Zen Bypass, vui lòng đợi...');
         
         await interaction.reply({ embeds: [pendingEmbed], fetchReply: true });
 
@@ -60,47 +60,52 @@ client.on('interactionCreate', async interaction => {
             return await interaction.editReply({ embeds: [invalidEmbed] });
         }
 
-        // Danh sách 3 máy chủ bẻ khóa mạnh nhất được cấu hình chạy luân phiên bảo vệ nhau
-        const apiEndpoints = [
-            { name: "Cụm Máy Chủ Lõi 1 (Fluxus Engine)", url: `https://fluxus.org{encodeURIComponent(url)}` },
-            { name: "Cụm Máy Chủ Lõi 2 (Bypass VIP)", url: `https://bypass.vip{encodeURIComponent(url)}` },
-            { name: "Cụm Máy Chủ Lõi 3 (Bypass City)", url: `https://bypass.city{encodeURIComponent(url)}` }
-        ];
-
-        let bypassSuccess = false;
-        let finalKey = "";
-
-        // Duyệt qua từng máy chủ, cái nào sống đầu tiên sẽ lấy kết quả cái đó
-        for (const api of apiEndpoints) {
-            try {
-                console.log(`Đang thử bypass qua: ${api.name}`);
-                const response = await axios.get(api.url, { timeout: 10000 }); // Đợi tối đa 10s mỗi máy chủ
-                
-                if (response.data && response.data.result) {
-                    finalKey = response.data.result;
-                    bypassSuccess = true;
-                    break; // Bẻ khóa thành công thì dừng vòng lặp ngay lập tức
+        try {
+            // Cấu hình API của Zen Bypass (izen.lol)
+            const zenApiUrl = `https://izen.lol{encodeURIComponent(url)}`;
+            
+            const response = await axios.get(zenApiUrl, { 
+                timeout: 25000, // Đợi Zen xử lý trong tối đa 25 giây
+                headers: {
+                    // Bạn cần cấu hình thêm biến ZEN_API_KEY ở mục nâng cao (Advanced) của Render giống như làm với Token
+                    'Authorization': `Bearer ${process.env.ZEN_API_KEY || 'YOUR_ZEN_API_KEY'}`
                 }
-            } catch (err) {
-                console.log(`[Thất bại] ${api.name} đang quá tải, tự động chuyển cụm tiếp theo...`);
+            });
+            
+            const data = response.data;
+
+            // Kiểm tra kết quả trả về từ cấu hình chuẩn của Zen API
+            if (data && data.success && data.result) {
+                const successEmbed = new EmbedBuilder()
+                    .setColor(0x00FF00)
+                    .setTitle('✅ Zen Bypass Success')
+                    .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${data.result}\n\`\`\``)
+                    .setFooter({ text: 'Vận hành dựa trên lõi cao cấp Zen API' });
+
+                await interaction.editReply({ embeds: [successEmbed] });
+            } else {
+                const failEmbed = new EmbedBuilder()
+                    .setColor(0xFF0000)
+                    .setTitle('❌ Giải mã thất bại')
+                    .setDescription(data.message || 'Mã lỗi từ máy chủ Zen: Link không hợp lệ hoặc đã hết hạn sử dụng.');
+                
+                await interaction.editReply({ embeds: [failEmbed] });
             }
-        }
 
-        if (bypassSuccess) {
-            const successEmbed = new EmbedBuilder()
-                .setColor(0x00FF00)
-                .setTitle('✅ Bypass Success')
-                .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
-                .setFooter({ text: 'Hệ thống tự động điều tốc bảo vệ bởi Dubo Bot' });
+        } catch (error) {
+            console.error('Lỗi kết nối Zen API:', error.message);
+            
+            let errorMsg = 'Cụm máy chủ Zen đang bảo trì hoặc tài khoản API của bạn đã hết lượt credits.';
+            if (error.response && error.response.data && error.response.data.message) {
+                errorMsg = error.response.data.message;
+            }
 
-            await interaction.editReply({ embeds: [successEmbed] });
-        } else {
-            const allFailEmbed = new EmbedBuilder()
+            const errorEmbed = new EmbedBuilder()
                 .setColor(0xFF0000)
-                .setTitle('❌ Tất Cả Máy Chủ Đều Bảo Trì')
-                .setDescription('Hiện tại phía nhà phát hành Delta vừa đổi thuật toán mới. Toàn bộ 3 cụm server bypass trung gian đang cập nhật bản vá. Vui lòng lấy link mới và thử lại sau ít phút.');
-
-            await interaction.editReply({ embeds: [allFailEmbed] });
+                .setTitle('❌ Lỗi kết nối API')
+                .setDescription(errorMsg);
+            
+            await interaction.editReply({ embeds: [errorEmbed] });
         }
     }
 });
