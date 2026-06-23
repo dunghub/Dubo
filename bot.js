@@ -13,7 +13,7 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta v3 - Auto Bám Đuổi Thuật Toán')
+        .setDescription('Lệnh bypass get key Delta qua cụm Bypass Tools')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay cần bypass')
@@ -46,13 +46,13 @@ client.on('interactionCreate', async interaction => {
         const url = interaction.options.getString('url');
 
         try {
-            // Hoãn phản hồi để tránh lỗi ứng dụng không phản hồi sau 3 giây
+            // Hoãn phản hồi để tránh lỗi "Ứng dụng không phản hồi" từ Discord
             await interaction.deferReply();
 
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang quét qua các mạng lưới máy chủ bẻ khóa chuyên biệt, vui lòng chờ...');
+                .setDescription('Đang bẻ khóa link thông qua cổng máy chủ Bypass Tools...');
             
             await interaction.editReply({ embeds: [pendingEmbed] });
 
@@ -64,67 +64,42 @@ client.on('interactionCreate', async interaction => {
                 return await interaction.editReply({ embeds: [invalidEmbed] });
             }
 
-            // Danh sách các API bẻ khóa lõi liên tục bám đuổi mã hóa mới của Delta
-            const apiEndpoints = [
-                { name: "Cụm Máy Chủ Lõi 1 (Bypass VIP)", url: `https://bypass.vip{encodeURIComponent(url)}` },
-                { name: "Cụm Máy Chủ Lõi 2 (Loli Bypasser)", url: `https://lolibypasser.lol{encodeURIComponent(url)}` },
-                { name: "Cụm Máy Chủ Dự Phòng 3 (Bypass Tech)", url: `https://bypass.tech{encodeURIComponent(url)}` },
-                { name: "Mạng Lưới Phân Phối Đa Tầng", url: `https://bypass.city{encodeURIComponent(url)}` }
-            ];
+            // Gọi trực tiếp đến API bẻ khóa của hệ thống bypass.tools
+            const bypassToolsUrl = `https://bypass.tools{encodeURIComponent(url)}`;
+            
+            // Ép bot chờ tối đa 20 giây để máy chủ quét quảng cáo ngầm
+            const response = await axios.get(bypassToolsUrl, { timeout: 20000 });
+            
+            // Vì API của bên bypass.tools trả về chữ trơn (Plain Text) chứa thẳng cái Key
+            const finalKey = response.data;
 
-            let bypassSuccess = false;
-            let finalKey = "";
-            let usedServer = "";
-
-            // Quét luân phiên qua từng cụm máy chủ gốc
-            for (const api of apiEndpoints) {
-                try {
-                    console.log(`Đang kết nối đến: ${api.name}`);
-                    const response = await axios.get(api.url, { timeout: 18000 }); // Chờ tối đa 18 giây mỗi cụm
-                    const data = response.data;
-                    
-                    // Trích xuất mã Key linh hoạt dựa theo cấu trúc dữ liệu trả về của các bên
-                    const keyFound = data.key || data.result || data.bypassed || (typeof data === 'string' && data.length < 100 ? data : null);
-
-                    if (keyFound && !keyFound.includes('error') && !keyFound.includes('fail')) {
-                        finalKey = keyFound;
-                        usedServer = api.name;
-                        bypassSuccess = true;
-                        break; // Đã tìm thấy Key sạch thì dừng quét ngay lập tức
-                    }
-                } catch (err) {
-                    console.log(`[Bận/Chặn] ${api.name} đang nâng cấp thuật toán, tự động chuyển tiếp...`);
-                }
-            }
-
-            if (bypassSuccess) {
+            // Kiểm tra xem kết quả có hợp lệ không (loại trừ từ khóa lỗi)
+            if (finalKey && !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail')) {
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x00FF00)
-                    .setTitle('✅ Bypass Delta Success')
-                    .setDescription(`🔑 **Key Delta của bạn đã bẻ khóa thành công:**\n\`\`\`text\n${finalKey}\n\`\`\``)
-                    .setFooter({ text: `Xử lý thành công qua hệ thống: ${usedServer}` });
+                    .setTitle('✅ Bypass Success')
+                    .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
+                    .setFooter({ text: 'Xử lý thành công qua lõi Bypass Tools Engine' });
 
                 await interaction.editReply({ embeds: [successEmbed] });
             } else {
-                const allFailEmbed = new EmbedBuilder()
+                const failEmbed = new EmbedBuilder()
                     .setColor(0xFF0000)
-                    .setTitle('❌ Hệ Thống Đang Đồng Bộ Bản Vá')
-                    .setDescription('Delta vừa cập nhật lớp mã hóa mới cho hệ thống Platorelay. Toàn bộ các cụm máy chủ lõi đang tự động cấu hình lại mã nguồn bám đuổi. Vui lòng lấy link mới trong game và thử lại sau ít phút.');
-
-                await interaction.editReply({ embeds: [allFailEmbed] });
+                    .setTitle('❌ Xử lý thất bại')
+                    .setDescription('Máy chủ không bóc tách được mã xác thực. Hãy lấy link mới tinh trong game và thử lại.');
+                
+                await interaction.editReply({ embeds: [failEmbed] });
             }
 
-        } catch (globalError) {
-            console.error('Lỗi vận hành hệ thống bot:', globalError.message);
-            try {
-                const systemErrorEmbed = new EmbedBuilder()
-                    .setColor(0xFF0000)
-                    .setTitle('❌ Lỗi Kết Nối')
-                    .setDescription('Bot gặp sự cố nghẽn mạng tạm thời khi gửi tín hiệu. Vui lòng thực hiện lại lệnh.');
-                await interaction.editReply({ embeds: [systemErrorEmbed] });
-            } catch (e) {
-                console.error('Không thể cập nhật phản hồi lỗi:', e.message);
-            }
+        } catch (error) {
+            console.error('Lỗi kết nối Bypass Tools:', error.message);
+            
+            const errorEmbed = new EmbedBuilder()
+                .setColor(0xFF0000)
+                .setTitle('❌ Máy Chủ Bảo Trì / Quá Tải')
+                .setDescription('Cổng API công cộng của Bypass Tools đang bị ngắt kết nối hoặc đang cập nhật mã nguồn theo Delta. Vui lòng thử lại sau ít phút.');
+            
+            await interaction.editReply({ embeds: [errorEmbed] });
         }
     }
 });
