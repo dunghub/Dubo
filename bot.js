@@ -3,6 +3,8 @@ const axios = require('axios');
 require('dotenv').config();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+
+// Bộ nhớ đệm lưu thời gian chờ của người dùng (Chống spam)
 const cooldowns = new Map();
 
 const commands = [
@@ -20,7 +22,8 @@ client.once('ready', async () => {
     try {
         const token = process.env.DISCORD_TOKEN || process.env.TOKEN;
         const rest = new REST({ version: '10' }).setToken(token);
-        await rest.put(Routes.applicationCommands(process.env.CLIENT_ID || client.user.id), { body: commands });
+        const CLIENT_ID = process.env.CLIENT_ID || client.user.id;
+        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
         console.log(`[OK] Kích hoạt hệ thống lệnh toàn cầu thành công!`);
     } catch (e) { console.error('Lỗi cấu hình:', e.message); }
 });
@@ -57,14 +60,14 @@ client.on('interactionCreate', async interaction => {
                 .setDescription('Đang điều hướng gói tin qua cổng API Vercel riêng biệt của bạn để vượt tường lửa Cloudflare...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // 🔥 ĐÃ SỬA CHUẨN XÁC: Gọi sang cổng API Vercel riêng biệt đã đổi tên file thành bypass.js của bạn
+            // 🔥 ĐÃ SỬA CHUẨN XÁC DẤU NHÁY HUYỀN VÀ CÚ PHÁP: Gọi sang cổng API Vercel độc quyền của bạn
             const myPrivateVercelUrl = `https://vercel.app{encodeURIComponent(url)}`;
             
             let finalKey = "";
             let errorMsg = "";
 
             try {
-                // Gọi dữ liệu sang máy chủ Amazon AWS sạch của Vercel
+                // Thực hiện gọi dữ liệu ngầm thông qua dải IP AWS sạch của Vercel
                 const response = await axios.get(myPrivateVercelUrl, { timeout: 25000 });
                 if (response.data && response.data.success) {
                     finalKey = response.data.key;
@@ -101,7 +104,7 @@ client.on('interactionCreate', async interaction => {
             } else {
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: `❌ **Bypass thất bại:** Máy chủ Delta gốc từ chối phản hồi Token.\n\n📊 **Chi tiết trạng thái:** \`${errorMsg || "Phiên làm việc đã hết hạn"}\`\n\n💡 **Mẹo chạy 100%:** Bạn hãy mở game Roblox lên, thực hiện **bấm lấy một đường link Get Key hoàn toàn mới tinh tinh vừa bấm xong**, dán ngay vào lệnh để chạy đúng tiến trình phiên.` 
+                    content: `❌ **Bypass thất bại:** Máy chủ Delta gốc từ chối phản hồi phiên.\n\n📊 **Chi tiết trạng thái:** \`${errorMsg || "Phiên làm việc đã hết hạn"}\`\n\n💡 **Mẹo chạy 100%:** Bạn hãy mở game Roblox lên, thực hiện **bấm lấy một đường link Get Key hoàn toàn mới tinh tinh vừa bấm xong**, dán ngay vào lệnh để chạy đúng tiến trình.` 
                 });
             }
 
