@@ -68,7 +68,7 @@ client.on('interactionCreate', async interaction => {
                 .setDescription('Đang bẻ khóa link và đồng bộ dữ liệu qua máy chủ API Vercel riêng độc lập...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // 🔥 ĐÃ ĐIỀN SẴN: Đường link Vercel sạch 100% của bạn
+            // 🔥 ĐÃ ĐỒNG BỘ: Đường dẫn API Vercel độc quyền, sạch sẽ 100% của bạn
             const myPrivateVercelUrl = `https://vercel.app{encodeURIComponent(url)}`;
             
             let finalKey = "";
@@ -99,7 +99,7 @@ client.on('interactionCreate', async interaction => {
                     .addFields({ name: '⚡ Tốc độ phản hồi', value: `\`${executionTime}ms\``, inline: true })
                     .setFooter({ text: 'Hệ thống vận hành an toàn qua cụm API Vercel độc lập v8' });
 
-                // Nút bấm văn bản thô để đè đúp copy nhanh trên điện thoại
+                // Nút bấm văn bản thô giúp người dùng đè ngón tay copy Key siêu nhanh trên điện thoại
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
                         .setLabel('Xem Bản Văn Bản Thô (Dễ Copy Trên ĐT)')
