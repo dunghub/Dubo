@@ -1,4 +1,4 @@
-lconst { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 require('dotenv').config();
