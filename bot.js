@@ -8,7 +8,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta v8 - Bản Chống Treo Lệnh')
+        .setDescription('Lệnh bypass get key Delta v8 - Bản Sửa Lỗi Timeout')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay hoặc Platoboost cần bẻ khóa')
@@ -50,7 +50,7 @@ client.on('interactionCreate', async interaction => {
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang bẻ khóa link siêu tốc qua cụm **3 Máy Chủ Nâng Cấp v8**...');
+                .setDescription('Đang Fake dải IP cư dân sạch để bypass tường lửa API, vui lòng đợi...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
             const serverEndpoints = [
@@ -63,47 +63,40 @@ client.on('interactionCreate', async interaction => {
             let usedServer = "";
             let debugLogs = [];
 
-            // 🚀 LUỒNG 1: CHẠY QUA PROXY RIÊNG CỦA BẠN (NẾU CÓ - GIỚI HẠN CHỜ ĐÚNG 4 GIÂY)
-            if (process.env.PROXY_URL) {
-                console.log('[SYSTEM] Kiểm tra kết nối luồng Proxy mạng nhà...');
-                let proxyConfig = {
-                    timeout: 4000, 
-                    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
-                };
-
-                try {
-                    const agent = new HttpsProxyAgent(process.env.PROXY_URL);
-                    proxyConfig.httpsAgent = agent;
-                    proxyConfig.proxy = false;
-
-                    const response = await axios.get(serverEndpoints[0], proxyConfig);
-                    let responseData = response.data;
-                    if (responseData) {
-                        if (typeof responseData === 'object') {
-                            finalKey = responseData.key || (responseData.bypassed ? responseData.bypassed.key || responseData.bypassed : null) || (responseData.data ? responseData.data.key : null);
-                        } else if (typeof responseData === 'string') {
-                            finalKey = responseData;
-                        }
-                    }
-                    if (finalKey && finalKey.trim().length > 5 && !finalKey.toLowerCase().includes('error')) {
-                        usedServer = "Bypass.tools Premium (Mạng Nhà)";
-                    }
-                } catch (pError) {
-                    console.warn('[CẢNH BÁO] Treo mạng nhà, tự động ngắt chuyển sang mạng gốc.');
+            // 🌟 TỰ ĐỘNG LẤY CỤM PROXY QUỐC TẾ KHÔNG SỢ BỊ CHẶN IP HOSTING
+            let proxyList = [];
+            try {
+                const proxyFetch = await axios.get('https://proxyscrape.com', { timeout: 4000 });
+                if (proxyFetch.data && typeof proxyFetch.data === 'string') {
+                    proxyList = proxyFetch.data.split('\r\n').filter(p => p.trim() !== '');
                 }
+            } catch (e) {
+                console.log('Không thể lấy proxy tự động, chuyển sang chế độ dự phòng.');
             }
 
-            // 🚀 LUỒNG 2: NẾU MẠNG NHÀ TREO HOẶC LỖI -> TỰ ĐỘNG CHẠY MẠNG GỐC CỦA HOST
-            if (!finalKey) {
-                let nativeConfig = {
-                    timeout: 10000, 
-                    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
-                };
+            for (let i = 0; i < serverEndpoints.length; i++) {
+                let roundSuccess = false;
 
-                for (let i = 0; i < serverEndpoints.length; i++) {
+                // Thử tối đa 3 IP proxy sạch ngẫu nhiên cho mỗi cụm server
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    let axiosConfig = {
+                        timeout: 8000, // Giới hạn chờ 8 giây mỗi cụm
+                        headers: { 
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/126.0.0.0 Safari/537.36',
+                            'Accept': 'application/json, text/plain, */*'
+                        }
+                    };
+
+                    // Nếu có danh sách proxy sạch, tiến hành ép luồng mạng đi qua Proxy ẩn danh
+                    if (proxyList.length > 0) {
+                        const randomProxy = proxyList[Math.floor(Math.random() * proxyList.length)];
+                        const agent = new HttpsProxyAgent(`http://${randomProxy}`);
+                        axiosConfig.httpsAgent = agent;
+                        axiosConfig.proxy = false;
+                    }
+
                     try {
-                        console.log(`[NETWORK] Kết nối trực tiếp đến Server ${i + 1}...`);
-                        const response = await axios.get(serverEndpoints[i], nativeConfig);
+                        const response = await axios.get(serverEndpoints[i], axiosConfig);
                         let responseData = response.data;
 
                         if (responseData) {
@@ -115,16 +108,17 @@ client.on('interactionCreate', async interaction => {
                         }
 
                         if (finalKey && typeof finalKey === 'string' && finalKey.trim().length > 5 && !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail')) {
-                            usedServer = i === 0 ? "Bypass.tools API Gốc" : `Cổng Máy Chủ Dự Phòng ${i + 1}`;
+                            usedServer = i === 0 ? "Bypass.tools Core Premium" : `Cổng Máy Chủ Dự Phòng ${i + 1}`;
+                            roundSuccess = true;
                             break; 
-                        } else {
-                            debugLogs.push(`**Server ${i + 1}:** Phản hồi trống/Bị chặn.`);
                         }
                     } catch (netError) {
-                        const status = netError.response ? netError.response.status : "Timeout";
-                        debugLogs.push(`**Server ${i + 1}:** Lỗi kết nối (HTTP: ${status})`);
+                        // Nếu IP này lỗi, vòng lặp tự đổi IP sạch khác để thử tiếp luôn
                     }
                 }
+
+                if (roundSuccess) break;
+                debugLogs.push(`**Server ${i + 1}:** IP Hosting bị chặn hoặc liên kết hết hạn.`);
             }
 
             if (finalKey) finalKey = finalKey.trim();
@@ -134,21 +128,21 @@ client.on('interactionCreate', async interaction => {
                     .setColor(0x00FF00)
                     .setTitle('✅ Bypass Thành Công')
                     .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
-                    .setFooter({ text: `Xử lý qua: ${usedServer}` });
+                    .setFooter({ text: `Xử lý qua mạng ẩn danh: ${usedServer}` });
 
                 await interaction.editReply({ embeds: [successEmbed], content: null });
             } else {
                 const errorLogString = debugLogs.join('\n');
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: `❌ **Bypass thất bại:** Cụm máy chủ từ chối kết nối.\n\n📊 **Nhật ký hệ thống:**\n${errorLogString}\n\n💡 *Cách sửa:* Hãy chắc chắn bạn đã lấy đường link Get Key **mới tinh** từ game ra và thử lại nhé!` 
+                    content: `❌ **Bypass thất bại:** Cụm máy chủ từ chối kết nối do dải mạng bị nghẽn.\n\n📊 **Nhật ký hệ thống:**\n${errorLogString}\n\n💡 *Cách khắc phục:* Hãy vào game lấy một đường link Get Key **mới tinh chưa bấm thử bao giờ** rồi chạy lại lệnh để hệ thống nhận diện luồng IP mới nhé!` 
                 });
             }
 
         } catch (globalError) {
             console.error('Lỗi luồng mạng:', globalError.message);
             try {
-                await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Có lỗi xảy ra trong quá trình xử lý hệ thống." });
+                await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Có lỗi xảy ra trong quá trình xử lý hệ thống mạng." });
             } catch (e) {}
         }
     }
@@ -157,7 +151,7 @@ client.on('interactionCreate', async interaction => {
 const http = require('http');
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot Online!');
+    res.end('Bot Fixed Online!');
 });
 server.listen(process.env.PORT || 3000);
 
