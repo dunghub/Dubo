@@ -3,7 +3,6 @@ const axios = require('axios');
 require('dotenv').config();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-
 const cooldowns = new Map();
 
 const commands = [
@@ -20,6 +19,8 @@ client.once('ready', async () => {
     console.log(`[OK] Bot Online hệ thống: ${client.user.tag}`);
     try {
         const token = process.env.DISCORD_TOKEN || process.env.TOKEN;
+        if (!token) return console.error("❌ Thiếu DISCORD_TOKEN trong biến môi trường!");
+        
         const rest = new REST({ version: '10' }).setToken(token);
         const CLIENT_ID = process.env.CLIENT_ID || client.user.id;
         await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
@@ -48,9 +49,14 @@ client.on('interactionCreate', async interaction => {
         try {
             await interaction.deferReply();
 
-            // 🔥 ĐÃ CẬP NHẬT: Chấp nhận cả tên miền ://platorelay.com mới của bạn
-            if (!url.includes('platorelay.com') && !url.includes('platoboost.com')) {
-                return await interaction.editReply({ content: "❌ **Lỗi:** Đường link nhập vào không đúng định dạng Get Key của Delta!" });
+            // SỬA LỖI: Kiểm tra định dạng link chặt chẽ hơn bằng URL Object
+            try {
+                const parsedUrl = new URL(url);
+                if (!parsedUrl.hostname.includes('platorelay.com') && !parsedUrl.hostname.includes('platoboost.com')) {
+                    return await interaction.editReply({ content: "❌ **Lỗi:** Đường link nhập vào không đúng định dạng miền Get Key Delta!" });
+                }
+            } catch (err) {
+                return await interaction.editReply({ content: "❌ **Lỗi:** Định dạng liên kết không hợp lệ!" });
             }
 
             const startTime = Date.now();
@@ -60,7 +66,8 @@ client.on('interactionCreate', async interaction => {
                 .setDescription('Đang điều hướng gói tin qua cổng API Vercel riêng biệt của bạn để vượt tường lửa Cloudflare...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            const vercelDomain = "https://vercel.app"; 
+            // SỬA LỖI: Lấy cấu hình Domain Vercel từ biến môi trường để linh hoạt đổi khi bị chặn/die domain
+            const vercelDomain = process.env.VERCEL_API_DOMAIN || "https://ten-du-an-cua-ban.vercel.app"; 
             const cleanDomain = vercelDomain.endsWith('/') ? vercelDomain.slice(0, -1) : vercelDomain;
             const myPrivateVercelUrl = `${cleanDomain}/api?url=${encodeURIComponent(url)}`;
             
@@ -68,14 +75,19 @@ client.on('interactionCreate', async interaction => {
             let errorMsg = "";
 
             try {
-                const response = await axios.get(myPrivateVercelUrl, { timeout: 25000 });
+                // SỬA LỖI: Hạ timeout xuống 9000ms (9 giây) để khớp với giới hạn tối đa của Vercel Free
+                const response = await axios.get(myPrivateVercelUrl, { timeout: 9000 });
                 if (response.data && response.data.success) {
                     finalKey = response.data.key;
                 } else {
-                    errorMsg = response.data ? response.data.message : "Dữ liệu trống";
+                    errorMsg = response.data ? response.data.message : "Dữ liệu trả về trống";
                 }
             } catch (netError) {
-                errorMsg = netError.response && netError.response.data ? netError.response.data.message : netError.message;
+                if (netError.code === 'ECONNABORTED') {
+                    errorMsg = "Phản hồi từ Vercel bị quá thời gian (Timeout 9s)";
+                } else {
+                    errorMsg = netError.response && netError.response.data ? netError.response.data.message : netError.message;
+                }
             }
 
             if (finalKey) finalKey = finalKey.trim();
@@ -103,7 +115,7 @@ client.on('interactionCreate', async interaction => {
             } else {
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: `❌ **Bypass thất bại:** Máy chủ Delta gốc từ chối phản hồi phiên.\n\n📊 **Chi tiết trạng thái:** \`${errorMsg || "Phiên làm việc đã hết hạn"}\`\n\n💡 **Mẹo chạy 100%:** Bạn hãy mở game Roblox lên, thực hiện **bấm lấy một đường link Get Key hoàn toàn mới tinh tinh vừa bấm xong**, dán ngay vào lệnh để chạy đúng tiến trình.` 
+                    content: `❌ **Bypass thất bại:** Máy chủ Delta hoặc cổng API từ chối phản hồi.\n\n📊 **Chi tiết trạng thái:** \`${errorMsg || "Phiên làm việc đã hết hạn"}\`\n\n💡 **Mẹo:** Hãy mở game lên lấy 1 liên kết mới tinh và thực hiện lại ngay.` 
                 });
             }
 
@@ -113,8 +125,12 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+// Giữ bot sống trên Render (Web Service)
 const http = require('http');
-const server = http.createServer((req, res) => { res.writeHead(200); res.end('Bot Core Running'); });
+const server = http.createServer((req, res) => { 
+    res.writeHead(200, { 'Content-Type': 'text/plain' }); 
+    res.end('Bot Core Is Running Securely'); 
+});
 server.listen(process.env.PORT || 3000);
 
 const botToken = process.env.DISCORD_TOKEN || process.env.TOKEN;
