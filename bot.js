@@ -7,7 +7,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta v8 - Cổng Miễn Phí 100%')
+        .setDescription('Lệnh bypass get key Delta v8 - Cổng Tự Động Phá Bản Vá')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay hoặc Platoboost cần bẻ khóa')
@@ -49,14 +49,14 @@ client.on('interactionCreate', async interaction => {
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang bẻ khóa qua cụm 3 Máy Chủ Cộng Đồng Miễn Phí, vui lòng đợi...');
+                .setDescription('Đang sử dụng cổng phá bản vá thế hệ mới, vui lòng chờ từ 10-15 giây...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // 🔥 CỤM CỔNG MIỄN PHÍ VĨNH VIỄN - KHÔNG YÊU CẦU ĐIỀN TÀI KHOẢN/MÃ THANH TOÁN
-            const publicFreeServers = [
+            // 🔥 SỬ DỤNG ENDPOINT KHÁNG CHẶN ĐỘC LẬP MỚI CỦA KHỐI CỘNG ĐỒNG
+            const updatedServers = [
+                `https://lootsolvers.xyz{encodeURIComponent(url)}`,
                 `https://bypass.vip{encodeURIComponent(url)}`,
-                `https://ethone.live{encodeURIComponent(url)}`,
-                `https://stickx.top{encodeURIComponent(url)}&api_key=free`
+                `https://vanyar.cfd{encodeURIComponent(url)}`
             ];
             
             let finalKey = "";
@@ -66,10 +66,10 @@ client.on('interactionCreate', async interaction => {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/126.0.0.0 Safari/537.36'
             };
 
-            for (let i = 0; i < publicFreeServers.length; i++) {
+            for (let i = 0; i < updatedServers.length; i++) {
                 try {
-                    console.log(`[NETWORK] Đang quét cổng miễn phí số ${i + 1}...`);
-                    const response = await axios.get(publicFreeServers[i], { headers: browserHeaders, timeout: 20000 });
+                    console.log(`[NETWORK] Đang gọi cổng phá bản vá số ${i + 1}...`);
+                    const response = await axios.get(updatedServers[i], { headers: browserHeaders, timeout: 25000 });
                     let resData = response.data;
 
                     if (resData) {
@@ -80,14 +80,13 @@ client.on('interactionCreate', async interaction => {
                         }
                     }
 
-                    // Nếu lấy được chuỗi Key chuẩn sạch thì dừng quét ngay
                     if (finalKey && typeof finalKey === 'string' && finalKey.trim().length > 5 && 
                         !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail')) {
-                        usedServer = `Cổng Miễn Phí ${i + 1}`;
+                        usedServer = `Cụm Máy Chủ Kháng Chặn ${i + 1}`;
                         break; 
                     }
                 } catch (netError) {
-                    console.warn(`Cổng miễn phí ${i + 1} đang bận:`, netError.message);
+                    console.warn(`Cổng số ${i + 1} quá tải:`, netError.message);
                 }
             }
 
@@ -98,13 +97,13 @@ client.on('interactionCreate', async interaction => {
                     .setColor(0x00FF00)
                     .setTitle('✅ Bypass Thành Công')
                     .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
-                    .setFooter({ text: `Xử lý miễn phí qua: ${usedServer}` });
+                    .setFooter({ text: `Xử lý ổn định qua: ${usedServer}` });
 
                 await interaction.editReply({ embeds: [successEmbed], content: null });
             } else {
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: "❌ **Bypass thất bại:** Cả 3 cổng miễn phí hiện tại đều bị Delta từ chối kết nối IP.\n\n💡 **Cách sửa lỗi:** Hãy vào lại game Roblox **bấm lấy một đường link mới tinh tinh** rồi gõ lại lệnh. Tuyệt đối không dùng lại link cũ đã bị kẹt tường lửa trước đó." 
+                    content: "❌ **Bypass thất bại:** Hệ thống Delta vừa cập nhật mã độc quyền chặn dải IP diện rộng.\n\n💡 **Mẹo thành công:** Bạn hãy vào game Roblox **bấm lấy một đường link mới tinh chưa gõ vào bot lần nào**, sau đó thực hiện lại lệnh ngay lập tức để hệ thống bẻ khóa đúng tiến trình." 
                 });
             }
 
@@ -116,7 +115,7 @@ client.on('interactionCreate', async interaction => {
 });
 
 const http = require('http');
-const server = http.createServer((req, res) => { res.writeHead(200); res.end('Bot Free Active'); });
+const server = http.createServer((req, res) => { res.writeHead(200); res.end('Bot Online'); });
 server.listen(process.env.PORT || 3000);
 
 const botToken = process.env.DISCORD_TOKEN || process.env.TOKEN;
