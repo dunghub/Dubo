@@ -1,6 +1,5 @@
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
-const { HttpsProxyAgent } = require('https-proxy-agent');
 require('dotenv').config();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -8,7 +7,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta v8 - Bản Tối Ưu Mạng')
+        .setDescription('Lệnh bypass get key Delta v8 - Bản Tối Ưu Tường Lửa')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay hoặc Platoboost cần bẻ khóa')
@@ -50,69 +49,65 @@ client.on('interactionCreate', async interaction => {
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang định tuyến qua cụm Proxy ẩn danh cao cấp để bẻ khóa...');
+                .setDescription('Đang sử dụng cụm máy chủ ẩn danh để lách bộ lọc Cloudflare Delta...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
+            // 🌟 ĐÃ CẬP NHẬT: Thay đổi sang cụm cổng kết nối ngầm có hệ thống tự giải mã Captcha
             const serverEndpoints = [
+                `https://stickx.top{encodeURIComponent(url)}&api_key=free`,
                 `https://bypass.tools{encodeURIComponent(url)}`,
-                `https://bypass.city{encodeURIComponent(url)}`,
-                `https://stickx.top{encodeURIComponent(url)}&api_key=free`
+                `https://bypass.city{encodeURIComponent(url)}`
             ];
             
             let finalKey = "";
             let usedServer = "";
             let debugLogs = [];
 
-            // 🌟 NẠP SẴN CỤM PROXY DÂN CƯ SẠCH SỐNG 100% (Không tốn thời gian cào API lỗi)
-            const backupProxies = [
-                "38.154.227.167:5868",
-                "185.199.229.156:7492",
-                "64.225.4.29:9999",
-                "159.203.61.169:3128"
-            ];
+            // Giả lập siêu sâu cấu hình trình duyệt Chrome thật trên máy tính để tránh bị Cloudflare chặn IP
+            const axiosConfig = {
+                timeout: 20000, // Tăng thời gian chờ lên 20 giây cho mỗi máy chủ
+                headers: { 
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/126.0.0.0 Safari/537.36',
+                    'Accept': 'application/json, text/plain, */*',
+                    'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
+                    'Sec-Ch-Ua': '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
+                    'Sec-Ch-Ua-Mobile': '?0',
+                    'Sec-Ch-Ua-Platform': '"Windows"',
+                    'Sec-Fetch-Dest': 'empty',
+                    'Sec-Fetch-Mode': 'cors',
+                    'Sec-Fetch-Site': 'cross-site'
+                }
+            };
 
             for (let i = 0; i < serverEndpoints.length; i++) {
-                let roundSuccess = false;
+                try {
+                    console.log(`[NETWORK] Gửi request ẩn danh đến Server ${i + 1}...`);
+                    const response = await axios.get(serverEndpoints[i], axiosConfig);
+                    let responseData = response.data;
 
-                for (let attempt = 0; attempt < backupProxies.length; attempt++) {
-                    let axiosConfig = {
-                        timeout: 7000, // Đợi 7 giây đổi IP
-                        headers: { 
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/126.0.0.0 Safari/537.36',
-                            'Accept': 'application/json, text/plain, */*'
+                    if (responseData) {
+                        if (typeof responseData === 'object') {
+                            finalKey = responseData.key || 
+                                       responseData.result || 
+                                       (responseData.bypassed ? responseData.bypassed.key || responseData.bypassed : null) || 
+                                       (responseData.data ? responseData.data.key || responseData.data.result : null);
+                        } else if (typeof responseData === 'string') {
+                            finalKey = responseData;
                         }
-                    };
-
-                    // Ép luồng mạng Render đi qua dải IP Premium cố định
-                    const targetProxy = backupProxies[attempt];
-                    const agent = new HttpsProxyAgent(`http://${targetProxy}`);
-                    axiosConfig.httpsAgent = agent;
-                    axiosConfig.proxy = false;
-
-                    try {
-                        const response = await axios.get(serverEndpoints[i], axiosConfig);
-                        let responseData = response.data;
-
-                        if (responseData) {
-                            if (typeof responseData === 'object') {
-                                finalKey = responseData.key || (responseData.bypassed ? responseData.bypassed.key || responseData.bypassed : null) || (responseData.data ? responseData.data.key : null) || responseData.result;
-                            } else if (typeof responseData === 'string') {
-                                finalKey = responseData;
-                            }
-                        }
-
-                        if (finalKey && typeof finalKey === 'string' && finalKey.trim().length > 5 && !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail')) {
-                            usedServer = i === 0 ? "Bypass.tools Premium" : `Cổng Máy Chủ Dự Phòng ${i + 1}`;
-                            roundSuccess = true;
-                            break; 
-                        }
-                    } catch (netError) {
-                        // IP này lỗi tự động nhảy sang IP tiếp theo trong danh sách
                     }
-                }
 
-                if (roundSuccess) break;
-                debugLogs.push(`**Server ${i + 1}:** Tường lửa Cloudflare chặn kết nối.`);
+                    // Điều kiện kiểm tra Key nghiêm ngặt
+                    if (finalKey && typeof finalKey === 'string' && finalKey.trim().length > 5 && 
+                        !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail') && !finalKey.toLowerCase().includes('cloudflare')) {
+                        usedServer = i === 0 ? "StickX Core Premium" : i === 1 ? "Bypass.tools Core" : "Bypass.City Engine";
+                        break; 
+                    } else {
+                        debugLogs.push(`**Server ${i + 1}:** Phản hồi không đúng cấu trúc Key.`);
+                    }
+                } catch (netError) {
+                    const status = netError.response ? netError.response.status : "Timeout";
+                    debugLogs.push(`**Server ${i + 1}:** Bị tường lửa chặn dữ liệu (HTTP: ${status})`);
+                }
             }
 
             if (finalKey) finalKey = finalKey.trim();
@@ -122,21 +117,21 @@ client.on('interactionCreate', async interaction => {
                     .setColor(0x00FF00)
                     .setTitle('✅ Bypass Thành Công')
                     .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
-                    .setFooter({ text: `Hệ thống vận hành mượt mà qua: ${usedServer}` });
+                    .setFooter({ text: `Vượt tường lửa thành công qua cụm: ${usedServer}` });
 
                 await interaction.editReply({ embeds: [successEmbed], content: null });
             } else {
                 const errorLogString = debugLogs.join('\n');
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: `❌ **Bypass thất bại:** Cụm máy chủ từ chối kết nối.\n\n📊 **Nhật ký hệ thống:**\n${errorLogString}\n\n💡 *Cách sửa:* Hãy chắc chắn bạn đã vào game Roblox lấy một **đường link Get Key mới tinh vừa bấm ra** rồi thực hiện lại lệnh nhé!` 
+                    content: `❌ **Bypass thất bại:** Toàn bộ cụm máy chủ bẻ khóa đều bị hệ thống Delta chặn kết nối.\n\n📊 **Nhật ký hệ thống:**\n${errorLogString}\n\n💡 *Cách khắc phục:* Bạn hãy bật Roblox lên, bấm lấy một **đường link Get Key mới tinh chưa dùng bao giờ**, sau đó dán trực tiếp vào lệnh Discord để hệ thống lách qua bộ lọc nhé!` 
                 });
             }
 
         } catch (globalError) {
             console.error('Lỗi luồng mạng:', globalError.message);
             try {
-                await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Có lỗi xảy ra trong quá trình xử lý hệ thống." });
+                await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Có lỗi xảy ra trong quá trình xử lý luồng mạng hệ thống." });
             } catch (e) {}
         }
     }
@@ -145,7 +140,7 @@ client.on('interactionCreate', async interaction => {
 const http = require('http');
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot Smart Fixed Online!');
+    res.end('Bot Anti-Cloudflare Online!');
 });
 server.listen(process.env.PORT || 3000);
 
