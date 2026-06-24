@@ -7,7 +7,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta v8 - Bản Vượt Tường Lửa Render')
+        .setDescription('Lệnh bypass get key Delta v8 - Bản Ép Luồng Mạng 2026')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay hoặc Platoboost cần bẻ khóa')
@@ -49,10 +49,10 @@ client.on('interactionCreate', async interaction => {
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang bẻ luồng dữ liệu qua cổng Proxy cao cấp để lách Cloudflare...');
+                .setDescription('Đang bẻ luồng mã hóa, ép lách qua hệ thống bảo mật Cloudflare...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // 🌟 SỬ DỤNG HỆ THỐNG API ĐƯỜNG TRUYỀN NGẦM TỰ ĐỘNG XOAY VÒNG IP CƯ DÂN KHÔNG SỢ BỊ CHẶN
+            // 🌟 ĐÃ CẬP NHẬT: Luân chuyển qua các cổng API gốc của nhà phát triển máy chủ bypass mã nguồn mở
             const serverEndpoints = [
                 `https://bypasser.org{encodeURIComponent(url)}`,
                 `https://stickx.top{encodeURIComponent(url)}&api_key=free`,
@@ -63,15 +63,17 @@ client.on('interactionCreate', async interaction => {
             let usedServer = "";
             let debugLogs = [];
 
-            // Giả lập cấu hình sâu tiêu đề mạng tránh các bộ lọc IP Data Center
+            // Giả lập sâu dấu vết trình duyệt (Browser Fingerprinting) cấp độ cao nhất để lừa bộ lọc Cloudflare
             const axiosConfig = {
                 timeout: 25000, // Đợi tối đa 25 giây đề phòng hệ thống giải mã Captcha ẩn
                 headers: { 
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/126.0.0.0 Safari/537.36',
-                    'Accept': 'application/json, text/plain, */*',
-                    'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
-                    'Origin': 'https://bypass.tools',
-                    'Referer': 'https://bypass.tools/'
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, Gecko) Chrome/125.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Sec-Fetch-User': '?1',
+                    'Upgrade-Insecure-Requests': '1'
                 }
             };
 
@@ -94,7 +96,7 @@ client.on('interactionCreate', async interaction => {
 
                     if (finalKey && typeof finalKey === 'string' && finalKey.trim().length > 5 && 
                         !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail') && !finalKey.toLowerCase().includes('cloudflare')) {
-                        usedServer = i === 0 ? "Bypasser Org Engine" : i === 1 ? "StickX Premium Engine" : "Bypass.City Cloud";
+                        usedServer = i === 0 ? "Bypasser Org Core" : i === 1 ? "StickX Engine" : "Bypass.City Cloud";
                         break; 
                     } else {
                         debugLogs.push(`**Server ${i + 1}:** Phản hồi trống hoặc link hết hạn.`);
@@ -119,7 +121,7 @@ client.on('interactionCreate', async interaction => {
                 const errorLogString = debugLogs.join('\n');
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: `❌ **Bypass thất bại:** Cụm máy chủ từ chối phân tách liên kết.\n\n📊 **Nhật ký hệ thống:**\n${errorLogString}\n\n💡 *Cách khắc phục:* Bạn hãy bật Roblox lên, bấm lấy một **đường link Get Key mới tinh chưa qua sử dụng**, sau đó dán trực tiếp vào lệnh Discord để hệ thống lách qua bộ lọc nhé!` 
+                    content: `❌ **Bypass thất bại:** Cụm máy chủ từ chối phân tách liên kết.\n\n📊 **Nhật ký hệ thống:**\n${errorLogString}\n\n💡 *Cách khắc phục:* Bạn hãy bật Roblox lên, bấm lấy một **đường link Get Key mới tinh vừa qua sử dụng**, sau đó dán trực tiếp vào lệnh Discord để hệ thống lách qua bộ lọc nhé!` 
                 });
             }
 
@@ -135,7 +137,7 @@ client.on('interactionCreate', async interaction => {
 const http = require('http');
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot Anti-Block Online!');
+    res.end('Bot Pure Anti-Block Online!');
 });
 server.listen(process.env.PORT || 3000);
 
