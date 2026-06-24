@@ -8,7 +8,7 @@ const cooldowns = new Map();
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta siêu tốc v8 - Bản Ép Luồng Sạch')
+        .setDescription('Lệnh bypass get key Delta siêu tốc v8 - Bản Ép Luồng Vercel Sạch')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay hoặc Platoboost cần bẻ khóa')
@@ -54,49 +54,31 @@ client.on('interactionCreate', async interaction => {
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang kết nối cụm máy chủ trung gian để quét dải IP sạch vượt Cloudflare Delta...');
+                .setDescription('Đang điều hướng gói tin qua cổng API Vercel riêng biệt của bạn để vượt tường lửa Cloudflare...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // Cụm máy chủ bẻ khóa độc lập tự động xoay dải IP dân cư sạch
-            const apiServers = [
-                `https://luxat.tech{encodeURIComponent(url)}`,
-                `https://bypass.vip{encodeURIComponent(url)}`,
-                `https://lootsolvers.xyz{encodeURIComponent(url)}`
-            ];
+            // 🔥 ĐÃ SỬA CHUẨN XÁC: Gọi sang cổng API Vercel riêng biệt đã đổi tên file thành bypass.js của bạn
+            const myPrivateVercelUrl = `https://vercel.app{encodeURIComponent(url)}`;
             
             let finalKey = "";
-            let usedServer = "";
+            let errorMsg = "";
 
-            for (let i = 0; i < apiServers.length; i++) {
-                try {
-                    const response = await axios.get(apiServers[i], { 
-                        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-                        timeout: 15000 
-                    });
-                    
-                    let resData = response.data;
-                    if (resData) {
-                        if (typeof resData === 'object') {
-                            finalKey = resData.key || resData.result || (resData.data ? resData.data.key : null);
-                        } else if (typeof resData === 'string') {
-                            finalKey = resData;
-                        }
-                    }
-
-                    if (finalKey && typeof finalKey === 'string' && finalKey.trim().length > 5 && 
-                        !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail')) {
-                        usedServer = `Tuyến Mạng Sạch Số ${i + 1}`;
-                        break; 
-                    }
-                } catch (err) {
-                    console.log(`Chuyển hướng luồng mạng cứu hộ sang cổng tiếp theo...`);
+            try {
+                // Gọi dữ liệu sang máy chủ Amazon AWS sạch của Vercel
+                const response = await axios.get(myPrivateVercelUrl, { timeout: 25000 });
+                if (response.data && response.data.success) {
+                    finalKey = response.data.key;
+                } else {
+                    errorMsg = response.data ? response.data.message : "Dữ liệu trống";
                 }
+            } catch (netError) {
+                errorMsg = netError.response && netError.response.data ? netError.response.data.message : netError.message;
             }
 
             if (finalKey) finalKey = finalKey.trim();
             const executionTime = Date.now() - startTime;
 
-            if (finalKey && finalKey.length > 5 && !finalKey.toLowerCase().includes('error')) {
+            if (finalKey && finalKey.length > 5) {
                 cooldowns.set(userId, currentTime);
                 setTimeout(() => cooldowns.delete(userId), cooldownAmount);
 
@@ -105,20 +87,21 @@ client.on('interactionCreate', async interaction => {
                     .setTitle('✅ Vượt Tường Lửa Thành Công')
                     .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
                     .addFields({ name: '⚡ Tốc độ bẻ khóa', value: `\`${executionTime}ms\``, inline: true })
-                    .setFooter({ text: `Xử lý an toàn qua: ${usedServer}` });
+                    .setFooter({ text: 'Xử lý độc quyền và an toàn qua cụm máy chủ Vercel' });
 
+                // Nút bấm văn bản thô giúp đè ngón tay copy siêu nhanh trên điện thoại
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
-                        .setLabel('Bấm Để Xem Bản Thô (Dễ Copy Trên ĐT)')
+                        .setLabel('Bấm Xem Bản Thô (Dễ Copy Trên ĐT)')
                         .setStyle(ButtonStyle.Link)
-                        .setURL(`https://luxat.tech{encodeURIComponent(url)}`)
+                        .setURL(myPrivateVercelUrl)
                 );
 
                 await interaction.editReply({ embeds: [successEmbed], components: [row] });
             } else {
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: "❌ **Bypass thất bại:** Cụm máy chủ trung gian đang quá tải hoặc liên kết Delta của bạn đã hết hạn.\n\n💡 **Cách xử lý:** Hãy vào game Roblox **bấm lấy một đường link Get Key hoàn toàn mới tinh tinh**, dán ngay vào lệnh \`/bypass\` để bot bóc tách chuẩn xác." 
+                    content: `❌ **Bypass thất bại:** Máy chủ Delta gốc từ chối phản hồi Token.\n\n📊 **Chi tiết trạng thái:** \`${errorMsg || "Phiên làm việc đã hết hạn"}\`\n\n💡 **Mẹo chạy 100%:** Bạn hãy mở game Roblox lên, thực hiện **bấm lấy một đường link Get Key hoàn toàn mới tinh tinh vừa bấm xong**, dán ngay vào lệnh để chạy đúng tiến trình phiên.` 
                 });
             }
 
