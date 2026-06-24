@@ -1,5 +1,6 @@
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
+const { HttpsProxyAgent } = require('https-proxy-agent'); // 🔥 Thư viện cấu hình Proxy
 require('dotenv').config();
 
 const client = new Client({
@@ -9,7 +10,7 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta v8 - Phiên Bản Gỡ Lỗi Sâu')
+        .setDescription('Lệnh bypass get key Delta v8 - Tích hợp Proxy chống chặn IP')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay hoặc Platoboost cần bẻ khóa')
@@ -31,7 +32,7 @@ client.once('ready', async () => {
             await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
         }
     } catch (error) {
-        console.error('[THẤT BẠI] Lỗi nạp lệnh:', error.message);
+        console.error('[THẤT BẠI] Lỗi nạp lệnh Slash:', error.message);
     }
 });
 
@@ -51,10 +52,9 @@ client.on('interactionCreate', async interaction => {
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang cố bẻ khóa qua cụm máy chủ và phân tích phản hồi hệ thống...');
+                .setDescription('Đang Fake ID mạng dân cư để vượt Cloudflare Delta, vui lòng đợi...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // Hệ thống 3 cụm Server chính xác theo cấu hình tài liệu mới nhất
             const serverEndpoints = [
                 `https://bypass.tools{encodeURIComponent(url)}`,
                 `https://bypass.city{encodeURIComponent(url)}`,
@@ -63,17 +63,27 @@ client.on('interactionCreate', async interaction => {
             
             let finalKey = "";
             let usedServer = "";
-            let debugLogs = []; // Lưu lại log phản hồi của từng server để người dùng kiểm tra
+            let debugLogs = [];
 
-            const requestHeaders = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/126.0.0.0 Safari/537.36',
-                'Accept': 'application/json, text/plain, */*'
+            // 🌟 CẤU HÌNH PROXY: Đọc thông tin từ biến môi trường trên Render
+            let axiosConfig = {
+                timeout: 18000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/126.0.0.0 Safari/537.36',
+                    'Accept': 'application/json, text/plain, */*'
+                }
             };
+
+            // Nếu bạn có điền cấu hình Proxy trên Render, bot sẽ tự động áp dụng để né chặn
+            if (process.env.PROXY_URL) {
+                const agent = new HttpsProxyAgent(process.env.PROXY_URL);
+                axiosConfig.httpsAgent = agent;
+                axiosConfig.proxy = false; // Vô hiệu hóa bộ proxy mặc định của axios để dùng agent nâng cao
+            }
 
             for (let i = 0; i < serverEndpoints.length; i++) {
                 try {
-                    console.log(`[NETWORK] Thử kết nối cổng Server ${i + 1}...`);
-                    const response = await axios.get(serverEndpoints[i], { headers: requestHeaders, timeout: 15000 });
+                    const response = await axios.get(serverEndpoints[i], axiosConfig);
                     let responseData = response.data;
 
                     if (responseData) {
@@ -87,18 +97,16 @@ client.on('interactionCreate', async interaction => {
                         }
                     }
 
-                    // Kiểm tra tính hợp lệ của Key thu được từ API
                     if (finalKey && typeof finalKey === 'string' && finalKey.trim().length > 5 && 
                         !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail')) {
-                        usedServer = i === 0 ? "Bypass.tools Core" : `Cổng Dự Phòng ${i + 1}`;
+                        usedServer = i === 0 ? "Bypass.tools Core (Ẩn Danh)" : `Cổng Dự Phòng ${i + 1} (Ẩn Danh)`;
                         break; 
                     } else {
-                        debugLogs.push(`**Server ${i + 1}:** Trả dữ liệu trống hoặc không đúng cấu hình.`);
+                        debugLogs.push(`**Server ${i + 1}:** Phản hồi trống.`);
                     }
                 } catch (netError) {
-                    // Trích xuất mã phản hồi thô từ máy chủ (ví dụ: 403, 429, 502)
-                    const status = netError.response ? netError.response.status : "Nghẽn Mạng/Timeout";
-                    debugLogs.push(`**Server ${i + 1}:** Thất bại (Mã lỗi HTTP: ${status})`);
+                    const status = netError.response ? netError.response.status : "Timeout";
+                    debugLogs.push(`**Server ${i + 1}:** Lỗi mạng (HTTP: ${status})`);
                 }
             }
 
@@ -109,22 +117,21 @@ client.on('interactionCreate', async interaction => {
                     .setColor(0x00FF00)
                     .setTitle('✅ Bypass Thành Công')
                     .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
-                    .setFooter({ text: `Xử lý qua hệ thống: ${usedServer}` });
+                    .setFooter({ text: `Xử lý an toàn qua mạng ẩn danh dân cư` });
 
                 await interaction.editReply({ embeds: [successEmbed], content: null });
             } else {
-                // Xuất trực tiếp bảng mã lỗi chi tiết của từng Server lên Discord để chẩn đoán
                 const errorLogString = debugLogs.join('\n');
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: `❌ **Bypass thất bại:** Cụm máy chủ từ chối phân tách.\n\n📊 **Nhật ký phản hồi lỗi từ API:**\n${errorLogString}\n\n💡 *Lời khuyên:* Nếu tất cả đều báo lỗi HTTP 403 hoặc Timeout, IP của Hosting bạn đang dùng đã bị Cloudflare chặn hoàn toàn. Hãy thử lấy link Get Key mới tinh hoặc đổi môi trường chạy bot sang máy cá nhân/VPS sạch.` 
+                    content: `❌ **Bypass thất bại:** Cụm máy chủ từ chối kết nối.\n\n📊 **Nhật ký hệ thống:**\n${errorLogString}\n\n💡 *Mẹo:* Hãy đảm bảo bạn đã cấu hình Proxy sạch để bot mượn ID mạng dân cư thành công.` 
                 });
             }
 
         } catch (globalError) {
-            console.error('Lỗi sập luồng ngầm:', globalError.message);
+            console.error('Lỗi mạng:', globalError.message);
             try {
-                await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Có lỗi xảy ra trong quá trình xử lý hệ thống." });
+                await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Hệ thống mạng gặp lỗi xử lý ngầm." });
             } catch (e) {}
         }
     }
@@ -133,9 +140,9 @@ client.on('interactionCreate', async interaction => {
 const http = require('http');
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot Debug Active!');
+    res.end('Bot Proxy Active!');
 });
 server.listen(process.env.PORT || 3000);
 
 const botToken = process.env.DISCORD_TOKEN || process.env.TOKEN;
-client.login(botToken);
+if (botToken) client.login(botToken);
