@@ -1,13 +1,16 @@
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const axios = require('axios');
 require('dotenv').config();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
+// Bộ nhớ đệm lưu thời gian chờ của người dùng (Chống spam)
+const cooldowns = new Map();
+
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta v8 - Cổng Tự Động Phá Bản Vá')
+        .setDescription('Lệnh bypass get key Delta siêu tốc v8 - Cổng Vercel Riêng')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay hoặc Platoboost cần bẻ khóa')
@@ -15,7 +18,7 @@ const commands = [
 ];
 
 client.once('ready', async () => {
-    console.log(`[OK] Bot đã kết nối thành công: ${client.user.tag}`);
+    console.log(`[OK] Bot Online hệ thống: ${client.user.tag}`);
     try {
         const token = process.env.DISCORD_TOKEN || process.env.TOKEN;
         const rest = new REST({ version: '10' }).setToken(token);
@@ -24,19 +27,30 @@ client.once('ready', async () => {
 
         if (GUILD_ID) {
             await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
-            console.log(`[OK] Kích hoạt lệnh siêu tốc tại Server ID: ${GUILD_ID}`);
+            console.log(`[OK] Đã kích hoạt lệnh siêu tốc tại Server ID: ${GUILD_ID}`);
         } else {
             await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
+            console.log(`[OK] Đã kích hoạt lệnh Toàn Cầu!`);
         }
-    } catch (error) {
-        console.error('[THẤT BẠI] Lỗi nạp lệnh Slash:', error.message);
-    }
+    } catch (e) { console.error('Lỗi cấu hình Discord:', e.message); }
 });
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === 'bypass') {
+        const userId = interaction.user.id;
+        const currentTime = Date.now();
+        const cooldownAmount = 10 * 1000; // Thời gian chờ 10 giây chống spam
+
+        if (cooldowns.has(userId)) {
+            const expirationTime = cooldowns.get(userId) + cooldownAmount;
+            if (currentTime < expirationTime) {
+                const timeLeft = ((expirationTime - currentTime) / 1000).toFixed(1);
+                return await interaction.reply({ content: `⏳ **Chậm lại nào!** Vui lòng đợi **${timeLeft} giây** để tiếp tục sử dụng lệnh.`, ephemeral: true });
+            }
+        }
+
         const url = interaction.options.getString('url').trim();
 
         try {
@@ -46,76 +60,69 @@ client.on('interactionCreate', async interaction => {
                 return await interaction.editReply({ content: "❌ **Lỗi:** Đường link nhập vào không đúng định dạng Get Key của Delta!" });
             }
 
+            const startTime = Date.now();
+
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang sử dụng cổng phá bản vá thế hệ mới, vui lòng chờ từ 10-15 giây...');
+                .setDescription('Đang bẻ khóa link và đồng bộ dữ liệu qua máy chủ API Vercel riêng độc lập...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // 🔥 SỬ DỤNG ENDPOINT KHÁNG CHẶN ĐỘC LẬP MỚI CỦA KHỐI CỘNG ĐỒNG
-            const updatedServers = [
-                `https://lootsolvers.xyz{encodeURIComponent(url)}`,
-                `https://bypass.vip{encodeURIComponent(url)}`,
-                `https://vanyar.cfd{encodeURIComponent(url)}`
-            ];
+            // 🔥 ĐÃ ĐIỀN SẴN: Đường link Vercel sạch 100% của bạn
+            const myPrivateVercelUrl = `https://vercel.app{encodeURIComponent(url)}`;
             
             let finalKey = "";
-            let usedServer = "";
+            let errorMsg = "";
 
-            const browserHeaders = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/126.0.0.0 Safari/537.36'
-            };
-
-            for (let i = 0; i < updatedServers.length; i++) {
-                try {
-                    console.log(`[NETWORK] Đang gọi cổng phá bản vá số ${i + 1}...`);
-                    const response = await axios.get(updatedServers[i], { headers: browserHeaders, timeout: 25000 });
-                    let resData = response.data;
-
-                    if (resData) {
-                        if (typeof resData === 'object') {
-                            finalKey = resData.key || resData.result || (resData.data ? resData.data.key || resData.data : null);
-                        } else if (typeof resData === 'string') {
-                            finalKey = resData;
-                        }
-                    }
-
-                    if (finalKey && typeof finalKey === 'string' && finalKey.trim().length > 5 && 
-                        !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail')) {
-                        usedServer = `Cụm Máy Chủ Kháng Chặn ${i + 1}`;
-                        break; 
-                    }
-                } catch (netError) {
-                    console.warn(`Cổng số ${i + 1} quá tải:`, netError.message);
+            try {
+                const response = await axios.get(myPrivateVercelUrl, { timeout: 25000 });
+                if (response.data && response.data.success) {
+                    finalKey = response.data.key;
+                } else {
+                    errorMsg = response.data ? response.data.message : "Dữ liệu trống";
                 }
+            } catch (netError) {
+                errorMsg = netError.response && netError.response.data ? netError.response.data.message : netError.message;
             }
 
             if (finalKey) finalKey = finalKey.trim();
+            const executionTime = Date.now() - startTime;
 
-            if (finalKey && !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail') && finalKey.length > 5) {
+            if (finalKey && finalKey.length > 5) {
+                cooldowns.set(userId, currentTime);
+                setTimeout(() => cooldowns.delete(userId), cooldownAmount);
+
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x00FF00)
-                    .setTitle('✅ Bypass Thành Công')
+                    .setTitle('✅ Vượt Tường Lửa Thành Công')
                     .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
-                    .setFooter({ text: `Xử lý ổn định qua: ${usedServer}` });
+                    .addFields({ name: '⚡ Tốc độ phản hồi', value: `\`${executionTime}ms\``, inline: true })
+                    .setFooter({ text: 'Hệ thống vận hành an toàn qua cụm API Vercel độc lập v8' });
 
-                await interaction.editReply({ embeds: [successEmbed], content: null });
+                // Nút bấm văn bản thô để đè đúp copy nhanh trên điện thoại
+                const row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setLabel('Xem Bản Văn Bản Thô (Dễ Copy Trên ĐT)')
+                        .setStyle(ButtonStyle.Link)
+                        .setURL(myPrivateVercelUrl)
+                );
+
+                await interaction.editReply({ embeds: [successEmbed], components: [row] });
             } else {
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: "❌ **Bypass thất bại:** Hệ thống Delta vừa cập nhật mã độc quyền chặn dải IP diện rộng.\n\n💡 **Mẹo thành công:** Bạn hãy vào game Roblox **bấm lấy một đường link mới tinh chưa gõ vào bot lần nào**, sau đó thực hiện lại lệnh ngay lập tức để hệ thống bẻ khóa đúng tiến trình." 
+                    content: `❌ **Bypass thất bại:** Cổng API riêng không nhận được tín hiệu hợp lệ từ Delta.\n\n📊 **Chi tiết phản hồi:** \`${errorMsg || "Phiên làm việc hết hạn"}\`\n\n💡 **Mẹo chạy 100%:** Hãy vào game Roblox **bấm lấy một đường link mới tinh tinh vừa bấm xong**, dán ngay vào lệnh để chạy đúng tiến trình phiên làm việc.` 
                 });
             }
 
         } catch (globalError) {
-            console.error('Lỗi luồng mạng:', globalError.message);
-            try { await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Hệ thống gặp lỗi xử lý luồng mạng ngầm." }); } catch (e) {}
+            try { await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Khối mạng ngầm cục bộ gặp lỗi xử lý." }); } catch (e) {}
         }
     }
 });
 
 const http = require('http');
-const server = http.createServer((req, res) => { res.writeHead(200); res.end('Bot Online'); });
+const server = http.createServer((req, res) => { res.writeHead(200); res.end('Bot Active'); });
 server.listen(process.env.PORT || 3000);
 
 const botToken = process.env.DISCORD_TOKEN || process.env.TOKEN;
