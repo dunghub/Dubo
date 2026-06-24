@@ -7,7 +7,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta v8 - Bản Ép Nhân Trực Tiếp')
+        .setDescription('Lệnh bypass get key Delta v8 - Bản Tối Ưu Scraper Premium')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platorelay hoặc Platoboost cần bẻ khóa')
@@ -24,7 +24,7 @@ client.once('ready', async () => {
 
         if (GUILD_ID) {
             await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
-            console.log(`[OK] Kích hoạt lệnh siêu tốc tại Server ID: ${GUILD_ID}`);
+            console.log(`[OK] Kích hoạt lệnh tại Server ID: ${GUILD_ID}`);
         } else {
             await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
         }
@@ -42,115 +42,111 @@ client.on('interactionCreate', async interaction => {
         try {
             await interaction.deferReply();
 
-            // 1. Phân tích chuỗi URL để trích xuất tham số bảo mật động 'd' của hệ thống Delta
             if (!url.includes('platorelay.com') && !url.includes('platoboost.com')) {
                 return await interaction.editReply({ content: "❌ **Lỗi:** Đường link nhập vào không đúng định dạng Get Key của Delta!" });
-            }
-
-            let dParam = "";
-            try {
-                const urlObj = new URL(url);
-                dParam = urlObj.searchParams.get('d');
-            } catch (e) {
-                // Phương án tách chuỗi thủ công nếu cấu trúc URL bị lỗi tầng phân tách
-                const match = url.match(/[?&]d=([^&]+)/);
-                if (match) dParam = match[1];
-            }
-
-            if (!dParam) {
-                return await interaction.editReply({ content: "❌ **Lỗi cấu trúc:** Không tìm thấy chuỗi mã hóa bảo mật 'd' trong link Delta của bạn!" });
             }
 
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang trích xuất hạt nhân bảo mật `d` và kích hoạt luồng bẻ khóa trực tiếp độc lập...');
+                .setDescription('Đang sử dụng cổng IP dân cư cao cấp kết hợp Trình duyệt Chrome ngầm giải quyết thử thách Cloudflare Delta...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // 🔥 HỆ THỐNG MÁY CHỦ GIẢI MÃ TRỰC TIẾP (DIRECT LINK SOLVER) KHÔNG QUA WEB TRUNG GIAN
-            const directSolvers = [
-                `https://ethone.live{encodeURIComponent(url)}`,
-                `https://luxat.tech{encodeURIComponent(url)}`,
-                `https://vercel.app{encodeURIComponent(url)}`
+            // 🔥 Cấu hình hệ thống cổng API lõi của Delta
+            const backendServers = [
+                `https://bypass.tools{encodeURIComponent(url)}`,
+                `https://bypass.city{encodeURIComponent(url)}`,
+                `https://bypass.vip{encodeURIComponent(url)}`
             ];
             
             let finalKey = "";
             let usedServer = "";
-            let errorDetails = [];
+            let debugLogs = [];
 
-            // Thiết lập dấu vết bảo mật TLS Trình duyệt chuẩn để đánh lừa Cloudflare Delta
-            const browserHeaders = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/126.0.0.0 Safari/537.36',
-                'Accept': 'application/json, text/plain, */*',
-                'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
-                'X-Requested-With': 'XMLHttpRequest'
-            };
+            // Đọc mã Key phá tường lửa mà bạn vừa tạo từ bảng điều khiển Render
+            const scraperKey = process.env.SCRAPER_API_KEY;
 
-            for (let i = 0; i < directSolvers.length; i++) {
+            for (let i = 0; i < backendServers.length; i++) {
                 try {
-                    console.log(`[NETWORK] Ép luồng kết nối trực tiếp đến Máy chủ cổng ${i + 1}...`);
+                    let finalUrl = backendServers[i];
                     
-                    // Nếu bạn có cấu hình ScraperAPI ở bước trước, bot sẽ mượn luôn IP để phá tường lửa nhanh hơn
-                    let finalTargetUrl = directSolvers[i];
-                    if (process.env.SCRAPER_API_KEY) {
-                        finalTargetUrl = `http://scraperapi.com?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(directSolvers[i])}&render=false`;
+                    if (scraperKey) {
+                        // Ép luồng chạy sang ScraperAPI, bật render=true để chạy Javascript của Cloudflare ngầm
+                        finalUrl = `http://scraperapi.com?api_key=${scraperKey}&url=${encodeURIComponent(backendServers[i])}&render=true&country_code=us`;
                     }
 
-                    const response = await axios.get(finalTargetUrl, { headers: browserHeaders, timeout: 20000 });
-                    let responseData = response.data;
+                    // Thời gian timeout nâng hẳn lên 45 giây để máy chủ mở Chrome ảo giải toán ẩn danh
+                    const response = await axios.get(finalUrl, { timeout: 45000 });
+                    let resData = response.data;
 
-                    if (responseData) {
-                        if (typeof responseData === 'object') {
-                            finalKey = responseData.key || responseData.result || responseData.bypassed || 
-                                       (responseData.data ? responseData.data.key || responseData.data.result || responseData.data : null);
-                        } else if (typeof responseData === 'string') {
-                            finalKey = responseData;
+                    if (resData) {
+                        // Phân tách cấu trúc đối tượng đa tầng thông minh chống trả chuỗi trống undefined
+                        if (typeof resData === 'object') {
+                            finalKey = resData.key || resData.result || 
+                                       (resData.data ? resData.data.key || resData.data.result || resData.data : null) ||
+                                       (resData.bypassed ? resData.bypassed.key || resData.bypassed : null);
+                        } else if (typeof resData === 'string') {
+                            // Trích xuất cụm JSON nằm lồng trong chuỗi text HTML nếu có
+                            if (resData.includes('{') && resData.includes('}')) {
+                                try {
+                                    const startIdx = resData.indexOf('{');
+                                    const endIdx = resData.lastIndexOf('}') + 1;
+                                    const parsedJson = JSON.parse(resData.substring(startIdx, endIdx));
+                                    finalKey = parsedJson.key || parsedJson.result || (parsedJson.data ? parsedJson.data.key : null);
+                                } catch (e) {
+                                    finalKey = resData;
+                                }
+                            } else {
+                                finalKey = resData;
+                            }
                         }
                     }
 
-                    // Điều kiện kiểm tra Key nghiêm ngặt loại bỏ chuỗi rác
                     if (finalKey && typeof finalKey === 'string' && finalKey.trim().length > 5 && 
                         !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail') && !finalKey.toLowerCase().includes('cloudflare')) {
-                        usedServer = `Direct Core Cổng ${i + 1}`;
+                        usedServer = i === 0 ? "Bypass.tools Premium Core" : i === 1 ? "Bypass.city Premium Core" : "Bypass.vip Core";
                         break; 
                     } else {
-                        errorDetails.push(`**Cổng ${i + 1}:** Phản hồi trống hoặc hết hạn.`);
+                        debugLogs.push(`**Cổng ${i + 1}:** Máy chủ phản hồi trống hoặc link hết hạn.`);
                     }
                 } catch (netError) {
-                    const status = netError.response ? netError.response.status : "Timeout mạng";
-                    errorDetails.push(`**Cổng ${i + 1}:** Lỗi bắt tín hiệu (HTTP: ${status})`);
+                    const status = netError.response ? netError.response.status : "Đang xoay tuyến IP";
+                    debugLogs.push(`**Cổng ${i + 1}:** Kháng chặn lỗi (${status})`);
                 }
             }
 
-            if (finalKey) finalKey = finalKey.trim();
+            if (finalKey && typeof finalKey === 'string') finalKey = finalKey.trim();
 
             if (finalKey && !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail') && finalKey.length > 5) {
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x00FF00)
                     .setTitle('✅ Bypass Thành Công')
                     .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
-                    .setFooter({ text: `Xử lý độc lập qua: ${usedServer}` });
+                    .setFooter({ text: `Xử lý vượt bộ lọc an toàn qua: ${usedServer}` });
 
                 await interaction.editReply({ embeds: [successEmbed], content: null });
             } else {
-                const errorLogString = errorDetails.join('\n');
+                const errorLogString = debugLogs.join('\n');
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: `❌ **Bypass thất bại:** Cụm giải mã lõi không thể phản hồi Key.\n\n📊 **Chi tiết trạng thái hệ thống:**\n${errorLogString}\n\n💡 **Cách sửa lỗi:** Bạn hãy vào game Roblox thực hiện **bấm lấy một đường link Get Key mới tinh tinh** rồi chạy lại lệnh. Các link cũ bấm đi bấm lại nhiều lần sẽ bị máy chủ Delta khóa vĩnh viễn.` 
+                    content: `❌ **Bypass thất bại:** Hệ thống ghi nhận lỗi chặn luồng mạng từ Delta.\n\n📊 **Nhật ký kết nối chuyên sâu:**\n${errorLogString}\n\n💡 **Cách khắc phục:** Hãy đảm bảo bạn đã lưu biến môi trường \`SCRAPER_API_KEY\` thành công trên Render. Tiếp theo, vào game Roblox **lấy một đường link Get Key mới tinh chưa qua sử dụng** rồi gõ lại lệnh để chạy.` 
                 });
             }
 
         } catch (globalError) {
-            console.error('Lỗi sập luồng mạng:', globalError.message);
+            console.error('Lỗi luồng mạng:', globalError.message);
             try {
-                await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Có lỗi xảy ra trong quá trình bóc tách luồng mạng." });
+                await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Có lỗi xảy ra trong quá trình xử lý luồng mạng hệ thống." });
             } catch (e) {}
         }
     }
 });
 
 const http = require('http');
-const server = http.createServer((req, res) => { res.writeHead(200); res.end('Bot Direct Solver Active'); });
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Bot ScraperEngine Premium Active!');
+});
 server.listen(process.env.PORT || 3000);
 
 const botToken = process.env.DISCORD_TOKEN || process.env.TOKEN;
