@@ -4,7 +4,6 @@ require('dotenv').config();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-// Bộ nhớ đệm lưu thời gian chờ của người dùng (Chống spam)
 const cooldowns = new Map();
 
 const commands = [
@@ -34,7 +33,7 @@ client.on('interactionCreate', async interaction => {
     if (interaction.commandName === 'bypass') {
         const userId = interaction.user.id;
         const currentTime = Date.now();
-        const cooldownAmount = 5 * 1000; // 5 giây chờ chống spam
+        const cooldownAmount = 5 * 1000;
 
         if (cooldowns.has(userId)) {
             const expirationTime = cooldowns.get(userId) + cooldownAmount;
@@ -49,6 +48,7 @@ client.on('interactionCreate', async interaction => {
         try {
             await interaction.deferReply();
 
+            // 🔥 ĐÃ CẬP NHẬT: Chấp nhận cả tên miền ://platorelay.com mới của bạn
             if (!url.includes('platorelay.com') && !url.includes('platoboost.com')) {
                 return await interaction.editReply({ content: "❌ **Lỗi:** Đường link nhập vào không đúng định dạng Get Key của Delta!" });
             }
@@ -60,15 +60,14 @@ client.on('interactionCreate', async interaction => {
                 .setDescription('Đang điều hướng gói tin qua cổng API Vercel riêng biệt của bạn để vượt tường lửa Cloudflare...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // 🔥 ĐÃ VÁ CHUẨN XÁC 100%: Gọi thẳng sang đường dẫn API cá nhân đã Ready của bạn
-            const cleanDomain = "https://vercel.app";
+            const vercelDomain = "https://vercel.app"; 
+            const cleanDomain = vercelDomain.endsWith('/') ? vercelDomain.slice(0, -1) : vercelDomain;
             const myPrivateVercelUrl = `${cleanDomain}/api?url=${encodeURIComponent(url)}`;
             
             let finalKey = "";
             let errorMsg = "";
 
             try {
-                // Thực hiện gọi dữ liệu ngầm qua Vercel của bạn
                 const response = await axios.get(myPrivateVercelUrl, { timeout: 25000 });
                 if (response.data && response.data.success) {
                     finalKey = response.data.key;
@@ -93,7 +92,6 @@ client.on('interactionCreate', async interaction => {
                     .addFields({ name: '⚡ Tốc độ bẻ khóa', value: `\`${executionTime}ms\``, inline: true })
                     .setFooter({ text: 'Xử lý độc quyền và an toàn qua cụm máy chủ Vercel' });
 
-                // Nút bấm văn bản thô giúp đè ngón tay copy siêu nhanh trên điện thoại
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
                         .setLabel('Bấm Xem Bản Thô (Dễ Copy Trên ĐT)')
