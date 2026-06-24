@@ -1,11 +1,9 @@
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+lconst { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 require('dotenv').config();
 
-const client = new Client({
-    intents: [GatewayIntentBits.Guilds]
-});
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 const commands = [
     new SlashCommandBuilder()
@@ -65,15 +63,12 @@ client.on('interactionCreate', async interaction => {
             let usedServer = "";
             let debugLogs = [];
 
-            // 🚀 LUỒNG 1: THỬ CHẠY QUA PROXY RIÊNG CỦA BẠN (GIỚI HẠN CHỜ 5 GIÂY ĐỂ TRÁNH TREO)
+            // 🚀 LUỒNG 1: CHẠY QUA PROXY RIÊNG CỦA BẠN (NẾU CÓ - GIỚI HẠN CHỜ ĐÚNG 4 GIÂY)
             if (process.env.PROXY_URL) {
                 console.log('[SYSTEM] Kiểm tra kết nối luồng Proxy mạng nhà...');
                 let proxyConfig = {
-                    timeout: 5000, // Chỉ đợi đúng 5 giây, nếu mạng nhà chặn/treo sẽ ngắt ngay lập tức
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/126.0.0.0 Safari/537.36',
-                        'Accept': 'application/json, text/plain, */*'
-                    }
+                    timeout: 4000, 
+                    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
                 };
 
                 try {
@@ -81,34 +76,28 @@ client.on('interactionCreate', async interaction => {
                     proxyConfig.httpsAgent = agent;
                     proxyConfig.proxy = false;
 
-                    // Thử quét Server 1 bằng Proxy trước
                     const response = await axios.get(serverEndpoints[0], proxyConfig);
                     let responseData = response.data;
                     if (responseData) {
                         if (typeof responseData === 'object') {
-                            finalKey = responseData.key || (responseData.bypassed ? responseData.bypassed.key || responseData.bypassed : null) || (responseData.data ? responseData.data.key : null) || responseData.result;
+                            finalKey = responseData.key || (responseData.bypassed ? responseData.bypassed.key || responseData.bypassed : null) || (responseData.data ? responseData.data.key : null);
                         } else if (typeof responseData === 'string') {
                             finalKey = responseData;
                         }
                     }
-                    if (finalKey && typeof finalKey === 'string' && finalKey.trim().length > 5 && !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail')) {
-                        usedServer = "Bypass.tools Premium Core (Mạng Nhà)";
+                    if (finalKey && finalKey.trim().length > 5 && !finalKey.toLowerCase().includes('error')) {
+                        usedServer = "Bypass.tools Premium (Mạng Nhà)";
                     }
                 } catch (pError) {
-                    console.warn('[CẢNH BÁO] Proxy mạng nhà bị lỗi hoặc treo cổng, tự động ngắt để chuyển sang mạng gốc:', pError.message);
-                    debugLogs.push(`**Proxy nhà:** Gặp lỗi kết nối/Treo cổng.`);
+                    console.warn('[CẢNH BÁO] Treo mạng nhà, tự động ngắt chuyển sang mạng gốc.');
                 }
             }
 
-            // 🚀 LUỒNG 2: NẾU PROXY TREO HOẶC KHÔNG RA KEY -> TỰ ĐỘNG CHẠY MẠNG GỐC SIÊU TỐC CỦA HOST
+            // 🚀 LUỒNG 2: NẾU MẠNG NHÀ TREO HOẶC LỖI -> TỰ ĐỘNG CHẠY MẠNG GỐC CỦA HOST
             if (!finalKey) {
-                console.log('[SYSTEM] Chuyển cấu hình sang luồng mạng gốc siêu tốc...');
                 let nativeConfig = {
-                    timeout: 12000, // Đợi tối đa 12 giây mỗi cổng máy chủ
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/126.0.0.0 Safari/537.36',
-                        'Accept': 'application/json, text/plain, */*'
-                    }
+                    timeout: 10000, 
+                    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
                 };
 
                 for (let i = 0; i < serverEndpoints.length; i++) {
@@ -129,38 +118,37 @@ client.on('interactionCreate', async interaction => {
                             usedServer = i === 0 ? "Bypass.tools API Gốc" : `Cổng Máy Chủ Dự Phòng ${i + 1}`;
                             break; 
                         } else {
-                            debugLogs.push(`**Server ${i + 1}:** Phản hồi trống hoặc bị Cloudflare chặn.`);
+                            debugLogs.push(`**Server ${i + 1}:** Phản hồi trống/Bị chặn.`);
                         }
                     } catch (netError) {
                         const status = netError.response ? netError.response.status : "Timeout";
-                        debugLogs.push(`**Server ${i + 1}:** Gặp lỗi kết nối (HTTP: ${status})`);
+                        debugLogs.push(`**Server ${i + 1}:** Lỗi kết nối (HTTP: ${status})`);
                     }
                 }
             }
 
             if (finalKey) finalKey = finalKey.trim();
 
-            // Xuất dữ liệu trả về cho người dùng Discord công khai
             if (finalKey && !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail') && finalKey.length > 5) {
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x00FF00)
                     .setTitle('✅ Bypass Thành Công')
                     .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
-                    .setFooter({ text: `Xử lý an toàn qua: ${usedServer}` });
+                    .setFooter({ text: `Xử lý qua: ${usedServer}` });
 
                 await interaction.editReply({ embeds: [successEmbed], content: null });
             } else {
                 const errorLogString = debugLogs.join('\n');
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: `❌ **Bypass thất bại:** Liên kết bị chặn hoặc hết hạn.\n\n📊 **Nhật ký hệ thống:**\n${errorLogString}\n\n💡 *Cách khắc phục:* Hãy chắc chắn rằng bạn đã copy đường link Get Key **mới tinh** vừa lấy từ game ra, không dùng lại link cũ đã test nhé!` 
+                    content: `❌ **Bypass thất bại:** Cụm máy chủ từ chối kết nối.\n\n📊 **Nhật ký hệ thống:**\n${errorLogString}\n\n💡 *Cách sửa:* Hãy chắc chắn bạn đã lấy đường link Get Key **mới tinh** từ game ra và thử lại nhé!` 
                 });
             }
 
         } catch (globalError) {
             console.error('Lỗi luồng mạng:', globalError.message);
             try {
-                await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Có lỗi xảy ra trong quá trình xử lý luồng mạng hệ thống." });
+                await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Có lỗi xảy ra trong quá trình xử lý hệ thống." });
             } catch (e) {}
         }
     }
@@ -169,7 +157,7 @@ client.on('interactionCreate', async interaction => {
 const http = require('http');
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot Smart Fallback Online!');
+    res.end('Bot Online!');
 });
 server.listen(process.env.PORT || 3000);
 
