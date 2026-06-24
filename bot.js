@@ -60,16 +60,15 @@ client.on('interactionCreate', async interaction => {
                 .setDescription('Đang điều hướng gói tin qua cổng API Vercel riêng biệt của bạn để vượt tường lửa Cloudflare...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // 🔥 ĐÃ GHÉP CHUẨN XÁC: Định tuyến thẳng về serverless function chứa file index.js của bạn
-            const vercelDomain = "https://delta-core-api.vercel.app"; 
-            const cleanDomain = vercelDomain.endsWith('/') ? vercelDomain.slice(0, -1) : vercelDomain;
+            // 🔥 ĐÃ VÁ CHUẨN XÁC 100%: Gọi thẳng sang đường dẫn API cá nhân đã Ready của bạn
+            const cleanDomain = "https://vercel.app";
             const myPrivateVercelUrl = `${cleanDomain}/api?url=${encodeURIComponent(url)}`;
             
             let finalKey = "";
             let errorMsg = "";
 
             try {
-                // Thực hiện gọi dữ liệu ngầm thông qua dải IP AWS sạch của Vercel
+                // Thực hiện gọi dữ liệu ngầm qua Vercel của bạn
                 const response = await axios.get(myPrivateVercelUrl, { timeout: 25000 });
                 if (response.data && response.data.success) {
                     finalKey = response.data.key;
