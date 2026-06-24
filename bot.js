@@ -60,8 +60,8 @@ client.on('interactionCreate', async interaction => {
                 .setDescription('Đang điều hướng gói tin qua cổng API Vercel riêng biệt của bạn để vượt tường lửa Cloudflare...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // Tự động lấy tên miền Vercel từ biến môi trường Environment Variables để tăng độ bảo mật
-            const vercelDomain = process.env.VERCEL_DOMAIN || "https://vercel.app"; 
+            // 🔥 ĐÃ GHÉP CHUẨN XÁC: Định tuyến thẳng về serverless function chứa file index.js của bạn
+            const vercelDomain = "https://delta-core-api.vercel.app"; 
             const cleanDomain = vercelDomain.endsWith('/') ? vercelDomain.slice(0, -1) : vercelDomain;
             const myPrivateVercelUrl = `${cleanDomain}/api?url=${encodeURIComponent(url)}`;
             
