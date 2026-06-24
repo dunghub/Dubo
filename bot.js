@@ -6,14 +6,14 @@ const client = new Client({
     intents: [GatewayIntentBits.Guilds]
 });
 
-// Cấu hình Slash Command đồng bộ hệ thống mới
+// Cấu hình lệnh Slash Command đồng bộ hệ thống mới
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta siêu tốc v8 - Cụm 3 Server Dự Phòng')
+        .setDescription('Lệnh bypass get key Delta siêu tốc v8 - Tích hợp Bypass.tools')
         .addStringOption(option => 
             option.setName('url')
-                .setDescription('Nhập đường link Platorelay cần bẻ khóa')
+                .setDescription('Nhập đường link Platorelay hoặc Platoboost cần bẻ khóa')
                 .setRequired(true))
 ];
 
@@ -24,9 +24,9 @@ client.once('ready', async () => {
         const rest = new REST({ version: '10' }).setToken(token);
         
         const CLIENT_ID = process.env.CLIENT_ID || client.user.id;
-        const GUILD_ID = process.env.GUILD_ID; // Cấu hình ID Server tại biến môi trường để nhận lệnh ngay lập tức
+        const GUILD_ID = process.env.GUILD_ID; // Nhập ID Server tại biến môi trường để nhận lệnh ngay lập tức
 
-        console.log('[⏳] Đang tích hợp lệnh Slash vào cụm máy chủ mới...');
+        console.log('[⏳] Đang tích hợp lệnh Slash vào cụm hệ thống mới...');
         
         if (GUILD_ID) {
             await rest.put(
@@ -53,7 +53,7 @@ client.on('interactionCreate', async interaction => {
         const url = interaction.options.getString('url').trim();
 
         try {
-            // Hoãn phản hồi chống lỗi "Ứng dụng không phản hồi" trong vòng 3 giây
+            // Hoãn phản hồi chống lỗi quá 3 giây của Discord (Né lỗi Ứng dụng không phản hồi)
             await interaction.deferReply();
 
             // Kiểm tra cấu trúc link hệ thống Delta
@@ -65,24 +65,24 @@ client.on('interactionCreate', async interaction => {
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang quét lệnh trên cụm **3 máy chủ nâng cấp v8**, vui lòng chờ trong giây lát...');
+                .setDescription('Đang bẻ khóa link qua cụm **3 Máy Chủ Siêu Cấp (Ưu tiên: Bypass.tools)**...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // 🔥 ĐÃ NẠP CỤM 3 SERVER UPDATE SIÊU TỐC TỰ ĐỘNG XOAY VÒNG
+            // 🔥 ĐÃ GẮN CỤM MÁY CHỦ MỚI - TỰ ĐỘNG XOAY VÒNG KHI CÓ LỖI
             const serverEndpoints = [
-                `https://bypass.city{encodeURIComponent(url)}`,                       // Server chính 1
-                `https://bypass.vip{encodeURIComponent(url)}`,                    // Server dự phòng 2
-                `https://stickx.top{encodeURIComponent(url)}&api_key=free`    // Server dự phòng 3 (Cổng StickX)
+                `https://bypass.tools{encodeURIComponent(url)}`,                  // 🌟 Cổng 1: Máy chủ mới Bypass.tools
+                `https://bypass.city{encodeURIComponent(url)}`,                       // Cổng 2: Máy chủ dự phòng City
+                `https://bypass.vip{encodeURIComponent(url)}`                    // Cổng 3: Máy chủ dự phòng Vip
             ];
             
             let finalKey = "";
             let usedServer = "";
 
-            // Vòng lặp tự động cào qua từng server cho đến khi ra Key
+            // Vòng lặp quét tìm server đang hoạt động tốt nhất
             for (let i = 0; i < serverEndpoints.length; i++) {
                 try {
-                    console.log(`[NETWORK] Đang thử bẻ khóa tại Server ${i + 1}...`);
-                    const response = await axios.get(serverEndpoints[i], { timeout: 12000 }); // Đợi tối đa 12 giây mỗi cổng
+                    console.log(`[NETWORK] Đang thử bẻ khóa tại Server Cổng ${i + 1}...`);
+                    const response = await axios.get(serverEndpoints[i], { timeout: 15000 }); // Đợi tối đa 15 giây mỗi cổng
                     
                     let responseData = response.data;
                     if (responseData) {
@@ -94,13 +94,13 @@ client.on('interactionCreate', async interaction => {
                         }
                     }
 
-                    // Điều kiện: Nếu tìm thấy key hợp lệ thì ghi nhận server và thoát vòng lặp ngay
+                    // Điều kiện: Nếu tìm thấy key hợp lệ (không chứa chữ error/fail) thì ghi nhận và thoát ngay
                     if (finalKey && !finalKey.toLowerCase().includes('error') && !finalKey.toLowerCase().includes('fail') && finalKey.length > 5) {
-                        usedServer = `Cổng Máy Chủ Dự Phòng ${i + 1}`;
+                        usedServer = i === 0 ? "Máy Chủ Mới (Bypass.tools)" : `Cổng Máy Chủ Dự Phòng ${i + 1}`;
                         break;
                     }
                 } catch (netError) {
-                    console.warn(`[CẢNH BÁO] Server ${i + 1} phản hồi lỗi hoặc hết hạn:`, netError.message);
+                    console.warn(`[CẢNH BÁO] Server cổng ${i + 1} phản hồi lỗi hoặc hết hạn:`, netError.message);
                 }
             }
 
@@ -118,7 +118,7 @@ client.on('interactionCreate', async interaction => {
             } else {
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: "❌ **Bypass thất bại:** Cả 3 cụm máy chủ đều không thể bẻ khóa liên kết này. Nguyên nhân có thể do Link Get Key đã hết hạn hoặc Delta vừa cập nhật bản vá chống bot. Hãy lấy link mới tinh trong game và thử lại." 
+                    content: "❌ **Bypass thất bại:** Cả 3 cụm máy chủ đều không thể bẻ khóa liên kết này. Nguyên nhân có thể do Link Get Key đã hết hạn hoặc hệ thống Delta vừa đổi thuật toán. Hãy lấy link mới tinh trong game và thử lại." 
                 });
             }
 
