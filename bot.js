@@ -1,7 +1,11 @@
-// bot.js - Hệ thống Bot Discord đa năng tự động nhận diện Luồng Android & iOS
+// bot.js - Hệ Thống Bot Độc Lập 100% - Tự Chạy Trình Duyệt Ẩn Danh Vượt Cloudflare (Bản Android & iOS)
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const axios = require('axios');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 require('dotenv').config();
+
+// KÍCH HOẠT TÍNH NĂNG STEALTH: Xóa bỏ hoàn toàn biến "navigator.webdriver" để Cloudflare không nhận diện được bot
+puppeteer.use(StealthPlugin());
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const cooldowns = new Map();
@@ -9,7 +13,7 @@ const cooldowns = new Map();
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta siêu tốc - Hỗ trợ cả Android & iOS')
+        .setDescription('Lệnh bypass get key Delta - Tự chạy trình duyệt ngầm vượt bảo mật')
         .addStringOption(option => 
             option.setName('url')
                 .setDescription('Nhập đường link Platoboost (Android) hoặc LootLabs (iOS) cần bẻ khóa')
@@ -17,15 +21,15 @@ const commands = [
 ];
 
 client.once('ready', async () => {
-    console.log(`[OK] Bot Online hệ thống đa nền tảng: ${client.user.tag}`);
+    console.log(`[OK] Bot Độc Lập Đang Hoạt Động: ${client.user.tag}`);
     try {
         const token = process.env.DISCORD_TOKEN || process.env.TOKEN;
-        if (!token) return console.error("❌ Thiếu DISCORD_TOKEN trong biến môi trường!");
+        if (!token) return console.error("❌ Thiếu DISCORD_TOKEN trong file .env!");
         
         const rest = new REST({ version: '10' }).setToken(token);
         const CLIENT_ID = process.env.CLIENT_ID || client.user.id;
         await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
-        console.log(`[OK] Kích hoạt hệ thống lệnh toàn cầu thành công!`);
+        console.log(`[OK] Đã kích hoạt lệnh slash command công khai!`);
     } catch (e) { console.error('Lỗi cấu hình:', e.message); }
 });
 
@@ -35,7 +39,7 @@ client.on('interactionCreate', async interaction => {
     if (interaction.commandName === 'bypass') {
         const userId = interaction.user.id;
         const currentTime = Date.now();
-        const cooldownAmount = 45 * 1000; // Bảo vệ hệ thống tránh spam proxy free
+        const cooldownAmount = 15 * 1000; // Đặt thời gian chờ lệnh là 15 giây
 
         if (cooldowns.has(userId)) {
             const expirationTime = cooldowns.get(userId) + cooldownAmount;
@@ -50,8 +54,9 @@ client.on('interactionCreate', async interaction => {
         try {
             await interaction.deferReply();
 
-            // 1. TỰ ĐỘNG NHẬN DIỆN HỆ ĐIỀU HÀNH QUA TÊN MIỀN LINK
+            // 1. TỰ ĐỘNG PHÂN TÁCH ĐỊNH DẠNG LINK ANDROID / IOS
             let osType = "";
+            let isLootLabs = false;
             try {
                 const parsedUrl = new URL(url.startsWith('http') ? url : `https://${url}`);
                 const host = parsedUrl.hostname;
@@ -60,63 +65,109 @@ client.on('interactionCreate', async interaction => {
                     osType = "Android (Platoboost)";
                 } else if (host.includes('lootlabs.gg')) {
                     osType = "iOS (LootLabs)";
+                    isLootLabs = true;
                 } else {
-                    return await interaction.editReply({ content: "❌ **Lỗi:** Bot chỉ hỗ trợ liên kết Get Key của Delta Android (Platoboost) và Delta iOS (LootLabs)!" });
+                    return await interaction.editReply({ content: "❌ **Lỗi:** Đường link nhập vào không đúng định dạng miền Get Key Delta!" });
                 }
             } catch (err) {
-                return await interaction.editReply({ content: "❌ **Lỗi:** Định dạng liên kết nhập vào không hợp lệ!" });
+                return await interaction.editReply({ content: "❌ **Lỗi:** Cấu trúc liên kết truyền vào không hợp lệ!" });
             }
 
             const startTime = Date.now();
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
-                .setTitle(`⏳ Hệ Thống Đang Xử Lý Luồng [${osType}]`)
-                .setDescription(`Đang điều hướng gói tin bẻ khóa qua cổng API riêng và cụm Proxy Free của cộng đồng. Quá trình dò luồng mất khoảng 5-15 giây, xin vui lòng đợi...`);
+                .setTitle(`⏳ Đang Xử Lý Luồng [${osType}]`)
+                .setDescription('Bot đang khởi chạy một cửa sổ Chrome ẩn ngầm, tự thực thi Javascript để vượt qua lớp thử thách của Cloudflare một cách tự nhiên như người thật...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // Cấu hình kết nối API Vercel của bạn
-            const vercelDomain = "https://vercel.app"; 
-            const myPrivateVercelUrl = `${vercelDomain}/api?url=${encodeURIComponent(url)}`;
-            
             let finalResult = "";
             let errorMsg = "";
+            let browser = null;
 
             try {
-                const response = await axios.get(myPrivateVercelUrl, { timeout: 30000 });
+                // Khởi chạy trình duyệt nhân Chromium ẩn danh ngay trên cấu hình máy chủ của bạn
+                browser = await puppeteer.launch({
+                    headless: true, // Ép chạy ngầm không tốn giao diện đồ họa hiển thị
+                    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null, // Nhận đường dẫn Chrome trên Render nếu có
+                    args: [
+                        '--no-sandbox', 
+                        '--disable-setuid-sandbox',
+                        '--disable-blink-features=AutomationControlled', // Chặn hoàn toàn mã phát hiện bot tự động
+                        '--window-size=1280,720',
+                        '--disable-infobars'
+                    ]
+                });
+
+                const page = await browser.newPage();
                 
-                if (response.data && response.data.success === true) {
-                    finalResult = response.data.key;
+                // Giả lập thông số phần cứng màn hình trùng khớp với cấu hình máy tính thật
+                await page.setViewport({ width: 1280, height: 720 });
+                await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36');
+
+                // Cho trình duyệt điều hướng truy cập trực tiếp vào link get key
+                await page.goto(url.startsWith('http') ? url : `https://${url}`, { 
+                    waitUntil: 'networkidle2', // Đợi trang tải xong toàn bộ tài nguyên hệ thống
+                    timeout: 28000             // Đặt giới hạn 28s trước khi quá hạn an toàn của Discord
+                });
+
+                // Ép trình duyệt ngầm nghỉ 5 giây để Cloudflare quét hành vi và tự động giải mã Turnstile ổn định
+                await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 5000)));
+
+                if (isLootLabs) {
+                    // LUỒNG IOS (LOOTLABS): Bốc thẳng đường link URL cuối cùng mà trang web tự nhảy tới sau khi vượt quảng cáo
+                    finalResult = page.url();
                 } else {
-                    errorMsg = response.data && response.data.message ? response.data.message : "Cổng API riêng chưa tìm thấy key.";
+                    // LUỒNG ANDROID (PLATOBOOST): Đọc dữ liệu văn bản thô hiển thị trên màn hình trang đích để tìm chuỗi Key
+                    const bodyText = await page.evaluate(() => document.body.innerText);
+                    
+                    // Phương án 1: Tìm kiếm trong các ô nhập dữ liệu có sẵn trên giao diện
+                    finalResult = await page.evaluate(() => {
+                        const inputElement = document.querySelector('input[id="key"]') || 
+                                             document.querySelector('input[name="key"]') || 
+                                             document.querySelector('textarea');
+                        return inputElement ? inputElement.value : "";
+                    });
+
+                    // Phương án dự phòng 2: Dùng Regex quét bóc tách dòng chữ hiển thị trực tiếp trên giao diện
+                    if (!finalResult) {
+                        const match = bodyText.match(/Key:\s*([A-Za-z0-9_-]+)/) || 
+                                      bodyText.match(/Your Key:\s*([A-Za-z0-9_-]+)/) ||
+                                      bodyText.match(/🔑\s*([A-Za-z0-9_-]{10,})/); // Quét chuỗi dài trên 10 ký tự
+                        if (match) finalResult = match[0];
+                    }
                 }
-            } catch (netError) {
-                if (netError.code === 'ECONNABORTED') {
-                    errorMsg = "Thời gian xử lý vượt quá giới hạn an toàn (Timeout 30s).";
-                } else if (netError.response && netError.response.data) {
-                    errorMsg = netError.response.data.message || `Lỗi máy chủ mã HTTP ${netError.response.status}`;
-                } else {
-                    errorMsg = `Không thể kết nối đến API Vercel: ${netError.message}`;
+
+                // Nếu chạy hết luồng mà kết quả thu được vẫn trùng với link ban đầu, chứng tỏ chưa bấm lấy key được
+                if (!finalResult || finalResult === url) {
+                    errorMsg = "Trình duyệt đã vượt bảo mật thành công nhưng trang đích chưa kích hoạt được nút nhận Key.";
+                }
+
+            } catch (err) {
+                errorMsg = `Lỗi trong quá trình giả lập trình duyệt ẩn: ${err.message}`;
+            } finally {
+                // CỰC KỲ QUAN TRỌNG: Đảm bảo cửa sổ Chrome ngầm phải được đóng lại bất kể chạy thành công hay thất bại để giải phóng bộ nhớ RAM
+                if (browser) {
+                    await browser.close();
                 }
             }
 
             const executionTime = Date.now() - startTime;
 
-            // 3. XỬ LÝ XUẤT KẾT QUẢ PHÙ HỢP CHO TỪNG LUỒNG HỆ ĐIỀU HÀNH
-            if (finalResult && finalResult.length > 5 && !finalResult.includes("{") && !finalResult.includes("false")) {
+            // 4. XỬ LÝ XUẤT KẾT QUẢ ĐỒNG BỘ LÊN DISCORD CHAT
+            if (finalResult && finalResult !== url && !finalResult.includes("false") && !finalResult.includes("undefined")) {
                 cooldowns.set(userId, currentTime);
                 setTimeout(() => cooldowns.delete(userId), cooldownAmount);
 
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x00FF00)
                     .setTitle(`✅ Vượt Tường Lửa [${osType}] Thành Công`)
-                    .addFields({ name: '⚡ Tốc độ bẻ khóa', value: `\`${executionTime}ms\``, inline: true })
-                    .setFooter({ text: 'Hệ thống Auto-Proxy Free đa nền tảng chạy ổn định' });
+                    .addFields({ name: '⚡ Thời gian phân tích', value: `\`${executionTime}ms\``, inline: true })
+                    .setFooter({ text: 'Hệ thống tự bẻ khóa độc lập bằng cơ chế Chromium Stealth 100%' });
 
                 const row = new ActionRowBuilder();
 
-                if (osType.includes("iOS")) {
-                    // Đối với iOS: Thường LootLabs sẽ trả về đường link đích chứa key hoặc trang tiếp theo, bot tạo nút bấm chuyển hướng trực tiếp cho tiện
-                    successEmbed.setDescription(`🔗 **Liên kết chứa mã Key Delta iOS của bạn đã sẵn sàng:**\n\nBạn hãy bấm vào nút bấm bên dưới để truy cập thẳng tới trang nhận mã key mà không cần xem quảng cáo!`);
+                if (isLootLabs) {
+                    successEmbed.setDescription(`🔗 **Liên kết chứa mã Key Delta iOS của bạn đã sẵn sàng:**\n\nBạn hãy bấm vào nút bấm bên dưới để mở liên kết lấy thẳng mã key cuối cùng mà không cần xem quảng cáo!`);
                     row.addComponents(
                         new ButtonBuilder()
                             .setLabel('Bấm Để Mở Link Nhận Key iOS')
@@ -124,13 +175,12 @@ client.on('interactionCreate', async interaction => {
                             .setURL(finalResult)
                     );
                 } else {
-                    // Đối với Android: Hiển thị chuỗi mã Key dạng văn bản để người dùng copy đè vào game
                     successEmbed.setDescription(`🔑 **Key Delta Android của bạn đã sẵn sàng:**\n\`\`\`text\n${finalResult}\n\`\`\``);
                     row.addComponents(
                         new ButtonBuilder()
-                            .setLabel('Bấm Xem Bản Thô (Dễ Copy Trên ĐT)')
+                            .setLabel('Bấm Để Sao Chép Link Gốc')
                             .setStyle(ButtonStyle.Link)
-                            .setURL(myPrivateVercelUrl)
+                            .setURL(url)
                     );
                 }
 
@@ -138,22 +188,3 @@ client.on('interactionCreate', async interaction => {
             } else {
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: `❌ **Bypass thất bại [${osType}]:** Cổng API riêng từ chối xác thực gói tin.\n\n📊 **Chi tiết trạng thái:** \`${errorMsg || "Dữ liệu phiên làm việc không hợp lệ"}\`\n\n💡 **Mẹo:** Bạn hãy mở game Roblox lên, bấm lấy 1 liên kết Get Key mới tinh rồi thực hiện lại lệnh ngay!` 
-                });
-            }
-
-        } catch (globalError) {
-            try { await interaction.editReply({ embeds: [], content: "❌ **Sự cố:** Hệ thống mạng gặp lỗi luồng ngầm cục bộ của bot." }); } catch (e) {}
-        }
-    }
-});
-
-const http = require('http');
-const server = http.createServer((req, res) => { 
-    res.writeHead(200, { 'Content-Type': 'text/plain' }); 
-    res.end('Bot Core Is Running Securely'); 
-});
-server.listen(process.env.PORT || 3000);
-
-const botToken = process.env.DISCORD_TOKEN || process.env.TOKEN;
-if (botToken) client.login(botToken);
