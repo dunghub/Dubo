@@ -1,3 +1,4 @@
+// bot.js - Hệ thống Bot Discord tương tác công khai chạy trên Render/VPS
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const axios = require('axios');
 require('dotenv').config();
@@ -63,10 +64,10 @@ client.on('interactionCreate', async interaction => {
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
                 .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang điều hướng gói tin qua cổng API Vercel riêng độc quyền của bạn để bẻ khóa tường lửa Platoboost...');
+                .setDescription('Đang điều hướng gói tin qua cổng API Vercel riêng phối hợp Proxy dân cư Sticky để bẻ khóa tường lửa...');
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // 2. ĐÃ SỬA LỖI: Điền trực tiếp domain Vercel thật của bạn để triệt tiêu hoàn toàn lỗi kết nối 1 giây
+            // Cấu hình Domain Vercel của bạn
             const vercelDomain = "https://delta-core-api.vercel.app"; 
             const myPrivateVercelUrl = `${vercelDomain}/api?url=${encodeURIComponent(url)}`;
             
@@ -74,7 +75,7 @@ client.on('interactionCreate', async interaction => {
             let errorMsg = "";
 
             try {
-                // ĐÃ SỬA LỖI: Nâng timeout từ 9s lên 30s (30000ms) để không bị ngắt kết nối khi server đang bẻ khóa ngầm
+                // Đặt timeout 30 giây đồng bộ với đầu API xử lý ngầm qua proxy
                 const response = await axios.get(myPrivateVercelUrl, { timeout: 30000 });
                 
                 if (response.data && response.data.success === true) {
@@ -86,7 +87,7 @@ client.on('interactionCreate', async interaction => {
                 if (netError.code === 'ECONNABORTED') {
                     errorMsg = "Thời gian xử lý vượt quá giới hạn an toàn (Timeout 30s).";
                 } else if (netError.response && netError.response.data) {
-                    // Trích xuất mã lỗi JSON chi tiết do file index.js trên Vercel gửi ngược về
+                    // Đọc mã lỗi JSON chi tiết do file index.js trên Vercel trả ngược về
                     errorMsg = netError.response.data.message || `Lỗi máy chủ mã HTTP ${netError.response.status}`;
                 } else {
                     errorMsg = `Không thể kết nối đến API Vercel: ${netError.message}`;
@@ -96,7 +97,7 @@ client.on('interactionCreate', async interaction => {
             if (finalKey) finalKey = finalKey.trim();
             const executionTime = Date.now() - startTime;
 
-            // 3. Xử lý xuất kết quả cuối cùng lên Discord chat công khai
+            // 3. Xử lý xuất kết quả cuối cùng lên Discord chat
             if (finalKey && finalKey.length > 5 && !finalKey.includes("{") && !finalKey.includes("false")) {
                 cooldowns.set(userId, currentTime);
                 setTimeout(() => cooldowns.delete(userId), cooldownAmount);
@@ -106,7 +107,7 @@ client.on('interactionCreate', async interaction => {
                     .setTitle('✅ Vượt Tường Lửa Thành Công')
                     .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
                     .addFields({ name: '⚡ Tốc độ bẻ khóa', value: `\`${executionTime}ms\``, inline: true })
-                    .setFooter({ text: 'Hệ thống API Vercel độc lập vận hành ổn định mượt mà' });
+                    .setFooter({ text: 'Hệ thống API Vercel tích hợp Proxy dân cư vận hành biệt lập' });
 
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
