@@ -1,4 +1,4 @@
-// bot.js - Hệ thống Bot Discord tương tác công khai chạy trên Render/VPS
+// bot.js - Hệ thống Bot Discord đa năng tự động nhận diện Luồng Android & iOS
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const axios = require('axios');
 require('dotenv').config();
@@ -9,15 +9,15 @@ const cooldowns = new Map();
 const commands = [
     new SlashCommandBuilder()
         .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta siêu tốc v8 - Bản Ép Luồng Vercel Sạch')
+        .setDescription('Lệnh bypass get key Delta siêu tốc - Hỗ trợ cả Android & iOS')
         .addStringOption(option => 
             option.setName('url')
-                .setDescription('Nhập đường link Platorelay hoặc Platoboost cần bẻ khóa')
+                .setDescription('Nhập đường link Platoboost (Android) hoặc LootLabs (iOS) cần bẻ khóa')
                 .setRequired(true))
 ];
 
 client.once('ready', async () => {
-    console.log(`[OK] Bot Online hệ thống: ${client.user.tag}`);
+    console.log(`[OK] Bot Online hệ thống đa nền tảng: ${client.user.tag}`);
     try {
         const token = process.env.DISCORD_TOKEN || process.env.TOKEN;
         if (!token) return console.error("❌ Thiếu DISCORD_TOKEN trong biến môi trường!");
@@ -35,7 +35,7 @@ client.on('interactionCreate', async interaction => {
     if (interaction.commandName === 'bypass') {
         const userId = interaction.user.id;
         const currentTime = Date.now();
-        const cooldownAmount = 5 * 1000;
+        const cooldownAmount = 45 * 1000; // Bảo vệ hệ thống tránh spam proxy free
 
         if (cooldowns.has(userId)) {
             const expirationTime = cooldowns.get(userId) + cooldownAmount;
@@ -50,36 +50,42 @@ client.on('interactionCreate', async interaction => {
         try {
             await interaction.deferReply();
 
-            // 1. Kiểm tra cấu trúc định dạng link đầu vào
+            // 1. TỰ ĐỘNG NHẬN DIỆN HỆ ĐIỀU HÀNH QUA TÊN MIỀN LINK
+            let osType = "";
             try {
-                const parsedUrl = new URL(url);
-                if (!parsedUrl.hostname.includes('platorelay.com') && !parsedUrl.hostname.includes('platoboost.com')) {
-                    return await interaction.editReply({ content: "❌ **Lỗi:** Đường link nhập vào không đúng định dạng miền Get Key Delta!" });
+                const parsedUrl = new URL(url.startsWith('http') ? url : `https://${url}`);
+                const host = parsedUrl.hostname;
+                
+                if (host.includes('platorelay.com') || host.includes('platoboost.com')) {
+                    osType = "Android (Platoboost)";
+                } else if (host.includes('lootlabs.gg')) {
+                    osType = "iOS (LootLabs)";
+                } else {
+                    return await interaction.editReply({ content: "❌ **Lỗi:** Bot chỉ hỗ trợ liên kết Get Key của Delta Android (Platoboost) và Delta iOS (LootLabs)!" });
                 }
             } catch (err) {
-                return await interaction.editReply({ content: "❌ **Lỗi:** Định dạng liên kết không hợp lệ!" });
+                return await interaction.editReply({ content: "❌ **Lỗi:** Định dạng liên kết nhập vào không hợp lệ!" });
             }
 
             const startTime = Date.now();
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
-                .setTitle('⏳ Hệ Thống Đang Xử Lý')
-                .setDescription('Đang điều hướng gói tin qua cổng API Vercel riêng phối hợp Proxy dân cư Sticky để bẻ khóa tường lửa...');
+                .setTitle(`⏳ Hệ Thống Đang Xử Lý Luồng [${osType}]`)
+                .setDescription(`Đang điều hướng gói tin bẻ khóa qua cổng API riêng và cụm Proxy Free của cộng đồng. Quá trình dò luồng mất khoảng 5-15 giây, xin vui lòng đợi...`);
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // Cấu hình Domain Vercel của bạn
-            const vercelDomain = "https://delta-core-api.vercel.app"; 
+            // Cấu hình kết nối API Vercel của bạn
+            const vercelDomain = "https://vercel.app"; 
             const myPrivateVercelUrl = `${vercelDomain}/api?url=${encodeURIComponent(url)}`;
             
-            let finalKey = "";
+            let finalResult = "";
             let errorMsg = "";
 
             try {
-                // Đặt timeout 30 giây đồng bộ với đầu API xử lý ngầm qua proxy
                 const response = await axios.get(myPrivateVercelUrl, { timeout: 30000 });
                 
                 if (response.data && response.data.success === true) {
-                    finalKey = response.data.key;
+                    finalResult = response.data.key;
                 } else {
                     errorMsg = response.data && response.data.message ? response.data.message : "Cổng API riêng chưa tìm thấy key.";
                 }
@@ -87,40 +93,52 @@ client.on('interactionCreate', async interaction => {
                 if (netError.code === 'ECONNABORTED') {
                     errorMsg = "Thời gian xử lý vượt quá giới hạn an toàn (Timeout 30s).";
                 } else if (netError.response && netError.response.data) {
-                    // Đọc mã lỗi JSON chi tiết do file index.js trên Vercel trả ngược về
                     errorMsg = netError.response.data.message || `Lỗi máy chủ mã HTTP ${netError.response.status}`;
                 } else {
                     errorMsg = `Không thể kết nối đến API Vercel: ${netError.message}`;
                 }
             }
 
-            if (finalKey) finalKey = finalKey.trim();
             const executionTime = Date.now() - startTime;
 
-            // 3. Xử lý xuất kết quả cuối cùng lên Discord chat
-            if (finalKey && finalKey.length > 5 && !finalKey.includes("{") && !finalKey.includes("false")) {
+            // 3. XỬ LÝ XUẤT KẾT QUẢ PHÙ HỢP CHO TỪNG LUỒNG HỆ ĐIỀU HÀNH
+            if (finalResult && finalResult.length > 5 && !finalResult.includes("{") && !finalResult.includes("false")) {
                 cooldowns.set(userId, currentTime);
                 setTimeout(() => cooldowns.delete(userId), cooldownAmount);
 
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x00FF00)
-                    .setTitle('✅ Vượt Tường Lửa Thành Công')
-                    .setDescription(`🔑 **Key Delta của bạn đã sẵn sàng:**\n\`\`\`text\n${finalKey}\n\`\`\``)
+                    .setTitle(`✅ Vượt Tường Lửa [${osType}] Thành Công`)
                     .addFields({ name: '⚡ Tốc độ bẻ khóa', value: `\`${executionTime}ms\``, inline: true })
-                    .setFooter({ text: 'Hệ thống API Vercel tích hợp Proxy dân cư vận hành biệt lập' });
+                    .setFooter({ text: 'Hệ thống Auto-Proxy Free đa nền tảng chạy ổn định' });
 
-                const row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder()
-                        .setLabel('Bấm Xem Bản Thô (Dễ Copy Trên ĐT)')
-                        .setStyle(ButtonStyle.Link)
-                        .setURL(myPrivateVercelUrl)
-                );
+                const row = new ActionRowBuilder();
+
+                if (osType.includes("iOS")) {
+                    // Đối với iOS: Thường LootLabs sẽ trả về đường link đích chứa key hoặc trang tiếp theo, bot tạo nút bấm chuyển hướng trực tiếp cho tiện
+                    successEmbed.setDescription(`🔗 **Liên kết chứa mã Key Delta iOS của bạn đã sẵn sàng:**\n\nBạn hãy bấm vào nút bấm bên dưới để truy cập thẳng tới trang nhận mã key mà không cần xem quảng cáo!`);
+                    row.addComponents(
+                        new ButtonBuilder()
+                            .setLabel('Bấm Để Mở Link Nhận Key iOS')
+                            .setStyle(ButtonStyle.Link)
+                            .setURL(finalResult)
+                    );
+                } else {
+                    // Đối với Android: Hiển thị chuỗi mã Key dạng văn bản để người dùng copy đè vào game
+                    successEmbed.setDescription(`🔑 **Key Delta Android của bạn đã sẵn sàng:**\n\`\`\`text\n${finalResult}\n\`\`\``);
+                    row.addComponents(
+                        new ButtonBuilder()
+                            .setLabel('Bấm Xem Bản Thô (Dễ Copy Trên ĐT)')
+                            .setStyle(ButtonStyle.Link)
+                            .setURL(myPrivateVercelUrl)
+                    );
+                }
 
                 await interaction.editReply({ embeds: [successEmbed], components: [row] });
             } else {
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: `❌ **Bypass thất bại:** Cổng API riêng từ chối xác thực gói tin.\n\n📊 **Chi tiết trạng thái:** \`${errorMsg || "Dữ liệu phiên làm việc không hợp lệ"}\`\n\n💡 **Mẹo:** Bạn hãy mở game Roblox lên, bấm lấy 1 liên kết Get Key mới tinh rồi thực hiện lại lệnh ngay!` 
+                    content: `❌ **Bypass thất bại [${osType}]:** Cổng API riêng từ chối xác thực gói tin.\n\n📊 **Chi tiết trạng thái:** \`${errorMsg || "Dữ liệu phiên làm việc không hợp lệ"}\`\n\n💡 **Mẹo:** Bạn hãy mở game Roblox lên, bấm lấy 1 liên kết Get Key mới tinh rồi thực hiện lại lệnh ngay!` 
                 });
             }
 
@@ -130,7 +148,6 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Giữ bot sống liên tục trên Render (Web Service)
 const http = require('http');
 const server = http.createServer((req, res) => { 
     res.writeHead(200, { 'Content-Type': 'text/plain' }); 
