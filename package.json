@@ -1,7 +1,7 @@
 {
   "name": "dubo-bot",
   "version": "1.0.0",
-  "description": "Bot Discord Dubo",
+  "description": "Bot Discord Dubo Bypass Chống Sập Bộ Nhớ RAM",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
