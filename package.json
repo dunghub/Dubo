@@ -1,7 +1,7 @@
 {
   "name": "dubo-bot",
   "version": "1.0.0",
-  "description": "Bot Discord Dubo Bypass Chống Sập Bộ Nhớ RAM",
+  "description": "Bot Discord Dubo Vượt Link Việt Nam Siêu Tốc Chống Sập RAM",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
@@ -9,7 +9,6 @@
   "dependencies": {
     "axios": "^1.7.9",
     "discord.js": "^14.14.1",
-    "dotenv": "^16.4.5",
-    "https-proxy-agent": "^7.0.5"
+    "dotenv": "^16.4.5"
   }
 }
