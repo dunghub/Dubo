@@ -7,18 +7,22 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const cooldowns = new Map();
 const localKeyCache = new Map(); // Bộ nhớ đệm RAM lưu key ngay trên Render
 
+// Cấu hình URL của API Server chạy Playwright/Puppeteer tại Việt Nam của bạn
+// Nếu chạy chung một server Render, giữ nguyên cổng là http://localhost:3000/api/bypass
+const LOCAL_API_URL = process.env.BYPASS_API_URL || 'http://localhost:3000/api/bypass';
+
 const commands = [
     new SlashCommandBuilder()
-        .setName('bypass')
-        .setDescription('Lệnh bypass get key Delta siêu tốc v8 - Bản Ép Luồng Sạch Không Lỗi')
+        .setName('vuotlink')
+        .setDescription('Tự động vượt link rút gọn lấy mã/key Việt Nam siêu tốc')
         .addStringOption(option => 
             option.setName('url')
-                .setDescription('Nhập đường link Platoboost (Android) hoặc LootLabs (iOS) cần bẻ khóa')
+                .setDescription('Nhập đường link rút gọn cần vượt (vuotlink, nhapcode1s...)')
                 .setRequired(true))
 ];
 
 client.once('ready', async () => {
-    console.log(`[OK] Bot Dubo Bản Sạch Đang Online: ${client.user.tag}`);
+    console.log(`[OK] Bot Dubo Bản Vượt Link VN Đang Online: ${client.user.tag}`);
     try {
         const token = process.env.DISCORD_TOKEN || process.env.TOKEN;
         if (!token) return console.error("❌ Thiếu DISCORD_TOKEN trong biến môi trường!");
@@ -33,10 +37,10 @@ client.once('ready', async () => {
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
-    if (interaction.commandName === 'bypass') {
+    if (interaction.commandName === 'vuotlink') {
         const userId = interaction.user.id;
         const currentTime = Date.now();
-        const cooldownAmount = 10 * 1000;
+        const cooldownAmount = 15 * 1000; // Giới hạn 15 giây mỗi lượt gõ lệnh
 
         if (cooldowns.has(userId)) {
             const expirationTime = cooldowns.get(userId) + cooldownAmount;
@@ -51,37 +55,27 @@ client.on('interactionCreate', async interaction => {
         try {
             await interaction.deferReply();
 
-            let osType = "";
-            let isLootLabs = false;
+            // Kiểm tra định dạng link cơ bản
             try {
-                const parsedUrl = new URL(url.startsWith('http') ? url : `https://${url}`);
-                const host = parsedUrl.hostname;
-                
-                if (host.includes('platorelay.com') || host.includes('platoboost.com')) {
-                    osType = "Android (Platoboost)";
-                } else if (host.includes('lootlabs.gg')) {
-                    osType = "iOS (LootLabs)";
-                    isLootLabs = true;
-                } else {
-                    return await interaction.editReply({ content: "❌ **Lỗi:** Đường link nhập vào không đúng định dạng miền Get Key Delta!" });
-                }
+                new URL(url.startsWith('http') ? url : `https://${url}`);
             } catch (err) {
                 return await interaction.editReply({ content: "❌ **Lỗi:** Định dạng liên kết truyền vào không hợp lệ!" });
             }
 
-            // KIỂM TRA CACHE TRÊN RENDER (Trùng link cũ trả ngay lập tức trong 0s)
+            // KIỂM TRA CACHE TRÊN RENDER (Trùng link cũ trả ngay kết quả trong 0s)
             if (localKeyCache.has(url)) {
                 const cache = localKeyCache.get(url);
-                if (currentTime - cache.time < 24 * 60 * 60 * 1000) {
+                // Cache hợp lệ trong vòng 10 phút vì mã code có thể đổi theo thời gian
+                if (currentTime - cache.time < 10 * 60 * 1000) {
                     const cacheEmbed = new EmbedBuilder()
                         .setColor(0x00FF00)
-                        .setTitle('✅ Bypass Successful')
-                        .setDescription(isLootLabs ? `🔗 **Mã dịch iOS đã sẵn sàng:**\nNhấn nút bên dưới để nhận trang cuối.` : `🔑 **Result:**\n\`\`\`text\n${cache.key}\n\`\`\``)
-                        .addFields({ name: '⚡ Processed in', value: '`0ms (Local Cache)`', inline: true })
-                        .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
+                        .setTitle('✅ Vượt Link Thành Công (Cache)')
+                        .setDescription(`🔑 **Mã code tìm thấy:**\n\`\`\`text\n${cache.key}\n\`\`\``)
+                        .addFields({ name: '⚡ Thời gian xử lý', value: '`0ms (Bộ nhớ đệm)`', inline: true })
+                        .setFooter({ text: `Yêu cầu bởi ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
 
                     const row = new ActionRowBuilder().addComponents(
-                        new ButtonBuilder().setLabel(isLootLabs ? 'Mở Link Nhận Key iOS' : 'Website Link Gốc').setStyle(ButtonStyle.Link).setURL(isLootLabs ? cache.key : url)
+                        new ButtonBuilder().setLabel('Website Link Gốc').setStyle(ButtonStyle.Link).setURL(url)
                     );
                     return await interaction.editReply({ embeds: [cacheEmbed], components: [row] });
                 } else {
@@ -92,40 +86,33 @@ client.on('interactionCreate', async interaction => {
             const startTime = Date.now();
             const pendingEmbed = new EmbedBuilder()
                 .setColor(0xFFA500)
-                .setTitle(`⏳ Hệ Thống Dubo Đang Xử Lý [${osType}]`)
-                .setDescription(`Đang trích xuất dữ liệu mã hóa thời gian thực qua chuỗi định tuyến đám mây bảo mật...`);
+                .setTitle(`⏳ Hệ Thống Dubo Đang Tự Động Vượt Link`)
+                .setDescription(`Đang mở trình duyệt ảo, giả lập hành vi cuộn trang và kích hoạt đồng hồ đếm ngược... Thao tác này mất khoảng 60-70 giây.`);
             await interaction.editReply({ embeds: [pendingEmbed] });
 
-            // 🟢 CHẠY THẲNG API POOL ĐỂ BỐC CACHE 0.5S TỪ CÁC SERVER LỚN
-            const serverEndpoints = [
-                `https://bypass.vip{encodeURIComponent(url)}`,
-                `https://uneti-bot.xyz{encodeURIComponent(url)}`
-            ];
-
             let finalResult = "";
-            let errorMsg = "Tất cả các cổng máy chủ đang bận xử lý.";
+            let errorMsg = "API Server không phản hồi.";
 
-            for (const apiOfServer of serverEndpoints) {
-                try {
-                    const response = await axios.get(apiOfServer, { 
-                        timeout: 12000,
-                        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/125.0.0.0 Safari/537.36' }
-                    });
-                    if (response.data && (response.data.status === "success" || response.data.success === true)) {
-                        finalResult = response.data.result || response.data.destination || response.data.key || "";
-                        if (finalResult && finalResult.length > 5 && !finalResult.includes("{")) {
-                            break; // Thành công thì dừng lặp ngay
-                        }
-                    }
-                } catch (netError) {
-                    errorMsg = `Trục trặc cổng: ${netError.message}`;
+            try {
+                // Gọi trực tiếp đến API Server để xử lý bằng Playwright/Puppeteer
+                const response = await axios.post(LOCAL_API_URL, { url: url }, { 
+                    timeout: 90000, // Chờ tối đa 90 giây vì trang web cần đếm ngược 60 giây
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.data && response.data.success === true) {
+                    finalResult = response.data.key || "";
+                } else {
+                    errorMsg = response.data.error || "Không tìm thấy khung chứa mã code.";
                 }
+            } catch (netError) {
+                errorMsg = `Trục trặc cổng kết nối API: ${netError.message}`;
             }
 
-            const executionTime = Date.now() - startTime;
+            const executionTime = ((Date.now() - startTime) / 1000).toFixed(1);
 
-            // ĐỒNG BỘ HIỂN THỊ KHUNG BẢNG XANH CHUẨN XỊN 100%
-            if (finalResult && finalResult.length > 5 && !finalResult.includes("{") && !finalResult.includes("false")) {
+            // XỬ LÝ KẾT QUẢ ĐẦU RA CHUẨN XỊN
+            if (finalResult && finalResult.length > 2) {
                 
                 localKeyCache.set(url, { key: finalResult.trim(), time: Date.now() });
                 cooldowns.set(userId, currentTime);
@@ -133,28 +120,20 @@ client.on('interactionCreate', async interaction => {
 
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x00FF00)
-                    .setTitle('✅ Bypass Successful')
-                    .addFields({ name: '⚡ Processed in', value: `\`${executionTime}ms\``, inline: true })
-                    .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
+                    .setTitle('✅ Vượt Link Thành Công')
+                    .setDescription(`🔑 **Mã code (Key) của bạn:**\n\`\`\`text\n${finalResult.trim()}\n\`\`\``)
+                    .addFields({ name: '⚡ Thời gian xử lý', value: `\`${executionTime} giây\``, inline: true })
+                    .setFooter({ text: `Yêu cầu bởi ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
 
-                const row = new ActionRowBuilder();
-
-                if (isLootLabs) {
-                    successEmbed.setDescription(`🔗 **Liên kết chứa mã Key Delta iOS của bạn đã sẵn sàng:**\n\nHãy bấm nút bên dưới để mở trang nhận key cuối cùng!`);
-                    row.addComponents(new ButtonBuilder().setLabel('Bấm Mở Link Nhận Key iOS').setStyle(ButtonStyle.Link).setURL(finalResult));
-                } else {
-                    successEmbed.setDescription(`🔑 **Result:**\n\`\`\`text\n${finalResult}\n\`\`\``);
-                    row.addComponents(
-                        new ButtonBuilder().setLabel('Website Link Gốc').setStyle(ButtonStyle.Link).setURL(url),
-                        new ButtonBuilder().setLabel('Copy Key (Thô)').setStyle(ButtonStyle.Secondary).setCustomId('copy_key_placeholder').setDisabled(true) // Nút trang trí giống app gốc
-                    );
-                }
+                const row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder().setLabel('Website Link Gốc').setStyle(ButtonStyle.Link).setURL(url)
+                );
 
                 await interaction.editReply({ embeds: [successEmbed], components: [row] });
             } else {
                 await interaction.editReply({ 
                     embeds: [], 
-                    content: `❌ **Bypass thất bại [${osType}]:** Toàn bộ cổng phân giải từ chối xác thực gói tin.\n\n📊 **Chi tiết trạng thái:** \`${errorMsg || "Dữ liệu liên kết đã hết hạn"}\`\n\n💡 **Mẹo:** Bạn hãy vào game Roblox lấy lại một liên kết Get Key mới tinh rồi thực hiện lại lệnh nhé!` 
+                    content: `❌ **Vượt link thất bại:** Hệ thống không thể bóc tách mã xác thực tự động.\n\n📊 **Chi tiết lỗi:** \`${errorMsg}\`\n\n💡 **Mẹo:** Kiểm tra xem liên kết của bạn có bị hết hạn hoặc sai cấu trúc yêu cầu tìm kiếm không nhé!` 
                 });
             }
 
@@ -164,6 +143,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+// Giữ cho Render luôn sống (Tránh idle ngắt kết nối)
 const http = require('http');
 const server = http.createServer((req, res) => { 
     res.writeHead(200, { 'Content-Type': 'text/plain' }); 
