@@ -7,7 +7,9 @@ const {
     ActionRowBuilder, 
     StringSelectMenuBuilder, 
     StringSelectMenuOptionBuilder,
-    EmbedBuilder
+    EmbedBuilder,
+    ButtonBuilder, // THÊM MỚI
+    ButtonStyle    // THÊM MỚI
 } = require('discord.js');
 
 // Bot lấy Token từ môi trường Render
@@ -78,11 +80,10 @@ client.on('interactionCreate', async interaction => {
         
         const selectMenu = new StringSelectMenuBuilder()
             .setCustomId('select_script_menu')
-            .setPlaceholder(`Select script | Page (1/1) 1-${scriptList.length}`) // Hiển thị Select script | Page (1/1) 1-15
+            .setPlaceholder(`Select script | Page (1/1) 1-${scriptList.length}`)
             .setMinValues(1)
             .setMaxValues(1);
 
-        // Đút 15 tên script vào mục chọn, lưu số thứ tự (0, 1, 2...) vào giá trị ẩn (value)
         scriptList.forEach((script, index) => {
             selectMenu.addOptions(
                 new StringSelectMenuOptionBuilder()
@@ -94,7 +95,6 @@ client.on('interactionCreate', async interaction => {
 
         const row = new ActionRowBuilder().addComponents(selectMenu);
 
-        // Hiện bảng chọn ở chế độ ẩn danh (Chỉ người gõ lệnh thấy)
         await interaction.reply({
             content: '**Select script | Page (1/1) 1-15**\nChọn ít nhất 1 mục bên dưới để nhận code:',
             components: [row],
@@ -102,18 +102,15 @@ client.on('interactionCreate', async interaction => {
         });
     }
 
-    // 2. KHI NGƯỜI DÙNG BẤM CHỌN MỤC (QUAN TRỌNG NHẤT)
+    // 2. KHI NGƯỜI DÙNG BẤM CHỌN MỤC TRONG MENU
     if (interaction.isStringSelectMenu() && interaction.customId === 'select_script_menu') {
-        // Lấy số thứ tự mà người dùng vừa bấm
         const selectedIndex = parseInt(interaction.values[0]); 
-        // Tìm ra đúng đoạn code script thực tế đi kèm với số thứ tự đó
         const chosenScript = scriptList[selectedIndex];
 
         if (!chosenScript) {
             return interaction.reply({ content: 'Lỗi: Không tìm thấy dữ liệu script!', ephemeral: true });
         }
 
-        // Tạo khung tin nhắn Embed chứa ĐOẠN CODE THỰC TẾ (chosenScript.code) chứ không phải tên
         const embed = new EmbedBuilder()
             .setColor('#00ffcc')
             .setTitle(`🤖 Dubo script | Cấp mã nguồn thành công`)
@@ -124,10 +121,35 @@ client.on('interactionCreate', async interaction => {
             .setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' })
             .setTimestamp();
 
-        // Gửi ĐOẠN CODE này ra ở chế độ nói chuyện riêng (Chỉ người đó thấy)
+        // THÊM MỚI: Tạo nút bấm "Copy Script" kèm ID chứa số thứ tự script
+        const copyButton = new ButtonBuilder()
+            .setCustomId(`copy_script_${selectedIndex}`)
+            .setLabel('📄 Copy Script')
+            .setStyle(ButtonStyle.Success); // Nút màu xanh lá cây bắt mắt
+
+        const buttonRow = new ActionRowBuilder().addComponents(copyButton);
+
         await interaction.reply({
             embeds: [embed],
+            components: [buttonRow], // Đính kèm nút vào tin nhắn phản hồi
             ephemeral: true
+        });
+    }
+
+    // 3. THÊM MỚI: XỬ LÝ KHI NGƯỜI DÙNG ẤN NÚT "COPY SCRIPT"
+    if (interaction.isButton() && interaction.customId.startsWith('copy_script_')) {
+        // Tách chuỗi lấy ID vị trí script
+        const selectedIndex = parseInt(interaction.customId.replace('copy_script_', ''));
+        const chosenScript = scriptList[selectedIndex];
+
+        if (!chosenScript) {
+            return interaction.reply({ content: 'Lỗi: Không tìm thấy dữ liệu sao chép!', ephemeral: true });
+        }
+
+        // Trả về đoạn mã không bọc trong Embed để người dùng copy nhanh nhất
+        await interaction.reply({
+            content: `${chosenScript.code}`,
+            ephemeral: true // Luôn giữ chế độ riêng tư (chỉ người ấn mới thấy)
         });
     }
 });
