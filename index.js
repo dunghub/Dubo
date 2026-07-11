@@ -22,21 +22,32 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 // Mảng chứa tên hiển thị VÀ đoạn code script thực tế của bạn
 const scriptList = [
-    { name: "gravity hub ☄️", code: 'loadstring(game:HttpGet("https://githubusercontent.com"))()' },
-    { name: "TEDDY hub", code: 'repeat task.wait() until game:IsLoaded() and game:GetService("Players") and game.Players.LocalPlayer and game.Players.LocalPlayer:FindFirstChild("PlayerGui")\nloadstring(game:HttpGet("https://githubusercontent.com"))()' },
-    { name: "banana fake 🍌", code: 'loadstring(game:HttpGet("https://githubusercontent.com"))()' },
-    { name: "vezyra hub", code: 'repeat wait() until game:IsLoaded() and game.Players.LocalPlayer \n\ngetgenv().team = "Marines" -- Pirates or Marines\n\nloadstring(game:HttpGet("https://githubusercontent.com"))()' },
-    { name: "SELENE hub auto bounty M1 fruit", code: 'repeat task.wait() until game:IsLoaded() and game:GetService("Players") and game.Players.LocalPlayer and game.Players.LocalPlayer:FindFirstChild("PlayerGui")\n_G.SeleneCFG = {\n    Team                          = "Pirates",\n    Region                       = "",\n    WebhookURL          = "",\n    DiscordID                  = "",\n    BulkAcc                    = false,\n    FruitTarget               = "",\n    SuperBoostFps       = false,\n}\nloadstring(game:HttpGet("https://githubusercontent.com"))()' },
-    { name: "Realkid hub", code: 'loadstring(game:HttpGet("https://githubusercontent.com"))()' },
-    { name: "DatThgVnV4", code: 'loadstring(game:HttpGet("https://github.com"))()' },
-    { name: "MeoX hub", code: 'loadstring(game:HttpGet("https://githubusercontent.com"))()' },
-    { name: "Bacon hub", code: 'loadstring(game:HttpGet("https://githubusercontent.com"))()' },
-    { name: "Orange hub", code: 'loadstring(game:HttpGet("https://githubusercontent.com"))()' },
-    { name: "Real_AnhKhoaVn", code: 'repeat wait() until game:IsLoaded() and game.Players.LocalPlayer\nloadstring(game:HttpGet("https://githubusercontent.com"))()' },
-    { name: "BlueX hub", code: 'loadstring(game:HttpGet("https://githubusercontent.com"))()' },
-    { name: "NgocBongV2", code: 'loadstring(game:HttpGet("https://github.com"))()' },
-    { name: "redz", code: 'loadstring(game:HttpGet("https://githubusercontent.com"))(Settings)' },
-    { name: "night hub hop sever", code: 'loadstring(game:HttpGet("https://github.com"))()' }
+    { name: "gravity hub ☄️", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/Main.lua"))()` },
+    { name: "TEDDY hub", code: `repeat task.wait() until game:IsLoaded() and game:GetService("Players") and game.Players.LocalPlayer and game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Teddyseetink/Haidepzai/refs/heads/main/TEDDYHUB-FREEMIUM"))()` },
+    { name: "banana fake 🍌", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/tamdznanatv/bananapremium/refs/heads/main/nanaXbanana.luau"))()` },
+    { name: "SELENE hub auto bounty M1 fruit", code: `repeat task.wait() until game:IsLoaded() and game:GetService("Players") and game.Players.LocalPlayer and game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+_G.SeleneCFG = {
+    Team                          = "Pirates",
+    Region                       = "",
+    WebhookURL          = "",
+    DiscordID                  = "",
+    BulkAcc                    = false,
+    FruitTarget               = "",
+    SuperBoostFps       = false,
+}
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Idontknowbrodontstalk/SELENE/refs/heads/main/M1Autobounty"))()` },
+    { name: "Realkid hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/realkidhub/realkid/refs/heads/main/main.lua"))()` },
+    { name: "DatThgVnV4", code: `loadstring(game:HttpGet("https://github.com/LuaCrack/DatThg/raw/refs/heads/main/DatThgVnV4"))()` },
+    { name: "MeoX hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/VanHoangIOS/MeoXHub/refs/heads/main/Main.lua"))()` },
+    { name: "Bacon hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/vinh129150/hack/refs/heads/main/BaconHub.lua"))()` },
+    { name: "Orange hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/HieuDepTrai-Z/Dev_Orange/refs/heads/main/OrangeHub.lua"))()` },
+    { name: "Real_AnhKhoaVn", code: `repeat wait() until game:IsLoaded() and game.Players.LocalPlayer
+loadstring(game:HttpGet("https://raw.githubusercontent.com/NguyenAnhKhoaVN/Real_AnhKhoa_2279/refs/heads/main/Main-BloxFruitsNX.lua"))()` },
+    { name: "BlueX hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-BlueX/BlueX-Hub/refs/heads/main/Main.lua"))()` },
+    { name: "NgocBongV2", code: `loadstring(game:HttpGet("https://github.com/LuaCrack/NgocBong/raw/refs/heads/main/NgocBongV2"))()` },
+    { name: "redz", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/newredzv3/Scripts/refs/heads/main/main.luau"))(Settings)` },
+    { name: "night hub hop sever", code: `loadstring(game:HttpGet("https://github.com/WhiteX1208/Scripts/blob/main/HopScript.luau?raw=true"))()` }
 ];
 
 // Tự động đăng ký lệnh gõ /script với Discord
