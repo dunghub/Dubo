@@ -24,9 +24,68 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 // Mảng chứa tên hiển thị VÀ đoạn code script thực tế của bạn
 const scriptList = [
-    { name: "gravity hub ☄️", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/Main.lua"))()` },
-    { name: "TEDDY hub", code: `repeat task.wait() until game:IsLoaded() and game:GetService("Players") and game.Players.LocalPlayer and game.Players.LocalPlayer:FindFirstChild("PlayerGui")
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Teddyseetink/Haidepzai/refs/heads/main/TEDDYHUB-FREEMIUM"))()` },
+    { name: "gravity hub ☄️", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/MainPremium.lua"))()` },
+    { name: "TEDDY hub", code: `getgenv()["Config"] = {
+
+    ["Fps Boost"] = true,
+
+    ["FPS Cap"] = 120,
+
+    ["Items"] = {
+
+        ["Auto Fully Fighting Style"] = true,
+
+        ["Skull Guitar"] = true,
+
+        ["Cursed Dual Katana"] = true,
+
+        ["Saber"] = true
+
+    },
+
+    ["Quests"] = {
+
+        ["Mirage Puzzle"] = true,
+
+        ["Upgrading Race"] = true,
+
+    },
+
+    ["Hopping"] = {
+
+        ["Auto Hop"] = true,
+
+        ["Hop Idle"] = true,
+
+        ["High Ping Hop"] = false,
+
+        ["Player Nearing Hop"] = false,
+
+    },
+
+    ["Sniper Fruit Shop"] = {
+
+        ["Enabled"] = true,
+
+        ["Fruit"] = {
+
+            "Leopard-Leopard",
+
+            "Kitsune-Kitsune",
+
+            "Dragon-Dragon",
+
+            "Yeti-Yeti",
+
+            "Gas-Gas"
+
+        },
+
+    },
+
+}
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Teddyseetink/diepvyzubu/refs/heads/main/TeddyHub-kaitunBF.lua"))()` },
     { name: "banana fake 🍌", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/tamdznanatv/bananapremium/refs/heads/main/nanaXbanana.luau"))()` },
     { name: "SELENE hub auto bounty M1 fruit", code: `repeat task.wait() until game:IsLoaded() and game:GetService("Players") and game.Players.LocalPlayer and game.Players.LocalPlayer:FindFirstChild("PlayerGui")
 _G.SeleneCFG = {
@@ -49,7 +108,12 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Idontknowbrodontstalk
     { name: "NgocBongV2", code: `loadstring(game:HttpGet("https://github.com/LuaCrack/NgocBong/raw/refs/heads/main/NgocBongV2"))()` },
     { name: "redz", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/newredzv3/Scripts/refs/heads/main/main.luau"))(Settings)` },
     { name: "night hub hop sever", code: `loadstring(game:HttpGet("https://github.com/WhiteX1208/Scripts/blob/main/HopScript.luau?raw=true"))()` },
-    { name: "speedhub", code: `loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Speed-Hub-x-29294"))()` }
+    { name: "speedhub", code: `loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Speed-Hub-x-29294"))()` },
+    { name: "Xero hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Xero2409/XeroHub/refs/heads/main/main.lua"))()` },
+    { name: "Quangtum", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/flazhy/QuantumOnyx/refs/heads/main/QuantumOnyx.lua"))()` },
+    { name: "Omg hub", code: `loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-OMG-Hub-50194"))()` },
+    { name: "W-azure", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/LuaAnarchist/YeuEmNhieuLam/refs/heads/main/w-azure.luau"))()` },
+    { name: "Tay hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/VTDROBLOX/Animehub/refs/heads/main/Tayhub.lua"))()` },
 ];
 
 // Tự động đăng ký lệnh gõ /script với Discord
