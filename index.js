@@ -8,9 +8,21 @@ const {
     StringSelectMenuBuilder, 
     StringSelectMenuOptionBuilder,
     EmbedBuilder,
-    ButtonBuilder, // THÊM MỚI
-    ButtonStyle    // THÊM MỚI
+    ButtonBuilder, 
+    ButtonStyle    
 } = require('discord.js');
+const http = require('http'); // Tự động import thư viện Web
+
+// ==========================================
+// TẠO SERVER WEB MINI ĐỂ GIỮ BOT ONLINE VĨNH VIỄN
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Bot Dubo Script dang online lien tuc 24/7!\n');
+}).listen(PORT, () => {
+    console.log(`Web server dang chay tren port: ${PORT}`);
+});
+// ==========================================
 
 // Bot lấy Token từ môi trường Render
 const BOT_TOKEN = process.env.TOKEN; 
@@ -113,12 +125,12 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Idontknowbrodontstalk
     { name: "Quangtum", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/flazhy/QuantumOnyx/refs/heads/main/QuantumOnyx.lua"))()` },
     { name: "Omg hub", code: `loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-OMG-Hub-50194"))()` },
     { name: "W-azure", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/LuaAnarchist/YeuEmNhieuLam/refs/heads/main/w-azure.luau"))()` },
-    { name: "Tay hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/VTDROBLOX/Animehub/refs/heads/main/Tayhub.lua"))()` },
+    { name: "Tay hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/VTDROBLOX/Animehub/refs/heads/main/Tayhub.lua"))()` }
 ];
 
 // Tự động đăng ký lệnh gõ /script với Discord
 client.once('ready', async () => {
-    console.log(`Bot Dubo script đã Online: ${client.user.tag}`);
+    console.log(`Bot Dubo script va Web Server da Online: ${client.user.tag}`);
     
     const commands = [
         new SlashCommandBuilder()
@@ -160,7 +172,7 @@ client.on('interactionCreate', async interaction => {
         const row = new ActionRowBuilder().addComponents(selectMenu);
 
         await interaction.reply({
-            content: '**Select script | Page (1/1) 1-15**\nChọn ít nhất 1 mục bên dưới để nhận code:',
+            content: `**Select script | Page (1/1) 1-${scriptList.length}**\nChọn ít nhất 1 mục bên dưới để nhận code:`,
             components: [row],
             ephemeral: true 
         });
@@ -185,24 +197,22 @@ client.on('interactionCreate', async interaction => {
             .setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' })
             .setTimestamp();
 
-        // THÊM MỚI: Tạo nút bấm "Copy Script" kèm ID chứa số thứ tự script
         const copyButton = new ButtonBuilder()
             .setCustomId(`copy_script_${selectedIndex}`)
             .setLabel('📄 Copy Script')
-            .setStyle(ButtonStyle.Success); // Nút màu xanh lá cây bắt mắt
+            .setStyle(ButtonStyle.Success); 
 
         const buttonRow = new ActionRowBuilder().addComponents(copyButton);
 
         await interaction.reply({
             embeds: [embed],
-            components: [buttonRow], // Đính kèm nút vào tin nhắn phản hồi
+            components: [buttonRow], 
             ephemeral: true
         });
     }
 
-    // 3. THÊM MỚI: XỬ LÝ KHI NGƯỜI DÙNG ẤN NÚT "COPY SCRIPT"
+    // 3. XỬ LÝ KHI NGƯỜI DÙNG ẤN NÚT "COPY SCRIPT"
     if (interaction.isButton() && interaction.customId.startsWith('copy_script_')) {
-        // Tách chuỗi lấy ID vị trí script
         const selectedIndex = parseInt(interaction.customId.replace('copy_script_', ''));
         const chosenScript = scriptList[selectedIndex];
 
@@ -210,10 +220,9 @@ client.on('interactionCreate', async interaction => {
             return interaction.reply({ content: 'Lỗi: Không tìm thấy dữ liệu sao chép!', ephemeral: true });
         }
 
-        // Trả về đoạn mã không bọc trong Embed để người dùng copy nhanh nhất
         await interaction.reply({
             content: `${chosenScript.code}`,
-            ephemeral: true // Luôn giữ chế độ riêng tư (chỉ người ấn mới thấy)
+            ephemeral: true 
         });
     }
 });
