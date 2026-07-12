@@ -83,7 +83,7 @@ const gag2List = [
     { name: "EliteVault", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/ZYSUME/EliteVault/refs/heads/main/Loader.Lua"))()` },
     { name: "Chiyo", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/kaisenlmao/loader/refs/heads/main/chiyo.lua"))()` },
     { name: "OP", code: `loadstring(game:HttpGet("https://pastefy.app/dRiqJxzW/raw"))()` },
-    { name: "", code: `` },
+    { name: "GLua XYZ ", code: `loadstring(game:HttpGet("https://api.glua.xyz/loader"))()` },
     { name: "", code: `` },
     { name: "", code: `` },
     { name: "", code: `` },
@@ -94,21 +94,77 @@ const gag2List = [
 
 // 3. Dữ liệu 99 Night (Đã có sẵn 10 mục trống riêng lẻ)
 const night99List = [
+    { name: "Keyless", code: `loadstring(game:HttpGet("https://pastebin.com/raw/LPbPPNpC"))()` },
+    { name: "NTT hub", code: `loadstring(game:HttpGet('https://ntt-hub.xyz/api/repo?id1=main&id2=lua'))()` },
+    { name: "Halloween 🎃", code: `loadstring(game:HttpGet("https://pastebin.com/raw/husyDTrd"))()` },
+    { name: "Cps hub 🌐", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Rx1m/CpsHub/refs/heads/main/Hub",true))()` },
+    { name: "ToastyXD", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/nouralddin-abdullah/ToastyHub-XD/refs/heads/main/hub-main.lua"))()` },
+    { name: "Infinite Candy 🍬", code: `` },
+    { name: "", code: `_G.Auto = true --true or false
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Event = ReplicatedStorage.RemoteEvents.CarnivalCompleteShootingGallery
+
+local function findTargets(parent, depth)
+    if depth > 3 then return {} end
+    
+    local targets = {}
+    
+    for _, child in ipairs(parent:GetChildren()) do
+        if child:IsA("BasePart") then
+            table.insert(targets, child)
+        end
+        
+        for _, subTarget in ipairs(findTargets(child, depth + 1)) do
+            table.insert(targets, subTarget)
+        end
+    end
+    
+    return targets
+end
+
+spawn(function()
+    while task.wait(3) do
+    
+        local targets = {}
+        local areas = {
+            workspace.Map,
+            workspace.Items, 
+            workspace.Characters
+        }
+        
+        for _, area in ipairs(areas) do
+            for _, target in ipairs(findTargets(area, 0)) do
+                table.insert(targets, target)
+            end
+        end
+        
+        for index, target in ipairs(targets) do
+            if not _G.Auto then break end
+            
+            local success = pcall(function()
+                Event:FireServer(target)
+            end)
+            task.wait(0.05)
+        end
+    end
+end)` },
+    { name: "Tycoon US", code: `loadstring(game:HttpGet("https://pastebin.com/raw/K9b3Fd7Z"))()` },
+    { name: "Elude hub 🫥", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/DarkenedEssence/Elude/refs/heads/main/Loader.lua"))()` },
+    { name: "Combo Wick", code: `loadstring(game:HttpGet("https://cdn.authguard.org/virtual-file/4cc9b982299840008b7d08796f54aaea"))()` },
+    { name: "Speed Hub X ⚡️", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua", true))()` },
+    { name: "Voidware 🕳️", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/kasumichwan/scripts/refs/heads/main/kasumi-hub.lua"))()` },
+    { name: "October", code: `loadstring(game:HttpGet("https://pastebin.com/raw/YgRSs7Pf"))()` },
+    { name: "Vortex hub", code: `loadstring(game:HttpGet("https://pastefy.app/qxDbSVlo/raw"))()` },
+    { name: "Horizon hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Laspard69/HorizonHub/refs/heads/main/loader.lua", true))()` },
+    { name: "Vex OP", code: `loadstring(game:HttpGet("https://pastefy.app/ibClJUjE/raw"))()` },
+    { name: "Moon hub 🌑", code: `loadstring(game:HttpGet("https://pastebin.com/raw/bhi4LinA"))()` },
+    { name: "Nazuro", code: `loadstring(game:HttpGet("https://nazuro.xyz/99nights"))()` },
+    { name: "DarkEsc",code: `` },
     { name: "", code: `` },
     { name: "", code: `` },
     { name: "", code: `` },
     { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` }
 ];
 
 // 4. Dữ liệu Sailor Piece (Đã có sẵn 10 mục trống riêng lẻ)
