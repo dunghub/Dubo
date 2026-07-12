@@ -1,1 +1,275 @@
-function _0xcbea(){const _0x123983=['loadstring(game:HttpGet(\x22https://pastefy.app/qxDbSVlo/raw\x22))()','Polluted\x20hub','JakesHub','redz','80038eZvPyV','AnbuWin','loadstring(game:HttpGet(\x22https://pastebin.com/raw/bhi4LinA\x22))()','Polluted','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/Bliqe/Upload/refs/heads/main/Games/SP/Express.lua\x22))()','error','menu_bloxfruit','Hiển\x20thị\x20hướng\x20dẫn\x20sử\x20dụng\x20bot\x20bằng\x20tiếng\x20Việt\x20và\x20Anh','15lSSJcJ','Realkid\x20hub','user','BlueX\x20hub','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/Kenniel123/Grow-a-garden/refs/heads/main/Grow%20A%20Garden\x22))()','Xero\x20hub','Vex\x20OP','loadstring(game:HttpGet(\x22https://pastebin.com/raw/3T1VunNZ\x22))()','loadstring(game:HttpGet(\x22https://gitlab.com/phantomreal1/CopernixHub/-/raw/main/api.lua?ref_type=heads\x22))()','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/kasumichwan/scripts/refs/heads/main/kasumi-hub.lua\x22))()','loadstring(game:HttpGet(\x22https://rawscripts.net/raw/Universal-Script-Speed-Hub-x-29294\x22))()','loadstring(game:HttpGet(\x22https://api.glua.xyz/loader\x22))()','Hybrid\x20hub','Real_AnhKhoaVn','code','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/HybridE3/HybridE3/refs/heads/main/Sailor%20Piece\x22))()','setStyle','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/lostinnowheres/Loader/refs/heads/main/Loader.Lua\x22))()','GLua\x20XYZ\x20','menu_sailor','toString','Lỗi:\x20Không\x20tìm\x20thấy\x20dữ\x20liệu\x20script!','Combo\x20Wick','setMinValues','setValue','Than\x20hub','setFooter','873573BiTlPN','Keyless','exit','script-bloxfruit','Orange\x20hub','Kenniel','Nazuro','loadstring(game:HttpGet(\x27https://raw.githubusercontent.com/sudaisontopxd/PhantomFlux/refs/heads/main/99NightsInTheForest\x27,\x20true))()','end','\x0a```','copy_sailor_','Lỗi\x20đồng\x20bộ\x20lệnh:','Mauscripts','listen','--\x20Trống','loadstring(game:HttpGet(\x22https://vss.pandadevelopment.net/virtual/file/2768ea6419cb4d73\x22))()','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/defaulttinowss/newgag2/refs/heads/main/op\x22))()','setLabel','44820ABnQLe','loadstring(game:HttpGet(\x22https://airflowscript.com/loader\x22))()','Polleser\x20hub','setTimestamp','customId','setColor','loadstring(game:HttpGet(\x22https://pastefy.app/Y4ic4T1s/raw\x22))()','#000000','setDescription','Kaito\x20hub','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/flazhy/QuantumOnyx/refs/heads/main/QuantumOnyx.lua\x22))()','setTitle','loadstring(game:HttpGet(\x22https://pastebin.com/raw/5rwbL0v9\x22))()','Bot\x20Dubo\x20Script\x20dang\x20online\x20lien\x20tuc\x2024/7!\x0a','interactionCreate','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/DarkenedEssence/DarkEsc/refs/heads/main/Loader.lua\x22))()','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/ZYSUME/EliteVault/refs/heads/main/Loader.Lua\x22))()','Newgag2','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/Hydrostreamz-hubs/-GAG-Spawner/refs/heads/main/Hydrostreamz\x22))()','NOX-ZUHILL','copy_bf_','loadstring(game:HttpGet(\x22https://pastebin.com/raw/xBK0EXUX\x22))()','repeat\x20task.wait()\x20until\x20game:IsLoaded()\x20and\x20game:GetService(\x22Players\x22)\x20and\x20game.Players.LocalPlayer\x20and\x20game.Players.LocalPlayer:FindFirstChild(\x22PlayerGui\x22)\x0a_G.SeleneCFG\x20=\x20{\x20Team\x20=\x20\x22Pirates\x22,\x20Region\x20=\x20\x22\x22,\x20WebhookURL\x20=\x20\x22\x22,\x20DiscordID\x20=\x20\x22\x22,\x20BulkAcc\x20=\x20false,\x20FruitTarget\x20=\x20\x22\x22,\x20SuperBoostFps\x20=\x20false\x20}\x0aloadstring(game:HttpGet(\x22https://raw.githubusercontent.com/Idontknowbrodontstalk/SELENE/refs/heads/main/M1Autobounty\x22))()','Halloween\x20🎃','Vortex\x20hub','trim','Universal','OverFlow','commandName','setToken','loadstring(game:HttpGet(\x22https://pastebin.com/raw/K9b3Fd7Z\x22))()','3023280ZVEVTV','Tycoon\x20US','slice','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/MoziIOnTop/MoziIHub/refs/heads/main/GrowaGarden\x22))()','copy_gag2_','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua\x22,\x20true))()','night\x20hub\x20hop\x20sever','createServer','isStringSelectMenu','Gumanba','setMaxValues','menu_99night','filter','loadstring(game:HttpGet(\x22https://rawscripts.net/raw/Universal-Script-OMG-Hub-50194\x22))()','replace','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/LuaAnarchist/YeuEmNhieuLam/refs/heads/main/w-azure.luau\x22))()','NgocBongV2','send','values','loadstring(game:HttpGet(\x22https://github.com/LuaCrack/DatThg/raw/refs/heads/main/DatThgVnV4\x22))()','_G.Auto\x20=\x20true\x0alocal\x20ReplicatedStorage\x20=\x20game:GetService(\x22ReplicatedStorage\x22)\x0alocal\x20Event\x20=\x20ReplicatedStorage.RemoteEvents.CarnivalCompleteShootingGallery\x0alocal\x20function\x20findTargets(parent,\x20depth)\x0a\x20if\x20depth\x20>\x203\x20then\x20return\x20{}\x20end\x0a\x20local\x20targets\x20=\x20{}\x0a\x20for\x20_,\x20child\x20in\x20ipairs(parent:GetChildren())\x20do\x0a\x20if\x20child:IsA(\x22BasePart\x22)\x20then\x20table.insert(targets,\x20child)\x20end\x0a\x20for\x20_,\x20subTarget\x20in\x20ipairs(findTargets(child,\x20depth\x20+\x201))\x20do\x20table.insert(targets,\x20subTarget)\x20end\x0a\x20end\x0a\x20return\x20targets\x0aend\x0aspawn(function()\x0a\x20while\x20task.wait(3)\x20do\x0a\x20local\x20targets\x20=\x20{}\x0a\x20local\x20areas\x20=\x20{workspace.Map,\x20workspace.Items,\x20workspace.Characters}\x0a\x20for\x20_,\x20area\x20in\x20ipairs(areas)\x20do\x0a\x20for\x20_,\x20target\x20in\x20ipairs(findTargets(area,\x200))\x20do\x20table.insert(targets,\x20target)\x20end\x0a\x20end\x0a\x20for\x20index,\x20target\x20in\x20ipairs(targets)\x20do\x0a\x20if\x20not\x20_G.Auto\x20then\x20break\x20end\x0a\x20pcall(function()\x20Event:FireServer(target)\x20end)\x0a\x20task.wait(0.05)\x0a\x20end\x0a\x20end\x0aend)','October','Hiển\x20thị\x20bảng\x20chọn\x20script\x2099\x20Night\x20ẩn\x20danh','Express\x20hub','isButton','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/DarkenedEssence/Elude/refs/heads/main/Loader.lua\x22))()','map','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/HieuDepTrai-Z/Dev_Orange/refs/heads/main/OrangeHub.lua\x22))()','Success','Gec\x20hub','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/MainPremium.lua\x22))()','Omg\x20hub','length','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/Xero2409/XeroHub/refs/heads/main/main.lua\x22))()','text/plain','#00ffcc','addComponents','Alchemy\x20hub','4XROaZW','loadstring(game:HttpGet(\x27https://raw.githubusercontent.com/NOX-ZUHILL/NOX-/refs/heads/main/NOX%20loader.lua\x27))()','#0099ff','Bấm\x20để\x20lấy\x20mã\x20code\x20của:\x20','💻\x20Đoạn\x20Code:',')**\x0aChọn\x20mục\x20bên\x20dưới\x20để\x20nhận\x20code:','isChatInputCommand','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/gumanba/Scripts/main/GrowaGarden\x22))()','Mozi\x20hub','setName','Đồng\x20bộ\x20các\x20lệnh\x20slash\x20command\x20thành\x20công!','```lua\x0a','Lume\x20hub','loadstring(game:HttpGet(\x22https://pastebin.com/raw/sQ6t8MU7\x22))()','editReply','log','1635042lWdmii','nolag\x20hub','Join\x20my\x20discord\x20server\x20to\x20chat\x20and\x20report\x20bot\x20errors\x20and\x20build\x20bots\x20with\x20me\x20Thank\x20you','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/vinh129150/hack/refs/heads/main/BaconHub.lua\x22))()','**ENG:**\x20Choose\x20a\x20script\x20repository\x20of\x20your\x20favourite\x20game,\x20choose\x20the\x20script\x20in\x20the\x20list\x20that\x20you\x20want\x20and\x20click\x20coppy\x20below\x20to\x20get\x20the\x20script','🎉\x20Thank\x20you!','loadstring(game:HttpGet(\x22https://cdn.authguard.org/virtual-file/4cc9b982299840008b7d08796f54aaea\x22))()','deferReply','GAG2','Hiển\x20thị\x20bảng\x20chọn\x20script\x20Blox\x20Fruit\x20ẩn\x20danh','HydroStreamz\x20hub','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/dusadeephenginx-sudo/roblox/main/uploads/sailor.lua\x22))()','120QlTdcb','DatThgVnV4','Bot\x20Dubo\x20script\x20va\x20Web\x20Server\x20da\x20Online:\x20','15598500yByKBw','MeoX\x20hub','writeHead','TEDDY\x20hub','http','startsWith','#ff0055','Strawberry\x20Cat\x20hub','speedhub','DarkEsc','NTT\x20hub','LỖI:\x20Bạn\x20chưa\x20cấu\x20hình\x20biến\x20TOKEN\x20trên\x20Render!','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/hehehe9028/Nagi-hub-99/refs/heads/main/Nagi%20hub%2099%20nights%20in%20the%20forest\x22))()','loadstring(game:HttpGet(\x22https://nazuro.xyz/99nights\x22))()','Foxxname','loadstring(game:HttpGet(\x22https://pastebin.com/raw/YgRSs7Pf\x22))()','loadstring(game:HttpGet(\x27https://ntt-hub.xyz/api/repo?id1=main&id2=lua\x27))()','Elude\x20hub\x20🫥','loadstring(game:HttpGet(\x22https://github.com/LuaCrack/NgocBong/raw/refs/heads/main/NgocBongV2\x22))()','Thank\x20you\x20for\x20using\x20my\x20bot\x0a','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/adibhub1/99-nighit-in-forest/refs/heads/main/99%20night%20in%20forest\x22,\x20true))()','script-99night','Web\x20server\x20dang\x20chay\x20tren\x20port:\x20','loadstring(game:HttpGet(\x22https://pastebin.com/raw/dwuNab5c\x22))()','gravity\x20hub\x20☄️','10sHXXnE','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/nouralddin-abdullah/ToastyHub-XD/refs/heads/main/hub-main.lua\x22))()','menu_gag2','165OWUBAf','reply','Limit\x20hub','PhantomFlux','name','script-gag2','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/realkidhub/realkid/refs/heads/main/main.lua\x22))()','put','**VN:**\x20Chọn\x20một\x20kho\x20kịch\x20bản\x20của\x201\x20trò\x20chơi\x20mà\x20bạn\x20yêu\x20thích,\x20chọn\x20kịch\x20bản\x20trong\x20danh\x20sách\x20mà\x20bạn\x20muốn\x20và\x20nhấn\x20coppy\x20ở\x20dưới\x20để\x20nhận\x20kịch\x20bản.\x0a','Blox\x20Fruit','discord.js','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/Nebula-xyzs/GAG/refs/heads/main/GrowAGardenXE\x22))()','Axel\x20hub','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/VanHoangIOS/MeoXHub/refs/heads/main/Main.lua\x22))()','addOptions','Nebula','guildCreate','Select\x20script\x20|\x201-','📌\x20Tên\x20Script:','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/OhhMyGehlee/sh/refs/heads/main/a\x22))()','**Select\x20script\x20|\x20','Copernix\x20hub','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/jakeeypoop-max/JakesHub/refs/heads/main/Loader.lua\x22))()','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/Laspard69/HorizonHub/refs/heads/main/loader.lua\x22,\x20true))()','Nagi\x20hub','help','getgenv()[\x22Config\x22]\x20=\x20{\x20[\x22Fps\x20Boost\x22]\x20=\x20true,\x20[\x22FPS\x20Cap\x22]\x20=\x20120,\x20[\x22Items\x22]\x20=\x20{\x20[\x22Auto\x20Fully\x20Fighting\x20Style\x22]\x20=\x20true,\x20[\x22Skull\x20Guitar\x22]\x20=\x20true,\x20[\x22Cursed\x20Dual\x20Katana\x22]\x20=\x20true,\x20[\x22Saber\x22]\x20=\x20true\x20},\x20[\x22Quests\x22]\x20=\x20{\x20[\x22Mirage\x20Puzzle\x22]\x20=\x20true,\x20[\x22Upgrading\x20Race\x22]\x20=\x20true,\x20},\x20[\x22Hopping\x22]\x20=\x20{\x20[\x22Auto\x20Hop\x22]\x20=\x20true,\x20[\x22Hop\x20Idle\x22]\x20=\x20true,\x20[\x22High\x20Ping\x20Hop\x22]\x20=\x20false,\x20[\x22Player\x20Nearing\x20Hop\x22]\x20=\x20false,\x20},\x20[\x22Sniper\x20Fruit\x20Shop\x22]\x20=\x20{\x20[\x22Enabled\x22]\x20=\x20true,\x20[\x22Fruit\x22]\x20=\x20{\x20\x22Leopard-Leopard\x22,\x20\x22Kitsune-Kitsune\x22,\x20\x22Dragon-Dragon\x22,\x20\x22Yeti-Yeti\x22,\x20\x22Gas-Gas\x22\x20},\x20},\x20}\x20\x0aloadstring(game:HttpGet(\x22https://raw.githubusercontent.com/Teddyseetink/diepvyzubu/refs/heads/main/TeddyHub-kaitunBF.lua\x22))()','Lucid','Auto\x20Gallery','EliteVault','Foggy\x20hub','RC\x20hub','loadstring(game:HttpGet(\x22https://pastebin.com/raw/M6NtAd4N\x22,\x20true))()','loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/newredzv3/Scripts/refs/heads/main/main.luau\x22))(Settings)','11760LYOYVE','Voidware\x20🕳️','copy_99night_','script-sailorpice'];_0xcbea=function(){return _0x123983;};return _0xcbea();}const _0x1eda3e=_0x51ab;function _0x51ab(_0x1d15ac,_0x73d2be){_0x1d15ac=_0x1d15ac-0xb8;const _0xcbea52=_0xcbea();let _0x51abe6=_0xcbea52[_0x1d15ac];return _0x51abe6;}(function(_0x1bb68b,_0x226a29){const _0x54bbd9=_0x51ab,_0x2f4efd=_0x1bb68b();while(!![]){try{const _0x1f4b84=parseInt(_0x54bbd9(0x17c))/0x1*(parseInt(_0x54bbd9(0xca))/0x2)+parseInt(_0x54bbd9(0xb8))/0x3*(-parseInt(_0x54bbd9(0x10f))/0x4)+-parseInt(_0x54bbd9(0x147))/0x5*(parseInt(_0x54bbd9(0x11f))/0x6)+parseInt(_0x54bbd9(0x174))/0x7*(-parseInt(_0x54bbd9(0x12b))/0x8)+-parseInt(_0x54bbd9(0xe9))/0x9+-parseInt(_0x54bbd9(0x16c))/0xa*(parseInt(_0x54bbd9(0x14a))/0xb)+parseInt(_0x54bbd9(0x12e))/0xc;if(_0x1f4b84===_0x226a29)break;else _0x2f4efd['push'](_0x2f4efd['shift']());}catch(_0x522a3c){_0x2f4efd['push'](_0x2f4efd['shift']());}}}(_0xcbea,0x4313e));const {Client,GatewayIntentBits,REST,Routes,SlashCommandBuilder,ActionRowBuilder,StringSelectMenuBuilder,StringSelectMenuOptionBuilder,EmbedBuilder,ButtonBuilder,ButtonStyle}=require(_0x1eda3e(0x154)),http=require(_0x1eda3e(0x132)),PORT=process.env.PORT||0xbb8;http[_0x1eda3e(0xf0)]((_0xf79e81,_0x3a863d)=>{const _0x49d349=_0x1eda3e;_0x3a863d[_0x49d349(0x130)](0xc8,{'Content-Type':_0x49d349(0x10b)}),_0x3a863d[_0x49d349(0xc0)](_0x49d349(0xd7));})[_0x1eda3e(0xc5)](PORT,()=>{const _0x57a043=_0x1eda3e;console[_0x57a043(0x11e)](_0x57a043(0x144)+PORT);});const BOT_TOKEN=process.env.TOKEN;!BOT_TOKEN&&(console[_0x1eda3e(0x179)](_0x1eda3e(0x139)),process[_0x1eda3e(0xba)](0x1));const client=new Client({'intents':[GatewayIntentBits['Guilds']]}),bloxfruitList=[{'name':_0x1eda3e(0x146),'code':_0x1eda3e(0x107)},{'name':_0x1eda3e(0x131),'code':_0x1eda3e(0x164)},{'name':'banana\x20fake\x20🍌','code':'loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/tamdznanatv/bananapremium/refs/heads/main/nanaXbanana.luau\x22))()'},{'name':'SELENE\x20hub\x20auto\x20bounty\x20M1\x20fruit','code':_0x1eda3e(0xe0)},{'name':_0x1eda3e(0x17d),'code':_0x1eda3e(0x150)},{'name':_0x1eda3e(0x12c),'code':_0x1eda3e(0xfc)},{'name':_0x1eda3e(0x12f),'code':_0x1eda3e(0x157)},{'name':'Bacon\x20hub','code':_0x1eda3e(0x122)},{'name':_0x1eda3e(0xbc),'code':_0x1eda3e(0x104)},{'name':_0x1eda3e(0x189),'code':'repeat\x20wait()\x20until\x20game:IsLoaded()\x20and\x20game.Players.LocalPlayerloadstring(game:HttpGet(\x22https://raw.githubusercontent.com/NguyenAnhKhoaVN/Real_AnhKhoa_2279/refs/heads/main/Main-BloxFruitsNX.lua\x22))()'},{'name':_0x1eda3e(0x17f),'code':'loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/Dev-BlueX/BlueX-Hub/refs/heads/main/Main.lua\x22))()'},{'name':_0x1eda3e(0xf9),'code':_0x1eda3e(0x140)},{'name':_0x1eda3e(0x173),'code':_0x1eda3e(0x16b)},{'name':_0x1eda3e(0xef),'code':'loadstring(game:HttpGet(\x22https://github.com/WhiteX1208/Scripts/blob/main/HopScript.luau?raw=true\x22))()'},{'name':_0x1eda3e(0x136),'code':_0x1eda3e(0x186)},{'name':_0x1eda3e(0x181),'code':_0x1eda3e(0x10a)},{'name':'Quangtum','code':_0x1eda3e(0xd4)},{'name':_0x1eda3e(0x108),'code':_0x1eda3e(0xf6)},{'name':'W-azure','code':_0x1eda3e(0xf8)},{'name':'Tay\x20hub','code':'loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/VTDROBLOX/Animehub/refs/heads/main/Tayhub.lua\x22))()'}],gag2List=[{'name':_0x1eda3e(0xc4),'code':'loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/nootmaus/GrowAAGarden/refs/heads/main/mauscripts\x22))()'},{'name':'Airflow','code':_0x1eda3e(0xcb)},{'name':'ZYSUME','code':'loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/ZYSUME/EliteVault/refs/heads/main/Loader.Lua\x22))()'},{'name':_0x1eda3e(0xdb),'code':_0x1eda3e(0xc8)},{'name':_0x1eda3e(0xdd),'code':_0x1eda3e(0x110)},{'name':_0x1eda3e(0x172),'code':_0x1eda3e(0x160)},{'name':_0x1eda3e(0x120),'code':'loadstring(game:HttpGet(\x22https://rawscripts.net/raw/Grow-a-Garden-NoLag-Hub-no-key-38699\x22))()'},{'name':_0x1eda3e(0x195),'code':'loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/thantzy/thanhub/refs/heads/main/thanv1\x22))()'},{'name':_0x1eda3e(0x117),'code':_0x1eda3e(0xec)},{'name':_0x1eda3e(0x129),'code':_0x1eda3e(0xdc)},{'name':_0x1eda3e(0x14c),'code':'loadstring(game:HttpGet((\x27https://raw.githubusercontent.com/FakeModz/LimitHub/refs/heads/main/LimitHub_Luarmor_E.lua\x27)))()'},{'name':_0x1eda3e(0xf2),'code':_0x1eda3e(0x116)},{'name':_0x1eda3e(0x159),'code':_0x1eda3e(0x155)},{'name':'Kenniel','code':_0x1eda3e(0x180)},{'name':_0x1eda3e(0x177),'code':'loadstring(game:HttpGet(\x22https://api.luarmor.net/files/v4/loaders/e8580ba6e94aeaa7aa2486f060167f85.lua\x22))()'},{'name':'JN\x20HH\x20Gaming','code':'loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/JNHHGaming/Grow-a-garden-script/refs/heads/main/JN%20HH%20Gaming\x22,true))()'},{'name':_0x1eda3e(0x167),'code':_0x1eda3e(0xda)},{'name':'Chiyo','code':'loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/kaisenlmao/loader/refs/heads/main/chiyo.lua\x22))()'},{'name':'OP','code':'loadstring(game:HttpGet(\x22https://pastefy.app/dRiqJxzW/raw\x22))()'},{'name':_0x1eda3e(0x18e),'code':_0x1eda3e(0x187)}],night99List=[{'name':_0x1eda3e(0xb9),'code':'loadstring(game:HttpGet(\x22https://pastebin.com/raw/LPbPPNpC\x22))()'},{'name':_0x1eda3e(0x138),'code':_0x1eda3e(0x13e)},{'name':_0x1eda3e(0xe1),'code':'loadstring(game:HttpGet(\x22https://pastebin.com/raw/husyDTrd\x22))()'},{'name':'Cps\x20hub\x20🌐','code':'loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/Rx1m/CpsHub/refs/heads/main/Hub\x22,true))()'},{'name':'ToastyXD','code':_0x1eda3e(0x148)},{'name':_0x1eda3e(0x166),'code':_0x1eda3e(0xfd)},{'name':_0x1eda3e(0xea),'code':_0x1eda3e(0xe8)},{'name':_0x1eda3e(0x13f),'code':_0x1eda3e(0x102)},{'name':_0x1eda3e(0x192),'code':_0x1eda3e(0x125)},{'name':'Speed\x20Hub\x20X\x20⚡️','code':_0x1eda3e(0xee)},{'name':_0x1eda3e(0x16d),'code':_0x1eda3e(0x185)},{'name':_0x1eda3e(0xfe),'code':_0x1eda3e(0x13d)},{'name':_0x1eda3e(0xe2),'code':_0x1eda3e(0x170)},{'name':'Horizon\x20hub','code':_0x1eda3e(0x161)},{'name':_0x1eda3e(0x182),'code':'loadstring(game:HttpGet(\x22https://pastefy.app/ibClJUjE/raw\x22))()'},{'name':'Moon\x20hub\x20🌑','code':_0x1eda3e(0x176)},{'name':_0x1eda3e(0xbe),'code':_0x1eda3e(0x13b)},{'name':_0x1eda3e(0x137),'code':_0x1eda3e(0xd9)},{'name':_0x1eda3e(0x14d),'code':_0x1eda3e(0xbf)},{'name':_0x1eda3e(0xe4),'code':_0x1eda3e(0x142)},{'name':_0x1eda3e(0xbd),'code':'loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/Kenniel123/99-Nights-in-the-Forest/refs/heads/main/99%20Nights%20in%20the%20Forest\x22))()'},{'name':_0x1eda3e(0x106),'code':'loadstring(game:HttpGet(\x22https://pastebin.com/raw/NTpCMwn8\x22))()'},{'name':_0x1eda3e(0x13c),'code':'loadstring(game:HttpGet(\x22https://pastebin.com/raw/7hfV4s5s\x22))()'},{'name':_0x1eda3e(0xcc),'code':_0x1eda3e(0xd0)},{'name':_0x1eda3e(0xd3),'code':_0x1eda3e(0xdf)},{'name':_0x1eda3e(0xe5),'code':_0x1eda3e(0x183)},{'name':_0x1eda3e(0x135),'code':_0x1eda3e(0x11c)},{'name':_0x1eda3e(0x168),'code':_0x1eda3e(0xd6)},{'name':_0x1eda3e(0x175),'code':'loadstring(game:HttpGet(\x22https://pastebin.com/raw/quQbccDD\x22))()'},{'name':_0x1eda3e(0x10e),'code':'loadstring(game:HttpGet(\x22https://pastebin.com/raw/FmDrhT3m\x22))()'},{'name':_0x1eda3e(0x162),'code':_0x1eda3e(0x13a)}],sailorList=[{'name':'Ajjans\x20hub','code':'loadstring(game:HttpGet(\x22https://api.luarmor.net/files/v4/loaders/3fcb385d3c782d11837cb680ae2a3ea4.lua\x22))()'},{'name':_0x1eda3e(0x171),'code':'loadstring(game:HttpGet(\x22https://api.luarmor.net/files/v4/loaders/b1f30331e1af9ab6e96fc80cd00b20a9.lua\x22))()'},{'name':_0x1eda3e(0x15f),'code':_0x1eda3e(0x184)},{'name':_0x1eda3e(0x156),'code':_0x1eda3e(0x18d)},{'name':_0x1eda3e(0x188),'code':_0x1eda3e(0x18b)},{'name':_0x1eda3e(0x11b),'code':_0x1eda3e(0x12a)},{'name':'Zypheron\x20hub','code':_0x1eda3e(0x16a)},{'name':_0x1eda3e(0x169),'code':_0x1eda3e(0xc7)},{'name':'BenJaMinZ\x20hub','code':'loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/BenJaMinZHub/Loader/refs/heads/main/GetKeyAllGame.lua\x22))()'},{'name':'Sindex\x20hub','code':'loadstring(game:HttpGet(\x22https://raw.githubusercontent.com/Sindex-Saliii/TrigonEvoHub/refs/heads/main/Main.luau\x22))()'},{'name':_0x1eda3e(0x156),'code':_0x1eda3e(0x145)},{'name':_0x1eda3e(0x165),'code':_0x1eda3e(0x15d)},{'name':_0x1eda3e(0x100),'code':_0x1eda3e(0x178)}];client['once']('ready',async()=>{const _0xf081eb=_0x1eda3e;console[_0xf081eb(0x11e)](_0xf081eb(0x12d)+client['user']['tag']);const _0xabfae5=[new SlashCommandBuilder()[_0xf081eb(0x118)](_0xf081eb(0x163))[_0xf081eb(0xd2)](_0xf081eb(0x17b)),new SlashCommandBuilder()[_0xf081eb(0x118)]('script-bloxfruit')[_0xf081eb(0xd2)](_0xf081eb(0x128)),new SlashCommandBuilder()[_0xf081eb(0x118)](_0xf081eb(0x14f))[_0xf081eb(0xd2)]('Hiển\x20thị\x20bảng\x20chọn\x20script\x20GAG2\x20ẩn\x20danh'),new SlashCommandBuilder()[_0xf081eb(0x118)](_0xf081eb(0x143))[_0xf081eb(0xd2)](_0xf081eb(0xff)),new SlashCommandBuilder()[_0xf081eb(0x118)](_0xf081eb(0x16f))['setDescription']('Hiển\x20thị\x20bảng\x20chọn\x20script\x20Sailor\x20Piece\x20ẩn\x20danh')][_0xf081eb(0x103)](_0x2b0f0d=>_0x2b0f0d['toJSON']()),_0x19105b=new REST({'version':'10'})[_0xf081eb(0xe7)](BOT_TOKEN);try{await _0x19105b[_0xf081eb(0x151)](Routes['applicationCommands'](client[_0xf081eb(0x17e)]['id']),{'body':_0xabfae5}),console[_0xf081eb(0x11e)](_0xf081eb(0x119));}catch(_0x1ddcd9){console[_0xf081eb(0x179)](_0xf081eb(0xc3),_0x1ddcd9);}});function getScriptByIndex(_0x3e0a73,_0x263ec9){const _0x3c0edf=_0x1eda3e,_0x181c24=_0x3e0a73['filter'](_0x17300f=>_0x17300f['name']&&_0x17300f[_0x3c0edf(0x14e)][_0x3c0edf(0xe3)]()!==''),_0x33233e=parseInt(_0x263ec9);return _0x181c24[_0x33233e]||null;}client['on'](_0x1eda3e(0xd8),async _0x59e550=>{const _0x23a015=_0x1eda3e;if(_0x59e550[_0x23a015(0x115)]()){if(_0x59e550['commandName']==='help'){const _0x3c2eb7=_0x23a015(0x152)+_0x23a015(0x123);return _0x59e550[_0x23a015(0x14b)]({'content':_0x3c2eb7,'ephemeral':!![]});}let _0x4c55a4=[],_0xb4e81b='',_0x19b410='';if(_0x59e550[_0x23a015(0xe6)]===_0x23a015(0xbb))_0x4c55a4=bloxfruitList,_0xb4e81b=_0x23a015(0x153),_0x19b410='menu_bloxfruit';else{if(_0x59e550[_0x23a015(0xe6)]===_0x23a015(0x14f))_0x4c55a4=gag2List,_0xb4e81b=_0x23a015(0x127),_0x19b410=_0x23a015(0x149);else{if(_0x59e550[_0x23a015(0xe6)]==='script-99night')_0x4c55a4=night99List,_0xb4e81b='99\x20Night',_0x19b410=_0x23a015(0xf4);else _0x59e550[_0x23a015(0xe6)]==='script-sailorpice'&&(_0x4c55a4=sailorList,_0xb4e81b='Sailor\x20Piece',_0x19b410=_0x23a015(0x18f));}}const _0x3250c0=_0x4c55a4[_0x23a015(0xf5)](_0x243c89=>_0x243c89[_0x23a015(0x14e)]&&_0x243c89['name'][_0x23a015(0xe3)]()!=='');if(_0x3250c0[_0x23a015(0x109)]===0x0)return _0x59e550[_0x23a015(0x14b)]({'content':'Hiện\x20tại\x20chưa\x20có\x20script\x20nào\x20cho\x20'+_0xb4e81b+'!','ephemeral':!![]});const _0x3e4870=_0x3250c0[_0x23a015(0xeb)](0x0,0x19)['map']((_0x13b15e,_0x34ee35)=>new StringSelectMenuOptionBuilder()[_0x23a015(0xc9)](_0x13b15e[_0x23a015(0x14e)])['setDescription'](_0x23a015(0x112)+_0x13b15e['name'])[_0x23a015(0x194)](_0x34ee35[_0x23a015(0x190)]())),_0x423c0e=new StringSelectMenuBuilder()['setCustomId'](_0x19b410)['setPlaceholder'](_0x23a015(0x15b)+_0x3e4870[_0x23a015(0x109)])[_0x23a015(0x193)](0x1)[_0x23a015(0xf3)](0x1)[_0x23a015(0x158)](_0x3e4870);await _0x59e550[_0x23a015(0x14b)]({'content':_0x23a015(0x15e)+_0xb4e81b+'\x20(1-'+_0x3e4870[_0x23a015(0x109)]+_0x23a015(0x114),'components':[new ActionRowBuilder()[_0x23a015(0x10d)](_0x423c0e)],'ephemeral':!![]});}if(_0x59e550[_0x23a015(0xf1)]()){await _0x59e550[_0x23a015(0x126)]({'ephemeral':!![]});let _0x4affa1=[],_0x553225=_0x23a015(0xd1),_0x3cb596='';_0x59e550[_0x23a015(0xce)]===_0x23a015(0x17a)&&(_0x4affa1=bloxfruitList,_0x553225=_0x23a015(0x10c),_0x3cb596='copy_bf_');_0x59e550[_0x23a015(0xce)]===_0x23a015(0x149)&&(_0x4affa1=gag2List,_0x553225='#ff9900',_0x3cb596=_0x23a015(0xed));_0x59e550[_0x23a015(0xce)]===_0x23a015(0xf4)&&(_0x4affa1=night99List,_0x553225=_0x23a015(0x134),_0x3cb596=_0x23a015(0x16e));_0x59e550[_0x23a015(0xce)]===_0x23a015(0x18f)&&(_0x4affa1=sailorList,_0x553225=_0x23a015(0x111),_0x3cb596='copy_sailor_');const _0x1dde84=getScriptByIndex(_0x4affa1,_0x59e550[_0x23a015(0xfb)][0x0]);if(!_0x1dde84)return _0x59e550[_0x23a015(0x11d)]({'content':_0x23a015(0x191)});const _0x1ec7d7=new EmbedBuilder()['setColor'](_0x553225)[_0x23a015(0xd5)]('🤖\x20Dubo\x20script\x20|\x20Cấp\x20mã\x20thành\x20công')['addFields']({'name':_0x23a015(0x15c),'value':'**'+_0x1dde84[_0x23a015(0x14e)]+'**'},{'name':_0x23a015(0x113),'value':_0x23a015(0x11a)+(_0x1dde84['code']||_0x23a015(0xc6))+_0x23a015(0xc1)})[_0x23a015(0x196)]({'text':'Yêu\x20cầu\x20từ\x20Dubo\x20script\x20•\x20Tin\x20nhắn\x20bảo\x20mật'})[_0x23a015(0xcd)](),_0x4af768=new ButtonBuilder()['setCustomId'](''+_0x3cb596+_0x59e550[_0x23a015(0xfb)][0x0])[_0x23a015(0xc9)]('📄\x20Copy\x20Script')[_0x23a015(0x18c)](ButtonStyle[_0x23a015(0x105)]);await _0x59e550[_0x23a015(0x11d)]({'embeds':[_0x1ec7d7],'components':[new ActionRowBuilder()['addComponents'](_0x4af768)]});}if(_0x59e550[_0x23a015(0x101)]()){await _0x59e550[_0x23a015(0x126)]({'ephemeral':!![]});let _0x5c3995=[],_0x2d6cc4='';if(_0x59e550['customId'][_0x23a015(0x133)](_0x23a015(0xde)))_0x5c3995=bloxfruitList,_0x2d6cc4=_0x59e550['customId']['replace'](_0x23a015(0xde),'');else{if(_0x59e550[_0x23a015(0xce)][_0x23a015(0x133)](_0x23a015(0xed)))_0x5c3995=gag2List,_0x2d6cc4=_0x59e550['customId'][_0x23a015(0xf7)](_0x23a015(0xed),'');else{if(_0x59e550[_0x23a015(0xce)][_0x23a015(0x133)](_0x23a015(0x16e)))_0x5c3995=night99List,_0x2d6cc4=_0x59e550[_0x23a015(0xce)]['replace'](_0x23a015(0x16e),'');else _0x59e550['customId'][_0x23a015(0x133)](_0x23a015(0xc2))&&(_0x5c3995=sailorList,_0x2d6cc4=_0x59e550[_0x23a015(0xce)][_0x23a015(0xf7)](_0x23a015(0xc2),''));}}const _0x5b4bae=getScriptByIndex(_0x5c3995,_0x2d6cc4);if(!_0x5b4bae)return _0x59e550['editReply']({'content':'Lỗi:\x20Không\x20tìm\x20thấy\x20dữ\x20liệu\x20sao\x20chép!'});await _0x59e550['editReply']({'content':''+(_0x5b4bae[_0x23a015(0x18a)]||_0x23a015(0xc6))});}}),client['on'](_0x1eda3e(0x15a),async _0x5b2560=>{const _0x577ff7=_0x1eda3e;try{const _0x50fb48=await _0x5b2560['fetchOwner']();if(_0x50fb48){const _0x2673c2=new EmbedBuilder()[_0x577ff7(0xcf)](_0x577ff7(0x10c))['setTitle'](_0x577ff7(0x124))['setDescription']('Cảm\x20ơn\x20bạn\x20đã\x20sử\x20dụng\x20bot\x20của\x20tôi\x0a'+_0x577ff7(0x141)+'link\x20sever:\x20https://discord.gg/Y7uUkKHBb\x0a\x0a'+_0x577ff7(0x121))[_0x577ff7(0xcd)]();await _0x50fb48[_0x577ff7(0xfa)]({'embeds':[_0x2673c2]});}}catch(_0x1db728){}}),client['login'](BOT_TOKEN);
+const { 
+    Client, 
+    GatewayIntentBits, 
+    REST, 
+    Routes, 
+    SlashCommandBuilder, 
+    ActionRowBuilder, 
+    StringSelectMenuBuilder, 
+    StringSelectMenuOptionBuilder,
+    EmbedBuilder,
+    ButtonBuilder, 
+    ButtonStyle    
+} = require('discord.js');
+const http = require('http');
+
+// ==========================================
+// TẠO SERVER WEB MINI ĐỂ GIỮ BOT ONLINE VĨNH VIỄN
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Bot Dubo Script dang online lien tuc 24/7!\n');
+}).listen(PORT, () => {
+    console.log(`Web server dang chay tren port: ${PORT}`);
+});
+// ==========================================
+
+const BOT_TOKEN = process.env.TOKEN; 
+
+if (!BOT_TOKEN) {
+    console.error("LỖI: Bạn chưa cấu hình biến TOKEN trên Render!");
+    process.exit(1);
+}
+
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+
+// =========================================================================
+// DATA SCRIPTS (ĐÃ ĐƯỢC CHUẨN HÓA DẤU NGOẶC)
+// =========================================================================
+
+const bloxfruitList = [
+    { name: "gravity hub ☄️", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/MainPremium.lua"))()` },
+    { name: "TEDDY hub", code: `getgenv()["Config"] = { ["Fps Boost"] = true, ["FPS Cap"] = 120, ["Items"] = { ["Auto Fully Fighting Style"] = true, ["Skull Guitar"] = true, ["Cursed Dual Katana"] = true, ["Saber"] = true }, ["Quests"] = { ["Mirage Puzzle"] = true, ["Upgrading Race"] = true, }, ["Hopping"] = { ["Auto Hop"] = true, ["Hop Idle"] = true, ["High Ping Hop"] = false, ["Player Nearing Hop"] = false, }, ["Sniper Fruit Shop"] = { ["Enabled"] = true, ["Fruit"] = { "Leopard-Leopard", "Kitsune-Kitsune", "Dragon-Dragon", "Yeti-Yeti", "Gas-Gas" }, }, } \nloadstring(game:HttpGet("https://raw.githubusercontent.com/Teddyseetink/diepvyzubu/refs/heads/main/TeddyHub-kaitunBF.lua"))()` },
+    { name: "banana fake 🍌", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/tamdznanatv/bananapremium/refs/heads/main/nanaXbanana.luau"))()` },
+    { name: "SELENE hub auto bounty M1 fruit", code: `repeat task.wait() until game:IsLoaded() and game:GetService("Players") and game.Players.LocalPlayer and game.Players.LocalPlayer:FindFirstChild("PlayerGui")\n_G.SeleneCFG = { Team = "Pirates", Region = "", WebhookURL = "", DiscordID = "", BulkAcc = false, FruitTarget = "", SuperBoostFps = false }\nloadstring(game:HttpGet("https://raw.githubusercontent.com/Idontknowbrodontstalk/SELENE/refs/heads/main/M1Autobounty"))()` },
+    { name: "Realkid hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/realkidhub/realkid/refs/heads/main/main.lua"))()` },
+    { name: "DatThgVnV4", code: `loadstring(game:HttpGet("https://github.com/LuaCrack/DatThg/raw/refs/heads/main/DatThgVnV4"))()` },
+    { name: "MeoX hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/VanHoangIOS/MeoXHub/refs/heads/main/Main.lua"))()` },
+    { name: "Bacon hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/vinh129150/hack/refs/heads/main/BaconHub.lua"))()` },
+    { name: "Orange hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/HieuDepTrai-Z/Dev_Orange/refs/heads/main/OrangeHub.lua"))()` },
+    { name: "Real_AnhKhoaVn", code: `repeat wait() until game:IsLoaded() and game.Players.LocalPlayerloadstring(game:HttpGet("https://raw.githubusercontent.com/NguyenAnhKhoaVN/Real_AnhKhoa_2279/refs/heads/main/Main-BloxFruitsNX.lua"))()` },
+    { name: "BlueX hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-BlueX/BlueX-Hub/refs/heads/main/Main.lua"))()` },
+    { name: "NgocBongV2", code: `loadstring(game:HttpGet("https://github.com/LuaCrack/NgocBong/raw/refs/heads/main/NgocBongV2"))()` },
+    { name: "redz", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/newredzv3/Scripts/refs/heads/main/main.luau"))(Settings)` },
+    { name: "night hub hop sever", code: `loadstring(game:HttpGet("https://github.com/WhiteX1208/Scripts/blob/main/HopScript.luau?raw=true"))()` },
+    { name: "speedhub", code: `loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Speed-Hub-x-29294"))()` },
+    { name: "Xero hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Xero2409/XeroHub/refs/heads/main/main.lua"))()` },
+    { name: "Quangtum", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/flazhy/QuantumOnyx/refs/heads/main/QuantumOnyx.lua"))()` },
+    { name: "Omg hub", code: `loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-OMG-Hub-50194"))()` },
+    { name: "W-azure", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/LuaAnarchist/YeuEmNhieuLam/refs/heads/main/w-azure.luau"))()` },
+    { name: "Tay hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/VTDROBLOX/Animehub/refs/heads/main/Tayhub.lua"))()` },
+    { name: "Turbo hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/TurboLite/Script/refs/heads/main/MainV2.lua"))()` },
+    { name: "Hermanos", code: `local script_mode = "PVP" -- PVP, FARMlocal loader = loadstringlocal url = "https://raw.githubusercontent.com/hermanos-dev/hermanos-hub/refs/heads/main/Loader.lua"local response = game:HttpGet(url)loader(response)()` },
+];
+
+const gag2List = [
+    { name: "Mauscripts", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/nootmaus/GrowAAGarden/refs/heads/main/mauscripts"))()` },
+    { name: "Airflow", code: `loadstring(game:HttpGet("https://airflowscript.com/loader"))()` },
+    { name: "ZYSUME", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/ZYSUME/EliteVault/refs/heads/main/Loader.Lua"))()` },
+    { name: "Newgag2", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/defaulttinowss/newgag2/refs/heads/main/op"))()` },
+    { name: "NOX-ZUHILL", code: `loadstring(game:HttpGet('https://raw.githubusercontent.com/NOX-ZUHILL/NOX-/refs/heads/main/NOX%20loader.lua'))()` },
+    { name: "JakesHub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/jakeeypoop-max/JakesHub/refs/heads/main/Loader.lua"))()` },
+    { name: "nolag hub", code: `loadstring(game:HttpGet("https://rawscripts.net/raw/Grow-a-Garden-NoLag-Hub-no-key-38699"))()` },
+    { name: "Than hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/thantzy/thanhub/refs/heads/main/thanv1"))()` },
+    { name: "Mozi hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/MoziIOnTop/MoziIHub/refs/heads/main/GrowaGarden"))()` },
+    { name: "HydroStreamz hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Hydrostreamz-hubs/-GAG-Spawner/refs/heads/main/Hydrostreamz"))()` },
+    { name: "Limit hub", code: `loadstring(game:HttpGet(('https://raw.githubusercontent.com/FakeModz/LimitHub/refs/heads/main/LimitHub_Luarmor_E.lua')))()` },
+    { name: "Gumanba", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/gumanba/Scripts/main/GrowaGarden"))()` },
+    { name: "Nebula", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Nebula-xyzs/GAG/refs/heads/main/GrowAGardenXE"))()` },
+    { name: "Kenniel", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Kenniel123/Grow-a-garden/refs/heads/main/Grow%20A%20Garden"))()` },
+    { name: "Polluted", code: `loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/e8580ba6e94aeaa7aa2486f060167f85.lua"))()` },
+    { name: "JN HH Gaming", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/JNHHGaming/Grow-a-garden-script/refs/heads/main/JN%20HH%20Gaming",true))()` },
+    { name: "EliteVault", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/ZYSUME/EliteVault/refs/heads/main/Loader.Lua"))()` },
+    { name: "Chiyo", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/kaisenlmao/loader/refs/heads/main/chiyo.lua"))()` },
+    { name: "OP", code: `loadstring(game:HttpGet("https://pastefy.app/dRiqJxzW/raw"))()` },
+    { name: "GLua XYZ ", code: `loadstring(game:HttpGet("https://api.glua.xyz/loader"))()` }
+];
+
+const night99List = [
+    { name: "Keyless", code: `loadstring(game:HttpGet("https://pastebin.com/raw/LPbPPNpC"))()` },
+    { name: "NTT hub", code: `loadstring(game:HttpGet('https://ntt-hub.xyz/api/repo?id1=main&id2=lua'))()` },
+    { name: "Halloween 🎃", code: `loadstring(game:HttpGet("https://pastebin.com/raw/husyDTrd"))()` },
+    { name: "Cps hub 🌐", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Rx1m/CpsHub/refs/heads/main/Hub",true))()` },
+    { name: "ToastyXD", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/nouralddin-abdullah/ToastyHub-XD/refs/heads/main/hub-main.lua"))()` },
+    { name: "Auto Gallery", code: `_G.Auto = true\nlocal ReplicatedStorage = game:GetService("ReplicatedStorage")\nlocal Event = ReplicatedStorage.RemoteEvents.CarnivalCompleteShootingGallery\nlocal function findTargets(parent, depth)\n if depth > 3 then return {} end\n local targets = {}\n for _, child in ipairs(parent:GetChildren()) do\n if child:IsA("BasePart") then table.insert(targets, child) end\n for _, subTarget in ipairs(findTargets(child, depth + 1)) do table.insert(targets, subTarget) end\n end\n return targets\nend\nspawn(function()\n while task.wait(3) do\n local targets = {}\n local areas = {workspace.Map, workspace.Items, workspace.Characters}\n for _, area in ipairs(areas) do\n for _, target in ipairs(findTargets(area, 0)) do table.insert(targets, target) end\n end\n for index, target in ipairs(targets) do\n if not _G.Auto then break end\n pcall(function() Event:FireServer(target) end)\n task.wait(0.05)\n end\n end\nend)` },
+    { name: "Tycoon US", code: `loadstring(game:HttpGet("https://pastebin.com/raw/K9b3Fd7Z"))()` },
+    { name: "Elude hub 🫥", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/DarkenedEssence/Elude/refs/heads/main/Loader.lua"))()` },
+    { name: "Combo Wick", code: `loadstring(game:HttpGet("https://cdn.authguard.org/virtual-file/4cc9b982299840008b7d08796f54aaea"))()` },
+    { name: "Speed Hub X ⚡️", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua", true))()` },
+    { name: "Voidware 🕳️", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/kasumichwan/scripts/refs/heads/main/kasumi-hub.lua"))()` },
+    { name: "October", code: `loadstring(game:HttpGet("https://pastebin.com/raw/YgRSs7Pf"))()` },
+    { name: "Vortex hub", code: `loadstring(game:HttpGet("https://pastefy.app/qxDbSVlo/raw"))()` },
+    { name: "Horizon hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Laspard69/HorizonHub/refs/heads/main/loader.lua", true))()` },
+    { name: "Vex OP", code: `loadstring(game:HttpGet("https://pastefy.app/ibClJUjE/raw"))()` },
+    { name: "Moon hub 🌑", code: `loadstring(game:HttpGet("https://pastebin.com/raw/bhi4LinA"))()` },
+    { name: "Nazuro", code: `loadstring(game:HttpGet("https://nazuro.xyz/99nights"))()` },
+    { name: "DarkEsc", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/DarkenedEssence/DarkEsc/refs/heads/main/Loader.lua"))()` },
+    { name: "PhantomFlux", code: `loadstring(game:HttpGet('https://raw.githubusercontent.com/sudaisontopxd/PhantomFlux/refs/heads/main/99NightsInTheForest', true))()` },
+    { name: "Universal", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/adibhub1/99-nighit-in-forest/refs/heads/main/99%20night%20in%20forest", true))()` },
+    { name: "Kenniel", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Kenniel123/99-Nights-in-the-Forest/refs/heads/main/99%20Nights%20in%20the%20Forest"))()` },
+    { name: "Gec hub", code: `loadstring(game:HttpGet("https://pastebin.com/raw/NTpCMwn8"))()` },
+    { name: "Foxxname", code: `loadstring(game:HttpGet("https://pastebin.com/raw/7hfV4s5s"))()` },
+    { name: "Polleser hub", code: `loadstring(game:HttpGet("https://pastefy.app/Y4ic4T1s/raw"))()` },
+    { name: "Kaito hub", code: `loadstring(game:HttpGet("https://pastebin.com/raw/xBK0EXUX"))()` },
+    { name: "OverFlow", code: `loadstring(game:HttpGet("https://pastebin.com/raw/3T1VunNZ"))()` },
+    { name: "Strawberry Cat hub", code: `loadstring(game:HttpGet("https://pastebin.com/raw/sQ6t8MU7"))()` },
+    { name: "Foggy hub", code: `loadstring(game:HttpGet("https://pastebin.com/raw/5rwbL0v9"))()` },
+    { name: "AnbuWin", code: `loadstring(game:HttpGet("https://pastebin.com/raw/quQbccDD"))()` },
+    { name: "Alchemy hub", code: `loadstring(game:HttpGet("https://pastebin.com/raw/FmDrhT3m"))()` },
+    { name: "Nagi hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/hehehe9028/Nagi-hub-99/refs/heads/main/Nagi%20hub%2099%20nights%20in%20the%20forest"))()` }
+];
+
+const sailorList = [
+    { name: "Ajjans hub", code: `loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/3fcb385d3c782d11837cb680ae2a3ea4.lua"))()` },
+    { name: "Polluted hub", code: `loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/b1f30331e1af9ab6e96fc80cd00b20a9.lua"))()` },
+    { name: "Copernix hub", code: `loadstring(game:HttpGet("https://gitlab.com/phantomreal1/CopernixHub/-/raw/main/api.lua?ref_type=heads"))()` },
+    { name: "Axel hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/lostinnowheres/Loader/refs/heads/main/Loader.Lua"))()` },
+    { name: "Hybrid hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/HybridE3/HybridE3/refs/heads/main/Sailor%20Piece"))()` },
+    { name: "Lume hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/dusadeephenginx-sudo/roblox/main/uploads/sailor.lua"))()` },
+    { name: "Zypheron hub", code: `loadstring(game:HttpGet("https://pastebin.com/raw/M6NtAd4N", true))()` },
+    { name: "RC hub", code: `loadstring(game:HttpGet("https://vss.pandadevelopment.net/virtual/file/2768ea6419cb4d73"))()` },
+    { name: "BenJaMinZ hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/BenJaMinZHub/Loader/refs/heads/main/GetKeyAllGame.lua"))()` },
+    { name: "Sindex hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Sindex-Saliii/TrigonEvoHub/refs/heads/main/Main.luau"))()` },
+    { name: "Axel hub", code: `loadstring(game:HttpGet("https://pastebin.com/raw/dwuNab5c"))()` },
+    { name: "Lucid", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/OhhMyGehlee/sh/refs/heads/main/a"))()` },
+    { name: "Express hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Bliqe/Upload/refs/heads/main/Games/SP/Express.lua"))()` }
+];
+
+// =========================================================================
+// ĐỒNG BỘ SLASH COMMANDS
+// =========================================================================
+client.once('ready', async () => {
+    console.log(`Bot Dubo script va Web Server da Online: ${client.user.tag}`);
+    
+    const commands = [
+        new SlashCommandBuilder().setName('help').setDescription('Hiển thị hướng dẫn sử dụng bot bằng tiếng Việt và Anh'),
+        new SlashCommandBuilder().setName('script-bloxfruit').setDescription('Hiển thị bảng chọn script Blox Fruit ẩn danh'),
+        new SlashCommandBuilder().setName('script-gag2').setDescription('Hiển thị bảng chọn script GAG2 ẩn danh'),
+        new SlashCommandBuilder().setName('script-99night').setDescription('Hiển thị bảng chọn script 99 Night ẩn danh'),
+        new SlashCommandBuilder().setName('script-sailorpice').setDescription('Hiển thị bảng chọn script Sailor Piece ẩn danh')
+    ].map(command => command.toJSON());
+
+    const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
+    try {
+        await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
+        console.log('Đồng bộ các lệnh slash command thành công!');
+    } catch (error) {
+        console.error('Lỗi đồng bộ lệnh:', error);
+    }
+});
+
+// Hàm hỗ trợ tìm script an toàn
+function getScriptByIndex(list, selectValue) {
+    const validList = list.filter(s => s.name && s.name.trim() !== "");
+    const idx = parseInt(selectValue);
+    return validList[idx] || null;
+}
+
+// =========================================================================
+// XỬ LÝ SỰ KIỆN (INTERACTION) - ĐÃ BỔ SUNG DEFERREPLY CHỐNG LỖI 3 GIÂY
+// =========================================================================
+client.on('interactionCreate', async interaction => {
+    
+    // --- XỬ LÝ SLASH COMMANDS ---
+    if (interaction.isChatInputCommand()) {
+        
+        // Xử lý riêng lệnh /help
+        if (interaction.commandName === 'help') {
+            const helpMessage = 
+                `**VN:** Chọn một kho kịch bản của 1 trò chơi mà bạn yêu thích, chọn kịch bản trong danh sách mà bạn muốn và nhấn coppy ở dưới để nhận kịch bản.\n` +
+                `**ENG:** Choose a script repository of your favourite game, choose the script in the list that you want and click coppy below to get the script`;
+            return interaction.reply({ content: helpMessage, ephemeral: true });
+        }
+
+        let currentList = [];
+        let titleName = "";
+        let customMenuId = "";
+
+        if (interaction.commandName === 'script-bloxfruit') { currentList = bloxfruitList; titleName = "Blox Fruit"; customMenuId = "menu_bloxfruit"; }
+        else if (interaction.commandName === 'script-gag2') { currentList = gag2List; titleName = "GAG2"; customMenuId = "menu_gag2"; }
+        else if (interaction.commandName === 'script-99night') { currentList = night99List; titleName = "99 Night"; customMenuId = "menu_99night"; }
+        else if (interaction.commandName === 'script-sailorpice') { currentList = sailorList; titleName = "Sailor Piece"; customMenuId = "menu_sailor"; }
+
+        const validList = currentList.filter(s => s.name && s.name.trim() !== "");
+        if (validList.length === 0) return interaction.reply({ content: `Hiện tại chưa có script nào cho ${titleName}!`, ephemeral: true });
+
+        // Tối đa 25 options cho menu Discord
+        const menuOptions = validList.slice(0, 25).map((script, index) => 
+            new StringSelectMenuOptionBuilder().setLabel(script.name).setDescription(`Bấm để lấy mã code của: ${script.name}`).setValue(index.toString())
+        );
+
+        const selectMenu = new StringSelectMenuBuilder().setCustomId(customMenuId).setPlaceholder(`Select script | 1-${menuOptions.length}`).setMinValues(1).setMaxValues(1).addOptions(menuOptions);
+        await interaction.reply({ content: `**Select script | ${titleName} (1-${menuOptions.length})**\nChọn mục bên dưới để nhận code:`, components: [new ActionRowBuilder().addComponents(selectMenu)], ephemeral: true });
+    }
+
+    // --- XỬ LÝ KHI CHỌN MENU ---
+    if (interaction.isStringSelectMenu()) {
+        // Chống lỗi 3 giây bằng cách báo "đang suy nghĩ" ẩn danh
+        await interaction.deferReply({ ephemeral: true });
+
+        let list = [];
+        let embedColor = "#000000";
+        let prefix = "";
+
+        if (interaction.customId === 'menu_bloxfruit') { list = bloxfruitList; embedColor = '#00ffcc'; prefix = "copy_bf_"; }
+        if (interaction.customId === 'menu_gag2') { list = gag2List; embedColor = '#ff9900'; prefix = "copy_gag2_"; }
+        if (interaction.customId === 'menu_99night') { list = night99List; embedColor = '#ff0055'; prefix = "copy_99night_"; }
+        if (interaction.customId === 'menu_sailor') { list = sailorList; embedColor = '#0099ff'; prefix = "copy_sailor_"; }
+
+        const chosenScript = getScriptByIndex(list, interaction.values[0]);
+        if (!chosenScript) return interaction.editReply({ content: 'Lỗi: Không tìm thấy dữ liệu script!' });
+
+        const embed = new EmbedBuilder().setColor(embedColor).setTitle(`🤖 Dubo script | Cấp mã thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code:', value: `\`\`\`lua\n${chosenScript.code || "-- Trống"}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
+        const copyButton = new ButtonBuilder().setCustomId(`${prefix}${interaction.values[0]}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success);
+
+        // Dùng editReply thay cho reply vì đã gọi deferReply trước đó
+        await interaction.editReply({ embeds: [embed], components: [new ActionRowBuilder().addComponents(copyButton)] });
+    }
+
+    // --- XỬ LÝ KHI BẤM NÚT COPY ---
+    if (interaction.isButton()) {
+        // Chống lỗi 3 giây cho nút bấm
+        await interaction.deferReply({ ephemeral: true });
+
+        let list = [];
+        let idxStr = "";
+
+        if (interaction.customId.startsWith('copy_bf_')) { list = bloxfruitList; idxStr = interaction.customId.replace('copy_bf_', ''); }
+        else if (interaction.customId.startsWith('copy_gag2_')) { list = gag2List; idxStr = interaction.customId.replace('copy_gag2_', ''); }
+        else if (interaction.customId.startsWith('copy_99night_')) { list = night99List; idxStr = interaction.customId.replace('copy_99night_', ''); }
+        else if (interaction.customId.startsWith('copy_sailor_')) { list = sailorList; idxStr = interaction.customId.replace('copy_sailor_', ''); }
+
+        const chosenScript = getScriptByIndex(list, idxStr);
+        if (!chosenScript) return interaction.editReply({ content: 'Lỗi: Không tìm thấy dữ liệu sao chép!' });
+
+        // Gửi code ra để người dùng copy dễ dàng trên điện thoại
+        await interaction.editReply({ content: `${chosenScript.code || "-- Trống"}` });
+    }
+});
+
+// =========================================================================
+// TỰ ĐỘNG GỬI TIN NHẮN RIÊNG (DM) CẢM ƠN CHỦ SERVER KHI BOT ĐƯỢC MỜI VÀO
+// =========================================================================
+client.on('guildCreate', async (guild) => {
+    try {
+        const owner = await guild.fetchOwner();
+        if (owner) {
+            const thankYouEmbed = new EmbedBuilder()
+                .setColor('#00ffcc')
+                .setTitle('🎉 Thank you!')
+                .setDescription(
+                    `Cảm ơn bạn đã sử dụng bot của tôi\n` +
+                    `Thank you for using my bot\n` +
+                    `link sever: https://discord.gg/Y7uUkKHBb\n\n` +
+                    `Join my discord server to chat and report bot errors and build bots with me Thank you`
+                )
+                .setTimestamp();
+
+            await owner.send({ embeds: [thankYouEmbed] });
+        }
+    } catch (error) {
+        // Bỏ qua tất cả lỗi (như khi chủ server khóa DM) để bot chạy ngầm hoàn toàn im lặng
+    }
+});
+
+client.login(BOT_TOKEN);
