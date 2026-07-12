@@ -38,7 +38,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 // CÁC MẢNG CHỨA SCRIPT ĐƯỢC TÁCH RIÊNG TỪNG NƠI THEO YÊU CẦU
 // =========================================================================
 
-// 1. Dữ liệu Blox Fruit (Giữ nguyên 20 script gốc - Có thể thêm dòng trống tùy thích)
+// 1. Dữ liệu Blox Fruit (Giữ nguyên 20 script gốc)
 const bloxfruitList = [
     { name: "gravity hub ☄️", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/MainPremium.lua"))()` },
     { name: "TEDDY hub", code: `getgenv()["Config"] = { ["Fps Boost"] = true, ["FPS Cap"] = 120, ["Items"] = { ["Auto Fully Fighting Style"] = true, ["Skull Guitar"] = true, ["Cursed Dual Katana"] = true, ["Saber"] = true }, ["Quests"] = { ["Mirage Puzzle"] = true, ["Upgrading Race"] = true, }, ["Hopping"] = { ["Auto Hop"] = true, ["Hop Idle"] = true, ["High Ping Hop"] = false, ["Player Nearing Hop"] = false, }, ["Sniper Fruit Shop"] = { ["Enabled"] = true, ["Fruit"] = { "Leopard-Leopard", "Kitsune-Kitsune", "Dragon-Dragon", "Yeti-Yeti", "Gas-Gas" }, }, } \nloadstring(game:HttpGet("https://raw.githubusercontent.com/Teddyseetink/diepvyzubu/refs/heads/main/TeddyHub-kaitunBF.lua"))()` },
@@ -128,21 +128,21 @@ const night99List = [
     { name: "Nagi hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/hehehe9028/Nagi-hub-99/refs/heads/main/Nagi%20hub%2099%20nights%20in%20the%20forest"))()` }
 ];
 
-// 4. Dữ liệu Sailor Piece
+// 4. Dữ liệu Sailor Piece (ĐÃ SỬA DẤU NGOẶC KÉP SAI CÚ PHÁP)
 const sailorList = [
-    { name: "Ajjans hub", code: `loadstring(game:HttpGet(“https://api.luarmor.net/files/v4/loaders/3fcb385d3c782d11837cb680ae2a3ea4.lua”))()` },
-    { name: "Polluted hub", code: `loadstring(game:HttpGet(“https://api.luarmor.net/files/v4/loaders/b1f30331e1af9ab6e96fc80cd00b20a9.lua”))()` },
-    { name: "Copernix hub", code: `loadstring(game:HttpGet(“https://gitlab.com/phantomreal1/CopernixHub/-/raw/main/api.lua?ref_type=heads”))()` },
-    { name: "Axel hub", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/lostinnowheres/Loader/refs/heads/main/Loader.Lua”))()` },
-    { name: "Hybrid hub", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/HybridE3/HybridE3/refs/heads/main/Sailor%20Piece”))()` },
-    { name: "Lume hub", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/dusadeephenginx-sudo/roblox/main/uploads/sailor.lua”))()` },
-    { name: "Zypheron hub", code: `loadstring(game:HttpGet(“https://pastebin.com/raw/M6NtAd4N”, true))()` },
-    { name: "RC hub", code: `loadstring(game:HttpGet(“https://vss.pandadevelopment.net/virtual/file/2768ea6419cb4d73”))()` },
-    { name: "BenJaMinZ hub", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/BenJaMinZHub/Loader/refs/heads/main/GetKeyAllGame.lua”))()` },
-    { name: "Sindex hub", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/Sindex-Saliii/TrigonEvoHub/refs/heads/main/Main.luau”))()` },
-    { name: "Axel hub", code: `loadstring(game:HttpGet((‘https://pastebin.com/raw/dwuNab5c’)))()` },
-    { name: "Lucid", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/OhhMyGehlee/sh/refs/heads/main/a”))()` },
-    { name: "Express hub", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/Bliqe/Upload/refs/heads/main/Games/SP/Express.lua”))()` },
+    { name: "Ajjans hub", code: `loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/3fcb385d3c782d11837cb680ae2a3ea4.lua"))()` },
+    { name: "Polluted hub", code: `loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/b1f30331e1af9ab6e96fc80cd00b20a9.lua"))()` },
+    { name: "Copernix hub", code: `loadstring(game:HttpGet("https://gitlab.com/phantomreal1/CopernixHub/-/raw/main/api.lua?ref_type=heads"))()` },
+    { name: "Axel hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/lostinnowheres/Loader/refs/heads/main/Loader.Lua"))()` },
+    { name: "Hybrid hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/HybridE3/HybridE3/refs/heads/main/Sailor%20Piece"))()` },
+    { name: "Lume hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/dusadeephenginx-sudo/roblox/main/uploads/sailor.lua"))()` },
+    { name: "Zypheron hub", code: `loadstring(game:HttpGet("https://pastebin.com/raw/M6NtAd4N", true))()` },
+    { name: "RC hub", code: `loadstring(game:HttpGet("https://vss.pandadevelopment.net/virtual/file/2768ea6419cb4d73"))()` },
+    { name: "BenJaMinZ hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/BenJaMinZHub/Loader/refs/heads/main/GetKeyAllGame.lua"))()` },
+    { name: "Sindex hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Sindex-Saliii/TrigonEvoHub/refs/heads/main/Main.luau"))()` },
+    { name: "Axel hub", code: `loadstring(game:HttpGet("https://pastebin.com/raw/dwuNab5c"))()` },
+    { name: "Lucid", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/OhhMyGehlee/sh/refs/heads/main/a"))()` },
+    { name: "Express hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Bliqe/Upload/refs/heads/main/Games/SP/Express.lua"))()` },
     { name: "", code: `` },
     { name: "", code: `` },
     { name: "", code: `` },
@@ -200,7 +200,6 @@ client.on('interactionCreate', async interaction => {
         if (!chosenScript) return interaction.reply({ content: 'Lỗi: Không tìm thấy dữ liệu script!', ephemeral: true });
 
         const embed = new EmbedBuilder().setColor('#00ffcc').setTitle(`🤖 Dubo script | Cấp mã Blox Fruit thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code:', value: `\`\`\`lua\n${chosenScript.code || "-- Trống"}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
-        // Nút bấm lưu tên script vào customId để tránh lệch index
         const copyButton = new ButtonBuilder().setCustomId(`copy_bf_${interaction.values[0]}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success); 
 
         await interaction.reply({ embeds: [embed], components: [new ActionRowBuilder().addComponents(copyButton)], ephemeral: true });
