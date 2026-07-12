@@ -1,7 +1,7 @@
 {
   "name": "dubo-script-bot",
   "version": "1.0.0",
-  "description": "Bot cap script an danh - Dubo script",
+  "description": "Bot cap script - Dubo script",
   "main": "index.js",
   "dependencies": {
     "discord.js": "^14.14.1"
