@@ -62,7 +62,7 @@ const bloxfruitList = [
     { name: "Tay hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/VTDROBLOX/Animehub/refs/heads/main/Tayhub.lua"))()` }
 ];
 
-// 2. Dữ liệu Gag2 (Đã có sẵn 10 mục trống riêng lẻ)
+// 2. Dữ liệu Gag2
 const gag2List = [
     { name: "Mauscripts", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/nootmaus/GrowAAGarden/refs/heads/main/mauscripts"))()` },
     { name: "Airflow", code: `loadstring(game:HttpGet("https://airflowscript.com/loader"))()` },
@@ -92,7 +92,7 @@ const gag2List = [
     { name: "", code: `` }
 ];
 
-// 3. Dữ liệu 99 Night (Đã có sẵn 10 mục trống riêng lẻ)
+// 3. Dữ liệu 99 Night
 const night99List = [
     { name: "Keyless", code: `loadstring(game:HttpGet("https://pastebin.com/raw/LPbPPNpC"))()` },
     { name: "NTT hub", code: `loadstring(game:HttpGet('https://ntt-hub.xyz/api/repo?id1=main&id2=lua'))()` },
@@ -100,55 +100,7 @@ const night99List = [
     { name: "Cps hub 🌐", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Rx1m/CpsHub/refs/heads/main/Hub",true))()` },
     { name: "ToastyXD", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/nouralddin-abdullah/ToastyHub-XD/refs/heads/main/hub-main.lua"))()` },
     { name: "Infinite Candy 🍬", code: `` },
-    { name: "", code: `_G.Auto = true --true or false
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Event = ReplicatedStorage.RemoteEvents.CarnivalCompleteShootingGallery
-
-local function findTargets(parent, depth)
-    if depth > 3 then return {} end
-    
-    local targets = {}
-    
-    for _, child in ipairs(parent:GetChildren()) do
-        if child:IsA("BasePart") then
-            table.insert(targets, child)
-        end
-        
-        for _, subTarget in ipairs(findTargets(child, depth + 1)) do
-            table.insert(targets, subTarget)
-        end
-    end
-    
-    return targets
-end
-
-spawn(function()
-    while task.wait(3) do
-    
-        local targets = {}
-        local areas = {
-            workspace.Map,
-            workspace.Items, 
-            workspace.Characters
-        }
-        
-        for _, area in ipairs(areas) do
-            for _, target in ipairs(findTargets(area, 0)) do
-                table.insert(targets, target)
-            end
-        end
-        
-        for index, target in ipairs(targets) do
-            if not _G.Auto then break end
-            
-            local success = pcall(function()
-                Event:FireServer(target)
-            end)
-            task.wait(0.05)
-        end
-    end
-end)` },
+    { name: "Auto Gallery", code: `_G.Auto = true --true or false\n\nlocal ReplicatedStorage = game:GetService("ReplicatedStorage")\nlocal Event = ReplicatedStorage.RemoteEvents.CarnivalCompleteShootingGallery\n\nlocal function findTargets(parent, depth)\n    if depth > 3 then return {} end\n    local targets = {}\n    for _, child in ipairs(parent:GetChildren()) do\n        if child:IsA("BasePart") then table.insert(targets, child) end\n        for _, subTarget in ipairs(findTargets(child, depth + 1)) do table.insert(targets, subTarget) end\n    end\n    return targets\nend\n\nspawn(function()\n    while task.wait(3) do\n        local targets = {}\n        local areas = {workspace.Map, workspace.Items, workspace.Characters}\n        for _, area in ipairs(areas) do\n            for _, target in ipairs(findTargets(area, 0)) do table.insert(targets, target) end\n        end\n        for index, target in ipairs(targets) do\n            if not _G.Auto then break end\n            pcall(function() Event:FireServer(target) end)\n            task.wait(0.05)\n        end\n    end\nend)` },
     { name: "Tycoon US", code: `loadstring(game:HttpGet("https://pastebin.com/raw/K9b3Fd7Z"))()` },
     { name: "Elude hub 🫥", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/DarkenedEssence/Elude/refs/heads/main/Loader.lua"))()` },
     { name: "Combo Wick", code: `loadstring(game:HttpGet("https://cdn.authguard.org/virtual-file/4cc9b982299840008b7d08796f54aaea"))()` },
@@ -176,27 +128,16 @@ end)` },
     { name: "Nagi hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/hehehe9028/Nagi-hub-99/refs/heads/main/Nagi%20hub%2099%20nights%20in%20the%20forest"))()` }
 ];
 
-// 4. Dữ liệu Sailor Piece (Đã có sẵn 10 mục trống riêng lẻ)
+// 4. Dữ liệu Sailor Piece
 const sailorList = [
     { name: "", code: `` },
     { name: "", code: `` },
     { name: "", code: `` },
     { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
+    { name: "", code: `` }
 ];
 
-
-// Tự động đăng ký 4 lệnh Slash Command mới với Discord
+// Tự động đăng ký 4 lệnh Slash Command với Discord
 client.once('ready', async () => {
     console.log(`Bot Dubo script va Web Server da Online: ${client.user.tag}`);
     
@@ -208,7 +149,6 @@ client.once('ready', async () => {
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
-
     try {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
         console.log('Đồng bộ 4 lệnh script thành công!');
@@ -217,53 +157,52 @@ client.once('ready', async () => {
     }
 });
 
+// Hàm hỗ trợ tìm script an toàn dựa trên vị trí hiển thị (Index thực tế trên menu)
+function getScriptByIndex(list, selectValue) {
+    const validList = list.filter(s => s.name && s.name.trim() !== "");
+    const idx = parseInt(selectValue);
+    return validList[idx] || null;
+}
+
 // Xử lý các tương tác của người dùng
 client.on('interactionCreate', async interaction => {
     
-    // ---------------------------------------------------------------------
-    // XỬ LÝ LỆNH /SCRIPT-BLOXFRUIT (ĐÃ THÊM CƠ CHẾ LỌC DÒNG TRỐNG)
-    // ---------------------------------------------------------------------
+    // ==========================================
+    // XỬ LÝ LỆNH /SCRIPT-BLOXFRUIT
+    // ==========================================
     if (interaction.isChatInputCommand() && interaction.commandName === 'script-bloxfruit') {
-        const validList = bloxfruitList.filter(s => s.name !== "");
+        const validList = bloxfruitList.filter(s => s.name && s.name.trim() !== "");
         if (validList.length === 0) return interaction.reply({ content: 'Hiện tại chưa có script nào được cấu hình cho Blox Fruit!', ephemeral: true });
 
-        const selectMenu = new StringSelectMenuBuilder()
-            .setCustomId('menu_bloxfruit')
-            .setPlaceholder(`Select script | 1-${validList.length}`)
-            .setMinValues(1).setMaxValues(1);
-
+        const selectMenu = new StringSelectMenuBuilder().setCustomId('menu_bloxfruit').setPlaceholder(`Select script | 1-${validList.length}`).setMinValues(1).setMaxValues(1);
         validList.forEach((script, index) => {
             selectMenu.addOptions(new StringSelectMenuOptionBuilder().setLabel(script.name).setDescription(`Bấm để lấy mã code của: ${script.name}`).setValue(index.toString()));
         });
 
-        await interaction.reply({
-            content: `**Select script | Blox Fruit (1-${validList.length})**\nChọn mục bên dưới để nhận code:`,
-            components: [new ActionRowBuilder().addComponents(selectMenu)],
-            ephemeral: true 
-        });
+        await interaction.reply({ content: `**Select script | Blox Fruit (1-${validList.length})**\nChọn mục bên dưới để nhận code:`, components: [new ActionRowBuilder().addComponents(selectMenu)], ephemeral: true });
     }
     if (interaction.isStringSelectMenu() && interaction.customId === 'menu_bloxfruit') {
-        const validList = bloxfruitList.filter(s => s.name !== "");
-        const selectedIndex = parseInt(interaction.values[0]); 
-        const chosenScript = validList[selectedIndex];
+        const chosenScript = getScriptByIndex(bloxfruitList, interaction.values[0]);
         if (!chosenScript) return interaction.reply({ content: 'Lỗi: Không tìm thấy dữ liệu script!', ephemeral: true });
 
-        const embed = new EmbedBuilder().setColor('#00ffcc').setTitle(`🤖 Dubo script | Cấp mã Blox Fruit thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code (Hãy copy dán vào bản hack):', value: `\`\`\`lua\n${chosenScript.code}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
-        const copyButton = new ButtonBuilder().setCustomId(`copy_bf_${selectedIndex}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success); 
+        const embed = new EmbedBuilder().setColor('#00ffcc').setTitle(`🤖 Dubo script | Cấp mã Blox Fruit thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code:', value: `\`\`\`lua\n${chosenScript.code || "-- Trống"}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
+        // Nút bấm lưu tên script vào customId để tránh lệch index
+        const copyButton = new ButtonBuilder().setCustomId(`copy_bf_${interaction.values[0]}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success); 
 
         await interaction.reply({ embeds: [embed], components: [new ActionRowBuilder().addComponents(copyButton)], ephemeral: true });
     }
     if (interaction.isButton() && interaction.customId.startsWith('copy_bf_')) {
-        const validList = bloxfruitList.filter(s => s.name !== "");
-        const selectedIndex = parseInt(interaction.customId.replace('copy_bf_', ''));
-        await interaction.reply({ content: `${validList[selectedIndex].code}`, ephemeral: true });
+        const idxStr = interaction.customId.replace('copy_bf_', '');
+        const chosenScript = getScriptByIndex(bloxfruitList, idxStr);
+        if (!chosenScript) return interaction.reply({ content: 'Lỗi: Không tìm thấy dữ liệu sao chép!', ephemeral: true });
+        await interaction.reply({ content: `${chosenScript.code || "-- Trống"}`, ephemeral: true });
     }
 
-    // ---------------------------------------------------------------------
+    // ==========================================
     // XỬ LÝ LỆNH /SCRIPT-GAG2
-    // ---------------------------------------------------------------------
+    // ==========================================
     if (interaction.isChatInputCommand() && interaction.commandName === 'script-gag2') {
-        const validList = gag2List.filter(s => s.name !== "");
+        const validList = gag2List.filter(s => s.name && s.name.trim() !== "");
         if (validList.length === 0) return interaction.reply({ content: 'Hiện tại chưa có script nào được cấu hình cho GAG2!', ephemeral: true });
 
         const selectMenu = new StringSelectMenuBuilder().setCustomId('menu_gag2').setPlaceholder(`Select script | 1-${validList.length}`).setMinValues(1).setMaxValues(1);
@@ -271,33 +210,29 @@ client.on('interactionCreate', async interaction => {
             selectMenu.addOptions(new StringSelectMenuOptionBuilder().setLabel(script.name).setDescription(`Bấm để lấy mã code của: ${script.name}`).setValue(index.toString()));
         });
 
-        await interaction.reply({
-            content: `**Select script | GAG2 (1-${validList.length})**\nChọn ít nhất 1 mục bên dưới để nhận code:`,
-            components: [new ActionRowBuilder().addComponents(selectMenu)],
-            ephemeral: true 
-        });
+        await interaction.reply({ content: `**Select script | GAG2 (1-${validList.length})**\nChọn mục bên dưới để nhận code:`, components: [new ActionRowBuilder().addComponents(selectMenu)], ephemeral: true });
     }
     if (interaction.isStringSelectMenu() && interaction.customId === 'menu_gag2') {
-        const validList = gag2List.filter(s => s.name !== "");
-        const selectedIndex = parseInt(interaction.values[0]); 
-        const chosenScript = validList[selectedIndex];
+        const chosenScript = getScriptByIndex(gag2List, interaction.values[0]);
+        if (!chosenScript) return interaction.reply({ content: 'Lỗi: Không tìm thấy dữ liệu script!', ephemeral: true });
 
-        const embed = new EmbedBuilder().setColor('#ff9900').setTitle(`🤖 Dubo script | Cấp mã nguồn thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code (Hãy copy dán vào bản hack):', value: `\`\`\`lua\n${chosenScript.code}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
-        const copyButton = new ButtonBuilder().setCustomId(`copy_gag2_${selectedIndex}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success); 
+        const embed = new EmbedBuilder().setColor('#ff9900').setTitle(`🤖 Dubo script | Cấp mã GAG2 thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code:', value: `\`\`\`lua\n${chosenScript.code || "-- Trống"}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
+        const copyButton = new ButtonBuilder().setCustomId(`copy_gag2_${interaction.values[0]}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success); 
 
         await interaction.reply({ embeds: [embed], components: [new ActionRowBuilder().addComponents(copyButton)], ephemeral: true });
     }
     if (interaction.isButton() && interaction.customId.startsWith('copy_gag2_')) {
-        const validList = gag2List.filter(s => s.name !== "");
-        const selectedIndex = parseInt(interaction.customId.replace('copy_gag2_', ''));
-        await interaction.reply({ content: `${validList[selectedIndex].code}`, ephemeral: true });
+        const idxStr = interaction.customId.replace('copy_gag2_', '');
+        const chosenScript = getScriptByIndex(gag2List, idxStr);
+        if (!chosenScript) return interaction.reply({ content: 'Lỗi: Không tìm thấy dữ liệu sao chép!', ephemeral: true });
+        await interaction.reply({ content: `${chosenScript.code || "-- Trống"}`, ephemeral: true });
     }
 
-    // ---------------------------------------------------------------------
+    // ==========================================
     // XỬ LÝ LỆNH /SCRIPT-99NIGHT
-    // ---------------------------------------------------------------------
+    // ==========================================
     if (interaction.isChatInputCommand() && interaction.commandName === 'script-99night') {
-        const validList = night99List.filter(s => s.name !== "");
+        const validList = night99List.filter(s => s.name && s.name.trim() !== "");
         if (validList.length === 0) return interaction.reply({ content: 'Hiện tại chưa có script nào được cấu hình cho 99 Night!', ephemeral: true });
 
         const selectMenu = new StringSelectMenuBuilder().setCustomId('menu_99night').setPlaceholder(`Select script | 1-${validList.length}`).setMinValues(1).setMaxValues(1);
@@ -305,33 +240,29 @@ client.on('interactionCreate', async interaction => {
             selectMenu.addOptions(new StringSelectMenuOptionBuilder().setLabel(script.name).setDescription(`Bấm để lấy mã code của: ${script.name}`).setValue(index.toString()));
         });
 
-        await interaction.reply({
-            content: `**Select script | 99 Night (1-${validList.length})**\nChọn ít nhất 1 mục bên dưới để nhận code:`,
-            components: [new ActionRowBuilder().addComponents(selectMenu)],
-            ephemeral: true 
-        });
+        await interaction.reply({ content: `**Select script | 99 Night (1-${validList.length})**\nChọn mục bên dưới để nhận code:`, components: [new ActionRowBuilder().addComponents(selectMenu)], ephemeral: true });
     }
     if (interaction.isStringSelectMenu() && interaction.customId === 'menu_99night') {
-        const validList = night99List.filter(s => s.name !== "");
-        const selectedIndex = parseInt(interaction.values[0]); 
-        const chosenScript = validList[selectedIndex];
+        const chosenScript = getScriptByIndex(night99List, interaction.values[0]);
+        if (!chosenScript) return interaction.reply({ content: 'Lỗi: Không tìm thấy dữ liệu script!', ephemeral: true });
 
-        const embed = new EmbedBuilder().setColor('#ff0055').setTitle(`🤖 Dubo script | Cấp mã nguồn thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code (Hãy copy dán vào bản hack):', value: `\`\`\`lua\n${chosenScript.code}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
-        const copyButton = new ButtonBuilder().setCustomId(`copy_99night_${selectedIndex}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success); 
+        const embed = new EmbedBuilder().setColor('#ff0055').setTitle(`🤖 Dubo script | Cấp mã 99 Night thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code:', value: `\`\`\`lua\n${chosenScript.code || "-- Trống"}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
+        const copyButton = new ButtonBuilder().setCustomId(`copy_99night_${interaction.values[0]}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success); 
 
         await interaction.reply({ embeds: [embed], components: [new ActionRowBuilder().addComponents(copyButton)], ephemeral: true });
     }
     if (interaction.isButton() && interaction.customId.startsWith('copy_99night_')) {
-        const validList = night99List.filter(s => s.name !== "");
-        const selectedIndex = parseInt(interaction.customId.replace('copy_99night_', ''));
-        await interaction.reply({ content: `${validList[selectedIndex].code}`, ephemeral: true });
+        const idxStr = interaction.customId.replace('copy_99night_', '');
+        const chosenScript = getScriptByIndex(night99List, idxStr);
+        if (!chosenScript) return interaction.reply({ content: 'Lỗi: Không tìm thấy dữ liệu sao chép!', ephemeral: true });
+        await interaction.reply({ content: `${chosenScript.code || "-- Trống"}`, ephemeral: true });
     }
 
-    // ---------------------------------------------------------------------
+    // ==========================================
     // XỬ LÝ LỆNH /SCRIPT-SAILORPICE
-    // ---------------------------------------------------------------------
+    // ==========================================
     if (interaction.isChatInputCommand() && interaction.commandName === 'script-sailorpice') {
-        const validList = sailorList.filter(s => s.name !== "");
+        const validList = sailorList.filter(s => s.name && s.name.trim() !== "");
         if (validList.length === 0) return interaction.reply({ content: 'Hiện tại chưa có script nào được cấu hình cho Sailor Piece!', ephemeral: true });
 
         const selectMenu = new StringSelectMenuBuilder().setCustomId('menu_sailor').setPlaceholder(`Select script | 1-${validList.length}`).setMinValues(1).setMaxValues(1);
@@ -339,26 +270,22 @@ client.on('interactionCreate', async interaction => {
             selectMenu.addOptions(new StringSelectMenuOptionBuilder().setLabel(script.name).setDescription(`Bấm để lấy mã code của: ${script.name}`).setValue(index.toString()));
         });
 
-        await interaction.reply({
-            content: `**Select script | Sailor Piece (1-${validList.length})**\nChọn ít nhất 1 mục bên dưới để nhận code:`,
-            components: [new ActionRowBuilder().addComponents(selectMenu)],
-            ephemeral: true 
-        });
+        await interaction.reply({ content: `**Select script | Sailor Piece (1-${validList.length})**\nChọn mục bên dưới để nhận code:`, components: [new ActionRowBuilder().addComponents(selectMenu)], ephemeral: true });
     }
     if (interaction.isStringSelectMenu() && interaction.customId === 'menu_sailor') {
-        const validList = sailorList.filter(s => s.name !== "");
-        const selectedIndex = parseInt(interaction.values[0]); 
-        const chosenScript = validList[selectedIndex];
+        const chosenScript = getScriptByIndex(sailorList, interaction.values[0]);
+        if (!chosenScript) return interaction.reply({ content: 'Lỗi: Không tìm thấy dữ liệu script!', ephemeral: true });
 
-        const embed = new EmbedBuilder().setColor('#0099ff').setTitle(`🤖 Dubo script | Cấp mã nguồn thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code (Hãy copy dán vào bản hack):', value: `\`\`\`lua\n${chosenScript.code}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
-        const copyButton = new ButtonBuilder().setCustomId(`copy_sailor_${selectedIndex}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success); 
+        const embed = new EmbedBuilder().setColor('#0099ff').setTitle(`🤖 Dubo script | Cấp mã Sailor Piece thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code:', value: `\`\`\`lua\n${chosenScript.code || "-- Trống"}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
+        const copyButton = new ButtonBuilder().setCustomId(`copy_sailor_${interaction.values[0]}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success); 
 
         await interaction.reply({ embeds: [embed], components: [new ActionRowBuilder().addComponents(copyButton)], ephemeral: true });
     }
     if (interaction.isButton() && interaction.customId.startsWith('copy_sailor_')) {
-        const validList = sailorList.filter(s => s.name !== "");
-        const selectedIndex = parseInt(interaction.customId.replace('copy_sailor_', ''));
-        await interaction.reply({ content: `${validList[selectedIndex].code}`, ephemeral: true });
+        const idxStr = interaction.customId.replace('copy_sailor_', '');
+        const chosenScript = getScriptByIndex(sailorList, idxStr);
+        if (!chosenScript) return interaction.reply({ content: 'Lỗi: Không tìm thấy dữ liệu sao chép!', ephemeral: true });
+        await interaction.reply({ content: `${chosenScript.code || "-- Trống"}`, ephemeral: true });
     }
 });
 
