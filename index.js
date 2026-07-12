@@ -139,7 +139,7 @@ const sailorList = [
 // KHO SCRIPT MỚI XẾP LIỀN NHAU LIÊN TỤC CHUẨN 20 DÒNG THEO MẪU GITHUB MOBILE
 // =========================================================================
 const gagList = [
-    { name: "", code: `` },
+    { name: "Speed Hub X ⚡️", code: `` },
     { name: "", code: `` },
     { name: "", code: `` },
     { name: "", code: `` },
