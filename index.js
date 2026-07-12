@@ -231,26 +231,26 @@ const murderMysteryList = [
 ];
 
 const fischList = [
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` }
+    { name: "ShieldTeam hub", code: `loadstring(game:HttpGet(('https://raw.githubusercontent.com/KAN-FISCH/tesss/refs/heads/main/allscript.lua'), true))()` },
+    { name: "Mur4Scripts hub", code: `loadstring(game:HttpGet("https://gist.githubusercontent.com/Mur4exe/af4ce068bd4910ff0e5715cd0215c143/raw/f3f36618e23d29d064618d1c573ab29e2e407f71/F%25C4%25B0SHv2.lua"))()` },
+    { name: "Black hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Skibidiking123/Fisch1/refs/heads/main/FischMain"))()` },
+    { name: "Mercuryu", code: `loadstring(game:HttpGet('https://raw.githubusercontent.com/imyourlio/Mercury/main/loader.luau'))()` },
+    { name: "Zenith hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Efe0626/ZenithHub/refs/heads/main/Loader"))()` },
+    { name: "Speed hub X", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua", true))()` },
+    { name: "Native", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Native-lab/Native/main/loader.lua"))()` },
+    { name: "Ronix hub", code: `loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/1255807d4f3b118b6636cfd3d386d8b8.lua"))()` },
+    { name: "Lunor hub", code: `loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/f6c9f276f7d6a7dd6edfd0173d7a211d.lua"))()` },
+    { name: "Draco hub", code: `loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/cdc8ffd74b2c33f6c9f47b85f4b77c45.lua"))()` },
+    { name: "Raito hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Efe0626/RaitoHub/main/Script"))()` },
+    { name: "Switch hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/kiciahook/kiciahook/refs/heads/main/loader.lua"))()` },
+    { name: "Kiciahook", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/kiciahook/kiciahook/refs/heads/main/loader.lua"))()` },
+    { name: "Bonk hub", code: `loadstring(game:HttpGet("https://bonkhubloader.netlify.app",true))()` },
+    { name: "Infinity hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Droidlol/Infinity/refs/heads/main/Infinity.lua"))()` },
+    { name: "Mercury hub", code: `loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/c019f214a19894b50f0b8e817b70d25f.lua"))()` },
+    { name: "Goomba hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/JustLevel/goombahub/main/fisch.lua"))()` },
+    { name: "Solix hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/debunked69/Solixreworkkeysystem/refs/heads/main/solix%20new%20keyui.lua"))()` },
+    { name: "Average hub", code: `loadstring(game:HttpGet("https://gist.githubusercontent.com/AverageHub/1980eccce4133d77fb24d166dc296125/raw/2d9c88acc21a302d92aed0e8b6f0dcd287c8b96b/gistfile1.txt"))()` },
+    { name: "Mean hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Alton012/Fisch.Script/refs/heads/main/Mean%20Hub"))()` }
 ];
 
 // =========================================================================
