@@ -36,7 +36,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 // Mảng chứa tên hiển thị VÀ đoạn code script thực tế của bạn
 const scriptList = [
-    { name: "gravity hub ☄️", script: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/MainPremium.lua"))()` },
+    { name: "gravity hub ☄️", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/MainPremium.lua"))()` },
     { name: "TEDDY hub", code: `getgenv()["Config"] = {
 
     ["Fps Boost"] = true,
