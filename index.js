@@ -130,11 +130,25 @@ const night99List = [
 
 // 4. Dữ liệu Sailor Piece
 const sailorList = [
+    { name: "Ajjans hub", code: `loadstring(game:HttpGet(“https://api.luarmor.net/files/v4/loaders/3fcb385d3c782d11837cb680ae2a3ea4.lua”))()` },
+    { name: "Polluted hub", code: `loadstring(game:HttpGet(“https://api.luarmor.net/files/v4/loaders/b1f30331e1af9ab6e96fc80cd00b20a9.lua”))()` },
+    { name: "Copernix hub", code: `loadstring(game:HttpGet(“https://gitlab.com/phantomreal1/CopernixHub/-/raw/main/api.lua?ref_type=heads”))()` },
+    { name: "Axel hub", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/lostinnowheres/Loader/refs/heads/main/Loader.Lua”))()` },
+    { name: "Hybrid hub", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/HybridE3/HybridE3/refs/heads/main/Sailor%20Piece”))()` },
+    { name: "Lume hub", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/dusadeephenginx-sudo/roblox/main/uploads/sailor.lua”))()` },
+    { name: "Zypheron hub", code: `loadstring(game:HttpGet(“https://pastebin.com/raw/M6NtAd4N”, true))()` },
+    { name: "RC hub", code: `loadstring(game:HttpGet(“https://vss.pandadevelopment.net/virtual/file/2768ea6419cb4d73”))()` },
+    { name: "BenJaMinZ hub", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/BenJaMinZHub/Loader/refs/heads/main/GetKeyAllGame.lua”))()` },
+    { name: "Sindex hub", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/Sindex-Saliii/TrigonEvoHub/refs/heads/main/Main.luau”))()` },
+    { name: "Axel hub", code: `loadstring(game:HttpGet((‘https://pastebin.com/raw/dwuNab5c’)))()` },
+    { name: "Lucid", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/OhhMyGehlee/sh/refs/heads/main/a”))()` },
+    { name: "Express hub", code: `loadstring(game:HttpGet(“https://raw.githubusercontent.com/Bliqe/Upload/refs/heads/main/Games/SP/Express.lua”))()` },
     { name: "", code: `` },
     { name: "", code: `` },
     { name: "", code: `` },
     { name: "", code: `` },
-    { name: "", code: `` }
+    { name: "", code: `` },
+    { name: "", code: `` },
 ];
 
 // Tự động đăng ký 4 lệnh Slash Command với Discord
