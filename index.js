@@ -208,11 +208,11 @@ const stealBrainrotList = [
 ];
 
 const murderMysteryList = [
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
+    { name: "MM2", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Doggo-cryto/EclipseMM2/master/Script", true))()` },
+    { name: "Aether hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/vzyxer/Aether-Hub-Global-Roblox-Script-Hub/refs/heads/main/Murder%20Mystery%202"))()` },
+    { name: "SNT hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Snowt-Team/SNT-HUB/refs/heads/main/MurderMystery2.txt"))()` },
+    { name: "SnapSanix hub", code: `loadstring(game:HttpGet('https://raw.githubusercontent.com/Roman34296589/SnapSanixHUB/refs/heads/main/SnapSanixHUB.lua'))()` },
+    { name: "Tbao hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/thaibao/main/TbaoHubMurdervssheriff"))()` },
     { name: "", code: `` },
     { name: "", code: `` },
     { name: "", code: `` },
