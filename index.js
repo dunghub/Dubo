@@ -136,7 +136,7 @@ const sailorList = [
 ];
 
 // ==========================================
-// 4 KHO SCRIPT MỚI (MỖI KHO 20 DÒNG MẪU)
+// KHO SCRIPT MỚI (MỖI KHO 20 DÒNG MẪU ĐỂ TRỐNG)
 // ==========================================
 const gagList = [
     { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
@@ -166,9 +166,16 @@ const murderMysteryList = [
     { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }
 ];
 
+// Thêm kho cho game Fisch mới yêu cầu
+const fischList = [
+    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
+    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
+    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
+    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }
+];
 
 // =========================================================================
-// ĐỒNG BỘ SLASH COMMANDS (LỆNH /HELP ĐÃ LÊN ĐẦU)
+// ĐỒNG BỘ SLASH COMMANDS (LỆNH /HELP LUÔN NẰM ĐẦU)
 // =========================================================================
 client.once('ready', async () => {
     console.log(`Bot Dubo script va Web Server da Online: ${client.user.tag}`);
@@ -179,11 +186,12 @@ client.once('ready', async () => {
         new SlashCommandBuilder().setName('script-gag2').setDescription('Hiển thị bảng chọn script GAG2 ẩn danh'),
         new SlashCommandBuilder().setName('script-99night').setDescription('Hiển thị bảng chọn script 99 Night ẩn danh'),
         new SlashCommandBuilder().setName('script-sailorpice').setDescription('Hiển thị bảng chọn script Sailor Piece ẩn danh'),
-        // 4 lệnh mới thêm vào hệ thống
         new SlashCommandBuilder().setName('script-gag').setDescription('Hiển thị bảng chọn script GAG ẩn danh'),
         new SlashCommandBuilder().setName('script-forsaken').setDescription('Hiển thị bảng chọn script Forsaken ẩn danh'),
         new SlashCommandBuilder().setName('script-steal-a-brainrot').setDescription('Hiển thị bảng chọn script Steal a Brainrot ẩn danh'),
-        new SlashCommandBuilder().setName('script-murder-mystery-2').setDescription('Hiển thị bảng chọn script Murder Mystery 2 ẩn danh')
+        new SlashCommandBuilder().setName('script-murder-mystery-2').setDescription('Hiển thị bảng chọn script Murder Mystery 2 ẩn danh'),
+        // Thêm đăng ký Slash Command mới cho Fisch
+        new SlashCommandBuilder().setName('script-fisch').setDescription('Hiển thị bảng chọn script Fisch ẩn danh')
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
@@ -226,11 +234,12 @@ client.on('interactionCreate', async interaction => {
         else if (interaction.commandName === 'script-gag2') { currentList = gag2List; titleName = "GAG2"; customMenuId = "menu_gag2"; }
         else if (interaction.commandName === 'script-99night') { currentList = night99List; titleName = "99 Night"; customMenuId = "menu_99night"; }
         else if (interaction.commandName === 'script-sailorpice') { currentList = sailorList; titleName = "Sailor Piece"; customMenuId = "menu_sailor"; }
-        // Cấu hình danh sách cho 4 lệnh mới
         else if (interaction.commandName === 'script-gag') { currentList = gagList; titleName = "GAG"; customMenuId = "menu_gag"; }
         else if (interaction.commandName === 'script-forsaken') { currentList = forsakenList; titleName = "Forsaken"; customMenuId = "menu_forsaken"; }
         else if (interaction.commandName === 'script-steal-a-brainrot') { currentList = stealBrainrotList; titleName = "Steal a Brainrot"; customMenuId = "menu_steal_brainrot"; }
         else if (interaction.commandName === 'script-murder-mystery-2') { currentList = murderMysteryList; titleName = "Murder Mystery 2"; customMenuId = "menu_mm2"; }
+        // Cấu hình danh sách cho lệnh fisch mới
+        else if (interaction.commandName === 'script-fisch') { currentList = fischList; titleName = "Fisch"; customMenuId = "menu_fisch"; }
 
         const validList = currentList.filter(s => s.name && s.name.trim() !== "");
         if (validList.length === 0) return interaction.reply({ content: `Hiện tại chưa có script nào cho ${titleName}!`, ephemeral: true });
@@ -256,11 +265,12 @@ client.on('interactionCreate', async interaction => {
         if (interaction.customId === 'menu_gag2') { list = gag2List; embedColor = '#ff9900'; prefix = "copy_gag2_"; }
         if (interaction.customId === 'menu_99night') { list = night99List; embedColor = '#ff0055'; prefix = "copy_99night_"; }
         if (interaction.customId === 'menu_sailor') { list = sailorList; embedColor = '#0099ff'; prefix = "copy_sailor_"; }
-        // Xử lý nhận diện menu ID cho 4 kho mới
         if (interaction.customId === 'menu_gag') { list = gagList; embedColor = '#33cc33'; prefix = "copy_gag_"; }
         if (interaction.customId === 'menu_forsaken') { list = forsakenList; embedColor = '#6600cc'; prefix = "copy_forsaken_"; }
         if (interaction.customId === 'menu_steal_brainrot') { list = stealBrainrotList; embedColor = '#ff3399'; prefix = "copy_steal_"; }
         if (interaction.customId === 'menu_mm2') { list = murderMysteryList; embedColor = '#cc0000'; prefix = "copy_mm2_"; }
+        // Nhận diện menu ID cho game Fisch mới
+        if (interaction.customId === 'menu_fisch') { list = fischList; embedColor = '#00ffff'; prefix = "copy_fisch_"; }
 
         const chosenScript = getScriptByIndex(list, interaction.values[0]);
         if (!chosenScript) return interaction.editReply({ content: 'Lỗi: Không tìm thấy dữ liệu script!' });
@@ -282,11 +292,12 @@ client.on('interactionCreate', async interaction => {
         else if (interaction.customId.startsWith('copy_gag2_')) { list = gag2List; idxStr = interaction.customId.replace('copy_gag2_', ''); }
         else if (interaction.customId.startsWith('copy_99night_')) { list = night99List; idxStr = interaction.customId.replace('copy_99night_', ''); }
         else if (interaction.customId.startsWith('copy_sailor_')) { list = sailorList; idxStr = interaction.customId.replace('copy_sailor_', ''); }
-        // Trích xuất index nút bấm của 4 lệnh mới
         else if (interaction.customId.startsWith('copy_gag_')) { list = gagList; idxStr = interaction.customId.replace('copy_gag_', ''); }
         else if (interaction.customId.startsWith('copy_forsaken_')) { list = forsakenList; idxStr = interaction.customId.replace('copy_forsaken_', ''); }
         else if (interaction.customId.startsWith('copy_steal_')) { list = stealBrainrotList; idxStr = interaction.customId.replace('copy_steal_', ''); }
         else if (interaction.customId.startsWith('copy_mm2_')) { list = murderMysteryList; idxStr = interaction.customId.replace('copy_mm2_', ''); }
+        // Trích xuất index nút bấm cho Fisch
+        else if (interaction.customId.startsWith('copy_fisch_')) { list = fischList; idxStr = interaction.customId.replace('copy_fisch_', ''); }
 
         const chosenScript = getScriptByIndex(list, idxStr);
         if (!chosenScript) return interaction.editReply({ content: 'Lỗi: Không tìm thấy dữ liệu sao chép!' });
