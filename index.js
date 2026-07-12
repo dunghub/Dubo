@@ -135,43 +135,122 @@ const sailorList = [
     { name: "Express hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Bliqe/Upload/refs/heads/main/Games/SP/Express.lua"))()` }
 ];
 
-// ==========================================
-// KHO SCRIPT MỚI (MỖI KHO 20 DÒNG MẪU ĐỂ TRỐNG)
-// ==========================================
+// =========================================================================
+// KHO SCRIPT MỚI XẾP LIỀN NHAU LIÊN TỤC CHUẨN 20 DÒNG THEO MẪU GITHUB MOBILE
+// =========================================================================
 const gagList = [
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` }
 ];
 
 const forsakenList = [
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` }
 ];
 
 const stealBrainrotList = [
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` }
 ];
 
 const murderMysteryList = [
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` }
 ];
 
-// Thêm kho cho game Fisch mới yêu cầu
 const fischList = [
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` },
-    { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }, { name: "", code: `` }
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` },
+    { name: "", code: `` }
 ];
 
 // =========================================================================
@@ -190,7 +269,6 @@ client.once('ready', async () => {
         new SlashCommandBuilder().setName('script-forsaken').setDescription('Hiển thị bảng chọn script Forsaken ẩn danh'),
         new SlashCommandBuilder().setName('script-steal-a-brainrot').setDescription('Hiển thị bảng chọn script Steal a Brainrot ẩn danh'),
         new SlashCommandBuilder().setName('script-murder-mystery-2').setDescription('Hiển thị bảng chọn script Murder Mystery 2 ẩn danh'),
-        // Thêm đăng ký Slash Command mới cho Fisch
         new SlashCommandBuilder().setName('script-fisch').setDescription('Hiển thị bảng chọn script Fisch ẩn danh')
     ].map(command => command.toJSON());
 
@@ -238,7 +316,6 @@ client.on('interactionCreate', async interaction => {
         else if (interaction.commandName === 'script-forsaken') { currentList = forsakenList; titleName = "Forsaken"; customMenuId = "menu_forsaken"; }
         else if (interaction.commandName === 'script-steal-a-brainrot') { currentList = stealBrainrotList; titleName = "Steal a Brainrot"; customMenuId = "menu_steal_brainrot"; }
         else if (interaction.commandName === 'script-murder-mystery-2') { currentList = murderMysteryList; titleName = "Murder Mystery 2"; customMenuId = "menu_mm2"; }
-        // Cấu hình danh sách cho lệnh fisch mới
         else if (interaction.commandName === 'script-fisch') { currentList = fischList; titleName = "Fisch"; customMenuId = "menu_fisch"; }
 
         const validList = currentList.filter(s => s.name && s.name.trim() !== "");
@@ -269,7 +346,6 @@ client.on('interactionCreate', async interaction => {
         if (interaction.customId === 'menu_forsaken') { list = forsakenList; embedColor = '#6600cc'; prefix = "copy_forsaken_"; }
         if (interaction.customId === 'menu_steal_brainrot') { list = stealBrainrotList; embedColor = '#ff3399'; prefix = "copy_steal_"; }
         if (interaction.customId === 'menu_mm2') { list = murderMysteryList; embedColor = '#cc0000'; prefix = "copy_mm2_"; }
-        // Nhận diện menu ID cho game Fisch mới
         if (interaction.customId === 'menu_fisch') { list = fischList; embedColor = '#00ffff'; prefix = "copy_fisch_"; }
 
         const chosenScript = getScriptByIndex(list, interaction.values[0]);
@@ -296,7 +372,6 @@ client.on('interactionCreate', async interaction => {
         else if (interaction.customId.startsWith('copy_forsaken_')) { list = forsakenList; idxStr = interaction.customId.replace('copy_forsaken_', ''); }
         else if (interaction.customId.startsWith('copy_steal_')) { list = stealBrainrotList; idxStr = interaction.customId.replace('copy_steal_', ''); }
         else if (interaction.customId.startsWith('copy_mm2_')) { list = murderMysteryList; idxStr = interaction.customId.replace('copy_mm2_', ''); }
-        // Trích xuất index nút bấm cho Fisch
         else if (interaction.customId.startsWith('copy_fisch_')) { list = fischList; idxStr = interaction.customId.replace('copy_fisch_', ''); }
 
         const chosenScript = getScriptByIndex(list, idxStr);
