@@ -148,7 +148,7 @@ const sailorList = [
     { name: "", code: `` },
     { name: "", code: `` },
     { name: "", code: `` },
-    { name: "", code: `` },
+    { name: "", code: `` }
 ];
 
 // Tự động đăng ký 4 lệnh Slash Command với Discord
