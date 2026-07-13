@@ -245,7 +245,6 @@ client.once('ready', async () => {
         new SlashCommandBuilder().setName('script-murder-mystery-2').setDescription('Hiển thị bảng chọn script Murder Mystery 2 ẩn danh'),
         new SlashCommandBuilder().setName('script-fisch').setDescription('Hiển thị bảng chọn script Fisch ẩn danh'),
         
-        // NÂNG CẤP LỆNH ĐƯỜNG ỐNG: Cho phép chọn Kênh Nguồn (Đầu vào) và Kênh Đích (Đầu ra nhận log)
         new SlashCommandBuilder()
             .setName('ticket-dubo')
             .setDescription('Thiết lập đường ống gửi bài viết và nhận ticket (Chỉ Chủ Bot)')
@@ -286,23 +285,18 @@ client.on('interactionCreate', async interaction => {
     
     // 1. XỬ LÝ SLASH COMMAND
     if (interaction.isChatInputCommand()) {
-        
-        // KIỂM TRA ĐỘC QUYỀN LỆNH /ticket-dubo BẰNG ID CỦA ÔNG
         if (interaction.commandName === 'ticket-dubo') {
             if (interaction.user.id !== OWNER_ID) {
                 return interaction.reply({ content: '❌ Lệnh ẩn danh này đã bị khóa bằng ID phần cứng! Bạn không có quyền sử dụng.', ephemeral: true });
             }
             
-            // 🛡️ [FIX 1] Báo nhận lệnh ngay lập tức để chống lỗi 3 giây phản hồi
             await interaction.deferReply({ ephemeral: true });
 
             const sourceChannel = interaction.options.getChannel('kenh-dang-embed');
             const targetChannel = interaction.options.getChannel('kenh-nhan-log');
 
-            // Cập nhật ID Kênh nhận log đầu ra vào biến hệ thống toàn cục
             TICKET_LOG_CHANNEL_ID = targetChannel.id;
 
-            // Tạo nút tạo Ticket màu đỏ đậm rực rỡ
             const ticketButton = new ButtonBuilder()
                 .setCustomId('open_ticket_modal')
                 .setLabel('🎫 Ticket Support')
@@ -310,7 +304,6 @@ client.on('interactionCreate', async interaction => {
 
             const row = new ActionRowBuilder().addComponents(ticketButton);
 
-            // Tạo Khung Embed màu xanh biển đậm rực rỡ
             const ticketEmbed = new EmbedBuilder()
                 .setColor('#0055ff') 
                 .setTitle('🛠️ HỆ THỐNG HỖ TRỢ & TỐ CÁO | SUPPORT SYSTEM')
@@ -324,11 +317,8 @@ client.on('interactionCreate', async interaction => {
                 .setFooter({ text: 'Dubo Bypass Script Hub • Click Button Below' })
                 .setTimestamp();
 
-            // Tiến hành hú Khung Embed đầu vào sang kênh nguồn
             try {
                 await sourceChannel.send({ embeds: [ticketEmbed], components: [row] });
-                
-                // Trả lời lại bằng editReply sau khi dùng deferReply thành công
                 return interaction.editReply({ 
                     content: `✅ **Đường ống thiết lập thành công!**\n📥 **Đầu vào (Embed):** Đã hú bảng Ticket tại ${sourceChannel}\n📤 **Đầu ra (Nhận Log):** Đã chuyển hướng toàn bộ ticket về ${targetChannel}`
                 });
@@ -366,7 +356,7 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ content: `**Select script | ${titleName} (1-${menuOptions.length})**\nChọn mục bên dưới để nhận code:`, components: [new ActionRowBuilder().addComponents(selectMenu)], ephemeral: true });
     }
 
-    // 2. XỬ LÝ KHI USER ẤN NÚT "TICKET" MÀU ĐỎ -> HIỆN MODAL NHẬP LIỆU (Giữ nguyên showModal)
+    // 2. XỬ LÝ KHI USER ẤN NÚT "TICKET" MÀU ĐỎ -> HIỆN MODAL NHẬP LIỆU
     if (interaction.isButton() && interaction.customId === 'open_ticket_modal') {
         const modal = new ModalBuilder()
             .setCustomId('ticket_submission_modal')
@@ -402,17 +392,15 @@ client.on('interactionCreate', async interaction => {
         return interaction.showModal(modal);
     }
 
-    // 3. XỬ LÝ KHI USER BẤM SEND REQUEST TRÊN MODAL -> ĐẨY VỀ ĐẦU RA ĐÃ ĐƯỢC CHỌN TRONG ĐƯỜNG ỐNG
+    // 3. XỬ LÝ KHI USER BẤM GỬI REQUEST TRÊN MODAL -> ĐẨY VỀ KÊNH LOG KÈM NÚT XANH GỬI TIN NHẮN
     if (interaction.isModalSubmit() && interaction.customId === 'ticket_submission_modal') {
-        
-        // 🛡️ [FIX 2] Phải hoãn lại ngay để tránh treo lệnh quá 3s khi đang xử lý đẩy Embed đường ống đầu ra
         await interaction.deferReply({ ephemeral: true });
 
         const userTag = interaction.fields.getTextInputValue('ticket_user_tag');
         const reason = interaction.fields.getTextInputValue('ticket_reason');
         const evidenceLink = interaction.fields.getTextInputValue('ticket_evidence_link');
 
-        // Tạo Embed gửi về cho đầu ra nhận log
+        // Tạo Khung Embed gửi về Log cho Admin xem
         const logEmbed = new EmbedBuilder()
             .setColor('#0055ff') 
             .setTitle('🚨 ĐƠN TỐ CÁO / YÊU CẦU HỖ TRỢ MỚI')
@@ -426,12 +414,19 @@ client.on('interactionCreate', async interaction => {
             .setTimestamp()
             .setFooter({ text: 'Hệ thống Dubo Ticket Support' });
 
+        // 🌟 TẠO NÚT MÀU XANH PHẢN HỒI LẠI NGƯỜI DÙNG (Lưu ID người gửi vào customId)
+        const replyButton = new ButtonBuilder()
+            .setCustomId(`reply_ticket_${interaction.user.id}`)
+            .setLabel('🔵 Gửi tin nhắn')
+            .setStyle(ButtonStyle.Primary);
+
+        const actionRow = new ActionRowBuilder().addComponents(replyButton);
+
         try {
-            // 🚀 [TỐI ƯU ĐƯỜNG ỐNG ĐẦU RA]: Dùng fetch để ép bot cào thẳng dữ liệu từ API, tránh bị hụt cache khi bot khởi động lại
             const logChannel = await client.channels.fetch(TICKET_LOG_CHANNEL_ID).catch(() => null);
             
             if (logChannel) {
-                await logChannel.send({ embeds: [logEmbed] });
+                await logChannel.send({ embeds: [logEmbed], components: [actionRow] });
                 return interaction.editReply({ content: '✅ Gửi yêu cầu hỗ trợ thành công! Ban quản trị sẽ sớm xử lý.' });
             } else {
                 console.error("LỖI: Không tìm thấy hoặc bot không có quyền truy cập kênh Log nhận ticket đầu ra!");
@@ -443,7 +438,58 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // 4. CÁC XỬ LÝ SELECT MENU SẴN CÓ CỦA SCRIPT (GIỮ NGUYÊN)
+    // 🌟 4. XỬ LÝ KHI CHỦ/ADMIN BẤM NÚT XANH "GỬI TIN NHẮN" Ở KÊNH LOG
+    if (interaction.isButton() && interaction.customId.startsWith('reply_ticket_')) {
+        // Trích xuất lấy ID người tạo ticket từ customId của nút
+        const targetUserId = interaction.customId.replace('reply_ticket_', '');
+
+        const modal = new ModalBuilder()
+            .setCustomId(`admin_reply_modal_${targetUserId}`)
+            .setTitle('Gửi Phản Hồi Ticket');
+
+        const messageInput = new TextInputBuilder()
+            .setCustomId('admin_reply_content')
+            .setLabel('Nội dung nhắn gửi đến thành viên')
+            .setPlaceholder('Nhập tin nhắn tại đây (Ví dụ: Bạn đang thiếu bằng chứng...)')
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true);
+
+        modal.addComponents(new ActionRowBuilder().addComponents(messageInput));
+        return interaction.showModal(modal);
+    }
+
+    // 🌟 5. XỬ LÝ KHI ADMIN NHẬP XONG VÀ BẤM GỬI TRÊN MODAL PHẢN HỒI
+    if (interaction.isModalSubmit() && interaction.customId.startsWith('admin_reply_modal_')) {
+        await interaction.deferReply({ ephemeral: true });
+        
+        // Lấy lại ID người cần gửi tin nhắn
+        const targetUserId = interaction.customId.replace('admin_reply_modal_', '');
+        const replyContent = interaction.fields.getTextInputValue('admin_reply_content');
+
+        try {
+            // Bot tự tìm tài khoản dựa trên ID
+            const targetUser = await client.users.fetch(targetUserId);
+            
+            if (targetUser) {
+                const dmEmbed = new EmbedBuilder()
+                    .setColor('#00ff55')
+                    .setTitle('📩 PHẢN HỒI TỪ BAN QUẢN TRỊ DUBOSCRIPT')
+                    .setDescription(`Chào bạn, đây là tin nhắn phản hồi về đơn Ticket/Tố cáo của bạn:\n\n**Nội dung:** ${replyContent}`)
+                    .setTimestamp()
+                    .setFooter({ text: 'Vui lòng kiểm tra lại yêu cầu nếu có sai sót.' });
+
+                await targetUser.send({ embeds: [dmEmbed] });
+                return interaction.editReply({ content: `✅ Đã gửi thành công tin nhắn đến người dùng <@${targetUserId}>!` });
+            } else {
+                return interaction.editReply({ content: '❌ Không tìm thấy người dùng này trên hệ thống Discord.' });
+            }
+        } catch (error) {
+            console.error("Lỗi gửi DM phản hồi ticket:", error);
+            return interaction.editReply({ content: `❌ Thất bại: Không thể gửi tin nhắn riêng cho người này (Có thể họ đã chặn DM từ người lạ/khóa server).` });
+        }
+    }
+
+    // 6. CÁC XỬ LÝ SELECT MENU SẴN CÓ CỦA SCRIPT (GIỮ NGUYÊN)
     if (interaction.isStringSelectMenu()) {
         if (['menu_bloxfruit', 'menu_gag2', 'menu_99night', 'menu_sailor', 'menu_gag', 'menu_forsaken', 'menu_steal_brainrot', 'menu_mm2', 'menu_fisch'].includes(interaction.customId)) {
             await interaction.deferReply({ ephemeral: true });
@@ -467,7 +513,7 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // 5. CÁC XỬ LÝ NÚT SẴN CÓ CỦA SCRIPT (GIỮ NGUYÊN)
+    // 7. CÁC XỬ LÝ NÚT SẴN CÓ CỦA SCRIPT (GIỮ NGUYÊN)
     if (interaction.isButton() && interaction.customId.startsWith('copy_')) {
         await interaction.deferReply({ ephemeral: true });
         let list = []; let idxStr = "";
@@ -513,4 +559,4 @@ client.on('guildMemberAdd', async (member) => {
     }
 });
 
-client.login(BOT_TOKEN); 
+client.login(BOT_TOKEN);
