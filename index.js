@@ -9,7 +9,7 @@ const {
     StringSelectMenuOptionBuilder,
     EmbedBuilder,
     ButtonBuilder, 
-    ButtonStyle    
+    ButtonStyle
 } = require('discord.js');
 const http = require('http');
 
@@ -31,10 +31,10 @@ if (!BOT_TOKEN) {
     process.exit(1);
 }
 
-// 🎯 ĐÃ CẬP NHẬT ID SERVER CỦA BẠN TẠI ĐÂY
+// 🎯 ID SERVER CỦA BẠN (Dùng cho sự kiện chào mừng thành viên)
 const MY_SERVER_ID = '1509197460512309298'; 
 
-// Cấu hình đầy đủ các Intent bắt buộc để quét thành viên
+// Cấu hình đầy đủ các Intent bắt buộc
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds,
@@ -326,43 +326,74 @@ client.on('interactionCreate', async interaction => {
 });
 
 // =========================================================================
-// GỬI TIN NHẮN CẢM ƠN CHỦ SERVER KHI BOT ĐƯỢC MỜI VÀO
+// GỬI TIN NHẮN CẢM ƠN QUA DM CHO NGƯỜI MỜI BOT (BẤT KỂ SERVER NÀO)
 // =========================================================================
 client.on('guildCreate', async (guild) => {
     try {
-        const owner = await guild.fetchOwner();
-        if (owner) {
-            const ownerName = owner.user.username;
-            const thankYouEmbed = new EmbedBuilder()
-                .setColor('#00ffcc')
-                .setTitle(`🎉 Thank you ${ownerName}`)
-                .setDescription(
-                    `Thank you ${ownerName}\n\n` +
-                    `Cảm ơn bạn đã sử dụng bot của tôi\n` +
-                    `Thank you for using my bot\n` +
-                    `link sever: https://discord.gg/Y7uUkKHBb\n\n` +
-                    `Join my discord server to chat and report bot errors and build bots with me Thank you`
-                )
-                .setTimestamp();
-            await owner.send({ embeds: [thankYouEmbed] });
+        // Đợi 1 giây để Discord kịp cập nhật Audit Log
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Kiểm tra xem bot có quyền xem Audit Log không
+        if (!guild.members.me.permissions.has('ViewAuditLog')) {
+            console.log(`Không có quyền xem Audit Log tại server: ${guild.name}. Thử gửi cho chủ server thay thế.`);
+            const owner = await guild.fetchOwner();
+            if (owner) return sendThankYouDM(owner.user, guild.name);
+            return;
         }
+
+        // Lấy lịch sử Audit Log phần thêm Bot (BOT_ADD)
+        const fetchedLogs = await guild.fetchAuditLogs({
+            limit: 1,
+            type: 28 // 28 tương ứng với AuditLogEvent.BotAdd
+        });
+
+        const botAddLog = fetchedLogs.entries.first();
+        
+        // Nếu tìm thấy người mời trong log, gửi DM cho họ. Nếu không, gửi cho chủ server làm phương án dự phòng.
+        if (botAddLog && botAddLog.target.id === client.user.id) {
+            const inviter = botAddLog.executor; // Đây chính là người đã mời bot
+            await sendThankYouDM(inviter, guild.name);
+        } else {
+            const owner = await guild.fetchOwner();
+            if (owner) await sendThankYouDM(owner.user, guild.name);
+        }
+
     } catch (error) {
-        // Bỏ qua lỗi khóa DM
+        console.error('Lỗi khi thực hiện sự kiện guildCreate:', error);
     }
 });
 
+// Hàm phụ trợ dùng để gửi tin nhắn riêng (DM)
+async function sendThankYouDM(user, guildName) {
+    if (!user) return;
+    
+    const thankYouEmbed = new EmbedBuilder()
+        .setColor('#00ffcc')
+        .setTitle(`🎉 Thank you ${user.username}`)
+        .setDescription(
+            `Thank you ${user.username}\n\n` +
+            `Cảm ơn bạn đã sử dụng bot của tôi\n` +
+            `Thank you for using my bot\n` +
+            `link sever: https://discord.gg/Y7uUkKHBb\n\n` +
+            `Join my discord server to chat and report bot errors and build bots with me Thank you`
+        )
+        .setTimestamp();
+
+    await user.send({ embeds: [thankYouEmbed] })
+        .then(() => console.log(`Đã gửi DM cảm ơn thành công đến ${user.username} tại server ${guildName}`))
+        .catch(() => console.log(`Không thể gửi DM cho ${user.username} (Server: ${guildName}) do họ khóa tin nhắn riêng.`));
+}
+
 // =========================================================================
-// KIỂM TRA SỰ KIỆN CHÀO MỪNG THÀNH VIÊN MỚI
+// KIỂM TRA SỰ KIỆN CHÀO MỪNG THÀNH VIÊN MỚI (CHỈ CHẠY Ở SERVER CỦA BẠN)
 // =========================================================================
 client.on('guildMemberAdd', async (member) => {
-    // 🛡️ CHỈ CHẠY DUY NHẤT TRÊN ID SERVER CỦA BẠN
     if (member.guild.id !== MY_SERVER_ID) return;
 
     try {
         const memberName = member.user.username;
         const welcomeEmbed = new EmbedBuilder()
             .setColor('#ffaa00')
-            // 🎯 ĐÃ SỬA: ĐƯA TÊN NGƯỜI VÀO LÊN ĐẦU TIÊU ĐỀ THEO ĐÚNG YÊU CẦU CỦA BẠN
             .setTitle(`👋 ${memberName} Welcome TO DUBO BOT BYPASS`)
             .setDescription(
                 `Thank you ${memberName}\n\n` +
