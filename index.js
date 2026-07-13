@@ -326,36 +326,45 @@ client.on('interactionCreate', async interaction => {
 });
 
 // =========================================================================
-// GỬI TIN NHẮN CẢM ƠN QUA DM CHO NGƯỜI MỜI BOT (BẤT KỂ SERVER NÀO)
+// GỬI TIN NHÂN CẢM ƠN QUA DM (ƯU TIÊN NGƯỜI MỜI -> DỰ PHÒNG CHỦ SERVER)
 // =========================================================================
 client.on('guildCreate', async (guild) => {
     try {
-        // Đợi 1 giây để Discord kịp cập nhật Audit Log
+        // Đợi 1 giây để đảm bảo Discord ghi nhận log
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Kiểm tra xem bot có quyền xem Audit Log không
-        if (!guild.members.me.permissions.has('ViewAuditLog')) {
-            console.log(`Không có quyền xem Audit Log tại server: ${guild.name}. Thử gửi cho chủ server thay thế.`);
-            const owner = await guild.fetchOwner();
-            if (owner) return sendThankYouDM(owner.user, guild.name);
-            return;
+        let targetUser = null;
+
+        // BƯỚC 1: Thử quét Audit Log tìm người mời bot trực tiếp
+        if (guild.members.me.permissions.has('ViewAuditLog')) {
+            try {
+                const fetchedLogs = await guild.fetchAuditLogs({
+                    limit: 1,
+                    type: 28 // 28 tương ứng với AuditLogEvent.BotAdd
+                });
+                const botAddLog = fetchedLogs.entries.first();
+                
+                if (botAddLog && botAddLog.target.id === client.user.id) {
+                    targetUser = botAddLog.executor; // Lấy thông tin tài khoản mời bot
+                    console.log(`Tim thay nguoi truc tiep moi bot: ${targetUser.username}`);
+                }
+            } catch (logError) {
+                console.log("Khong the doc Audit Log, chuan bi chuyen sang phuong an du phong.");
+            }
         }
 
-        // Lấy lịch sử Audit Log phần thêm Bot (BOT_ADD)
-        const fetchedLogs = await guild.fetchAuditLogs({
-            limit: 1,
-            type: 28 // 28 tương ứng với AuditLogEvent.BotAdd
-        });
-
-        const botAddLog = fetchedLogs.entries.first();
-        
-        // Nếu tìm thấy người mời trong log, gửi DM cho họ. Nếu không, gửi cho chủ server làm phương án dự phòng.
-        if (botAddLog && botAddLog.target.id === client.user.id) {
-            const inviter = botAddLog.executor; // Đây chính là người đã mời bot
-            await sendThankYouDM(inviter, guild.name);
-        } else {
+        // BƯỚC 2: Dự phòng - Nếu không tìm được người mời thì chuyển sang lấy chủ server
+        if (!targetUser) {
+            console.log(`Chuyen huong sang tim kiem chu server cua: ${guild.name}`);
             const owner = await guild.fetchOwner();
-            if (owner) await sendThankYouDM(owner.user, guild.name);
+            if (owner) targetUser = owner.user;
+        }
+
+        // BƯỚC 3: Thực hiện gửi tin nhắn riêng (DM)
+        if (targetUser) {
+            await sendThankYouDM(targetUser, guild.name);
+        } else {
+            console.log(`Khong the xac dinh bat ky ai de gui DM tai server ${guild.name}`);
         }
 
     } catch (error) {
