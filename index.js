@@ -31,7 +31,16 @@ if (!BOT_TOKEN) {
     process.exit(1);
 }
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+// CẤU HÌNH ID SERVER CỦA BẠN (Thay thế ID server của bạn vào đây)
+const MY_SERVER_ID = 'ID_SERVER_CỦA_BẠN_TẠI_ĐÂY'; 
+
+// Thêm GuildMembers intent để bot có thể lắng nghe sự kiện người dùng tham gia server
+const client = new Client({ 
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers 
+    ] 
+});
 
 // =========================================================================
 // DATA SCRIPTS (ĐÃ ĐƯỢC CHUẨN HÓA DẤU NGOẶC)
@@ -135,9 +144,6 @@ const sailorList = [
     { name: "Express hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Bliqe/Upload/refs/heads/main/Games/SP/Express.lua"))()` }
 ];
 
-// =========================================================================
-// KHO SCRIPT MỚI XẾP LIỀN NHAU LIÊN TỤC CHUẨN 20 DÒNG THEO MẪU GITHUB MOBILE
-// =========================================================================
 const gagList = [
     { name: "Speed hub X ⚡️", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua", true))();` },
     { name: "Lumin hub", code: `loadstring(game:HttpGet("https://pastebin.com/raw/DSzWXEgx", true))()` },
@@ -153,12 +159,7 @@ const gagList = [
     { name: "FFJ hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/FFJ1/Roblox-Exploits/main/scripts/Loader.lua"))()` },
     { name: "EF hub", code: `loadstring(game:HttpGet("https://api.exploitingis.fun/loader"))()` },
     { name: "HckMan hub", code: `loadstring(game:HttpGet(('https://raw.githubusercontent.com/ndaju/-h/refs/heads/main/laodemain.txt'),true))()` },
-    { name: "Alter hub", code: `loadstring(game:HttpGet('https://raw.githubusercontent.com/frvaunted/Main/refs/heads/main/Alter%20Hub'))()` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` }
+    { name: "Alter hub", code: `loadstring(game:HttpGet('https://raw.githubusercontent.com/frvaunted/Main/refs/heads/main/Alter%20Hub'))()` }
 ];
 
 const forsakenList = [
@@ -170,18 +171,7 @@ const forsakenList = [
     { name: "RINGTA", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/PlutomasterAccount/Funny-Hub-V2/main/Forsaken"))()` },
     { name: "SNT hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Snowt69/SNT-HUB/refs/heads/main/Forsaken"))()` },
     { name: "AshLab hub", code: `loadstring(game:HttpGet("https://pastebin.com/raw/Xan01DmF", true))()` },
-    { name: "NS hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/OhhMyGehlee/sak/refs/heads/main/for"))()` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` }
+    { name: "NS hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/OhhMyGehlee/sak/refs/heads/main/for"))()` }
 ];
 
 const stealBrainrotList = [
@@ -196,15 +186,7 @@ const stealBrainrotList = [
     { name: "Arbix hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Youifpg/Steal-a-Brianrot/refs/heads/main/Slowversion.lua"))()` },
     { name: "Roube", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/game/refs/heads/main/TbaoHubStealBranrot"))()` },
     { name: "Ghost hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Akbar123s/Script-Roblox-/refs/heads/main/Script%20Brainrot%20New"))()` },
-    { name: "Neox hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/NEOXHUBMAIN/refs/heads/main/StealABrainrot"))()` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` }
+    { name: "Neox hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/NEOXHUBMAIN/refs/heads/main/StealABrainrot"))()` }
 ];
 
 const murderMysteryList = [
@@ -212,22 +194,7 @@ const murderMysteryList = [
     { name: "Aether hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/vzyxer/Aether-Hub-Global-Roblox-Script-Hub/refs/heads/main/Murder%20Mystery%202"))()` },
     { name: "SNT hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Snowt-Team/SNT-HUB/refs/heads/main/MurderMystery2.txt"))()` },
     { name: "SnapSanix hub", code: `loadstring(game:HttpGet('https://raw.githubusercontent.com/Roman34296589/SnapSanixHUB/refs/heads/main/SnapSanixHUB.lua'))()` },
-    { name: "Tbao hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/thaibao/main/TbaoHubMurdervssheriff"))()` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` },
-    { name: "", code: `` }
+    { name: "Tbao hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/thaibao/main/TbaoHubMurdervssheriff"))()` }
 ];
 
 const fischList = [
@@ -388,10 +355,12 @@ client.on('guildCreate', async (guild) => {
     try {
         const owner = await guild.fetchOwner();
         if (owner) {
+            const ownerName = owner.user.username; // Lấy tên người dùng mời bot
             const thankYouEmbed = new EmbedBuilder()
                 .setColor('#00ffcc')
-                .setTitle('🎉 Thank you!')
+                .setTitle(`🎉 Thank you ${ownerName}`)
                 .setDescription(
+                    `Thank you ${ownerName}\n\n` +
                     `Cảm ơn bạn đã sử dụng bot của tôi\n` +
                     `Thank you for using my bot\n` +
                     `link sever: https://discord.gg/Y7uUkKHBb\n\n` +
@@ -403,6 +372,33 @@ client.on('guildCreate', async (guild) => {
         }
     } catch (error) {
         // Bỏ qua tất cả lỗi (như khi chủ server khóa DM) để bot chạy ngầm hoàn toàn im lặng
+    }
+});
+
+// =========================================================================
+// SỰ KIỆN: CHÀO MỪNG THÀNH VIÊN MỚI (CHỈ CHẠY TRÊN SERVER CỦA BẠN)
+// =========================================================================
+client.on('guildMemberAdd', async (member) => {
+    // Chỉ gửi lời cảm ơn nếu người đó tham gia đúng ID server đã cấp, chặn hoàn toàn server khác
+    if (member.guild.id !== MY_SERVER_ID) return;
+
+    try {
+        const memberName = member.user.username;
+        const welcomeEmbed = new EmbedBuilder()
+            .setColor('#ffaa00')
+            .setTitle(`👋 Thank you ${memberName}`)
+            .setDescription(
+                `Thank you ${memberName}\n\n` +
+                `Cảm ơn bạn đã tham gia server của tôi!\n` +
+                `Thank you for joining my server!\n` +
+                `Chúc bạn có những trải nghiệm tuyệt vời tại đây.`
+            )
+            .setTimestamp();
+
+        // Gửi tin nhắn riêng (DM) trực tiếp cho thành viên vừa tham gia server của bạn
+        await member.send({ embeds: [welcomeEmbed] });
+    } catch (error) {
+        // Bỏ qua lỗi nếu thành viên chặn DM người lạ
     }
 });
 
