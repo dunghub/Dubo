@@ -362,8 +362,8 @@ client.on('guildMemberAdd', async (member) => {
         const memberName = member.user.username;
         const welcomeEmbed = new EmbedBuilder()
             .setColor('#ffaa00')
-            // 🎯 ĐÃ THAY ĐỔI DÒNG CHỮ CHÀO MỪNG THEO YÊU CẦU CỦA BẠN TẠI ĐÂY
-            .setTitle(`👋 Welcome ${memberName} TO DUBO BOT BYPASS`)
+            // 🎯 ĐÃ SỬA: ĐƯA TÊN NGƯỜI VÀO LÊN ĐẦU TIÊU ĐỀ THEO ĐÚNG YÊU CẦU CỦA BẠN
+            .setTitle(`👋 ${memberName} Welcome TO DUBO BOT BYPASS`)
             .setDescription(
                 `Thank you ${memberName}\n\n` +
                 `Cảm ơn bạn đã tham gia server của tôi!\n` +
