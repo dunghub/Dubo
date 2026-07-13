@@ -31,7 +31,7 @@ if (!BOT_TOKEN) {
     process.exit(1);
 }
 
-// 🎯 ĐÃ ĐỔI ĐÚNG ID SERVER CỦA BẠN: Bot chỉ chạy tính năng chào mừng tại duy nhất Server này
+// 🎯 ĐÃ CẬP NHẬT ID SERVER CỦA BẠN TẠI ĐÂY
 const MY_SERVER_ID = '1509197460512309298'; 
 
 // Cấu hình đầy đủ các Intent bắt buộc để quét thành viên
@@ -43,7 +43,7 @@ const client = new Client({
 });
 
 // =========================================================================
-// DATA SCRIPTS
+// DATA SCRIPTS (GIỮ NGUYÊN HOÀN TOÀN ĐẦY ĐỦ KHÔNG RÚT GỌN)
 // =========================================================================
 
 const bloxfruitList = [
@@ -267,4 +267,115 @@ client.on('interactionCreate', async interaction => {
         let currentList = []; let titleName = ""; let customMenuId = "";
         if (interaction.commandName === 'script-bloxfruit') { currentList = bloxfruitList; titleName = "Blox Fruit"; customMenuId = "menu_bloxfruit"; }
         else if (interaction.commandName === 'script-gag2') { currentList = gag2List; titleName = "GAG2"; customMenuId = "menu_gag2"; }
-        else if (interaction.commandName === 'script-99night') { currentList = night99List; titleName = "9
+        else if (interaction.commandName === 'script-99night') { currentList = night99List; titleName = "99 Night"; customMenuId = "menu_99night"; }
+        else if (interaction.commandName === 'script-sailorpice') { currentList = sailorList; titleName = "Sailor Piece"; customMenuId = "menu_sailor"; }
+        else if (interaction.commandName === 'script-gag') { currentList = gagList; titleName = "GAG"; customMenuId = "menu_gag"; }
+        else if (interaction.commandName === 'script-forsaken') { currentList = forsakenList; titleName = "Forsaken"; customMenuId = "menu_forsaken"; }
+        else if (interaction.commandName === 'script-steal-a-brainrot') { currentList = stealBrainrotList; titleName = "Steal a Brainrot"; customMenuId = "menu_steal_brainrot"; }
+        else if (interaction.commandName === 'script-murder-mystery-2') { currentList = murderMysteryList; titleName = "Murder Mystery 2"; customMenuId = "menu_mm2"; }
+        else if (interaction.commandName === 'script-fisch') { currentList = fischList; titleName = "Fisch"; customMenuId = "menu_fisch"; }
+
+        const validList = currentList.filter(s => s.name && s.name.trim() !== "");
+        if (validList.length === 0) return interaction.reply({ content: `Hiện tại chưa có script nào cho ${titleName}!`, ephemeral: true });
+
+        const menuOptions = validList.slice(0, 25).map((script, index) => 
+            new StringSelectMenuOptionBuilder().setLabel(script.name).setDescription(`Bấm để lấy mã code của: ${script.name}`).setValue(index.toString())
+        );
+        const selectMenu = new StringSelectMenuBuilder().setCustomId(customMenuId).setPlaceholder(`Select script | 1-${menuOptions.length}`).setMinValues(1).setMaxValues(1).addOptions(menuOptions);
+        await interaction.reply({ content: `**Select script | ${titleName} (1-${menuOptions.length})**\nChọn mục bên dưới để nhận code:`, components: [new ActionRowBuilder().addComponents(selectMenu)], ephemeral: true });
+    }
+
+    if (interaction.isStringSelectMenu()) {
+        await interaction.deferReply({ ephemeral: true });
+        let list = []; let embedColor = "#000000"; let prefix = "";
+        if (interaction.customId === 'menu_bloxfruit') { list = bloxfruitList; embedColor = '#00ffcc'; prefix = "copy_bf_"; }
+        if (interaction.customId === 'menu_gag2') { list = gag2List; embedColor = '#ff9900'; prefix = "copy_gag2_"; }
+        if (interaction.customId === 'menu_99night') { list = night99List; embedColor = '#ff0055'; prefix = "copy_99night_"; }
+        if (interaction.customId === 'menu_sailor') { list = sailorList; embedColor = '#0099ff'; prefix = "copy_sailor_"; }
+        if (interaction.customId === 'menu_gag') { list = gagList; embedColor = '#33cc33'; prefix = "copy_gag_"; }
+        if (interaction.customId === 'menu_forsaken') { list = forsakenList; embedColor = '#6600cc'; prefix = "copy_forsaken_"; }
+        if (interaction.customId === 'menu_steal_brainrot') { list = stealBrainrotList; embedColor = '#ff3399'; prefix = "copy_steal_"; }
+        if (interaction.customId === 'menu_mm2') { list = murderMysteryList; embedColor = '#cc0000'; prefix = "copy_mm2_"; }
+        if (interaction.customId === 'menu_fisch') { list = fischList; embedColor = '#00ffff'; prefix = "copy_fisch_"; }
+
+        const chosenScript = getScriptByIndex(list, interaction.values[0]);
+        if (!chosenScript) return interaction.editReply({ content: 'Lỗi: Không tìm thấy dữ liệu script!' });
+
+        const embed = new EmbedBuilder().setColor(embedColor).setTitle(`🤖 Dubo script | Cấp mã thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code:', value: `\`\`\`lua\n${chosenScript.code || "-- Trống"}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
+        const copyButton = new ButtonBuilder().setCustomId(`${prefix}${interaction.values[0]}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success);
+        await interaction.editReply({ embeds: [embed], components: [new ActionRowBuilder().addComponents(copyButton)] });
+    }
+
+    if (interaction.isButton()) {
+        await interaction.deferReply({ ephemeral: true });
+        let list = []; let idxStr = "";
+        if (interaction.customId.startsWith('copy_bf_')) { list = bloxfruitList; idxStr = interaction.customId.replace('copy_bf_', ''); }
+        else if (interaction.customId.startsWith('copy_gag2_')) { list = gag2List; idxStr = interaction.customId.replace('copy_gag2_', ''); }
+        else if (interaction.customId.startsWith('copy_99night_')) { list = night99List; idxStr = interaction.customId.replace('copy_99night_', ''); }
+        else if (interaction.customId.startsWith('copy_sailor_')) { list = sailorList; idxStr = interaction.customId.replace('copy_sailor_', ''); }
+        else if (interaction.customId.startsWith('copy_gag_')) { list = gagList; idxStr = interaction.customId.replace('copy_gag_', ''); }
+        else if (interaction.customId.startsWith('copy_forsaken_')) { list = forsakenList; idxStr = interaction.customId.replace('copy_forsaken_', ''); }
+        else if (interaction.customId.startsWith('copy_steal_')) { list = stealBrainrotList; idxStr = interaction.customId.replace('copy_steal_', ''); }
+        else if (interaction.customId.startsWith('copy_mm2_')) { list = murderMysteryList; idxStr = interaction.customId.replace('copy_mm2_', ''); }
+        else if (interaction.customId.startsWith('copy_fisch_')) { list = fischList; idxStr = interaction.customId.replace('copy_fisch_', ''); }
+
+        const chosenScript = getScriptByIndex(list, idxStr);
+        if (!chosenScript) return interaction.editReply({ content: 'Lỗi: Không tìm thấy dữ liệu sao chép!' });
+        await interaction.editReply({ content: `${chosenScript.code || "-- Trống"}` });
+    }
+});
+
+// =========================================================================
+// GỬI TIN NHẮN CẢM ƠN CHỦ SERVER KHI BOT ĐƯỢC MỜI VÀO
+// =========================================================================
+client.on('guildCreate', async (guild) => {
+    try {
+        const owner = await guild.fetchOwner();
+        if (owner) {
+            const ownerName = owner.user.username;
+            const thankYouEmbed = new EmbedBuilder()
+                .setColor('#00ffcc')
+                .setTitle(`🎉 Thank you ${ownerName}`)
+                .setDescription(
+                    `Thank you ${ownerName}\n\n` +
+                    `Cảm ơn bạn đã sử dụng bot của tôi\n` +
+                    `Thank you for using my bot\n` +
+                    `link sever: https://discord.gg/Y7uUkKHBb\n\n` +
+                    `Join my discord server to chat and report bot errors and build bots with me Thank you`
+                )
+                .setTimestamp();
+            await owner.send({ embeds: [thankYouEmbed] });
+        }
+    } catch (error) {
+        // Bỏ qua lỗi khóa DM
+    }
+});
+
+// =========================================================================
+// KIỂM TRA SỰ KIỆN CHÀO MỪNG THÀNH VIÊN MỚI
+// =========================================================================
+client.on('guildMemberAdd', async (member) => {
+    // 🛡️ CHỈ CHẠY DUY NHẤT TRÊN ID SERVER CỦA BẠN
+    if (member.guild.id !== MY_SERVER_ID) return;
+
+    try {
+        const memberName = member.user.username;
+        const welcomeEmbed = new EmbedBuilder()
+            .setColor('#ffaa00')
+            .setTitle(`👋 Thank you ${memberName}`)
+            .setDescription(
+                `Thank you ${memberName}\n\n` +
+                `Cảm ơn bạn đã tham gia server của tôi!\n` +
+                `Thank you for joining my server!\n` +
+                `Chúc bạn có những trải nghiệm tuyệt vời tại đây.`
+            )
+            .setTimestamp();
+
+        await member.send({ embeds: [welcomeEmbed] });
+        console.log(`Da gui loi chao mung den thanh vien moi: ${memberName}`);
+    } catch (error) {
+        console.error(`Khong the gui DM vi tai khoan này dang khoa tin nhan nguoi la!`, error);
+    }
+});
+
+client.login(BOT_TOKEN);
