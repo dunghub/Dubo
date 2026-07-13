@@ -37,10 +37,12 @@ if (!BOT_TOKEN) {
     process.exit(1);
 }
 
-// 🎯 CẤU HÌNH ID QUAN TRỌNG
+// 🎯 CẤU HÌNH ID QUAN TRỌNG ĐÃ CẬP NHẬT THEO YÊU CẦU
 const MY_SERVER_ID = '1509197460512309298'; 
-const OWNER_ID = '1501730680613114048'; // ID của ông (Độc quyền dùng lệnh ẩn danh và xóa kênh trùng)
-const TICKET_LOG_CHANNEL_ID = '1526179515355893811'; // Kênh log mới đã cập nhật
+const OWNER_ID = '1501730680613114048'; // ID của ông (Độc quyền dùng lệnh ẩn danh)
+
+// ĐƯỜNG ỐNG ĐẦU RA MẶC ĐỊNH (Sẽ tự động cập nhật động khi chạy lệnh /ticket-dubo)
+let TICKET_LOG_CHANNEL_ID = '1526179515355893811'; 
 
 const client = new Client({ 
     intents: [
@@ -50,7 +52,7 @@ const client = new Client({
 });
 
 // =========================================================================
-// DATA SCRIPTS
+// DATA SCRIPTS (GIỮ NGUYÊN HOÀN TOÀN ĐẦY ĐỦ KHÔNG RÚT GỌN)
 // =========================================================================
 
 const bloxfruitList = [
@@ -121,7 +123,7 @@ const night99List = [
     { name: "Nazuro", code: `loadstring(game:HttpGet("https://nazuro.xyz/99nights"))()` },
     { name: "DarkEsc", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/DarkenedEssence/DarkEsc/refs/heads/main/Loader.lua"))()` },
     { name: "PhantomFlux", code: `loadstring(game:HttpGet('https://raw.githubusercontent.com/sudaisontopxd/PhantomFlux/refs/heads/main/99NightsInTheForest', true))()` },
-    { name: "Universal", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/adibhub1/99-nighit-in-forest/refs/heads/main/99%20night%20id%20in%20forest", true))()` },
+    { name: "Universal", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/adibhub1/99-nighit-in-forest/refs/heads/main/99%20night%20in%20forest", true))()` },
     { name: "Kenniel", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Kenniel123/99-Nights-in-the-Forest/refs/heads/main/99%20Nights%20in%20the%20Forest"))()` },
     { name: "Gec hub", code: `loadstring(game:HttpGet("https://pastebin.com/raw/NTpCMwn8"))()` },
     { name: "Foxxname", code: `loadstring(game:HttpGet("https://pastebin.com/raw/7hfV4s5s"))()` },
@@ -243,16 +245,23 @@ client.once('ready', async () => {
         new SlashCommandBuilder().setName('script-murder-mystery-2').setDescription('Hiển thị bảng chọn script Murder Mystery 2 ẩn danh'),
         new SlashCommandBuilder().setName('script-fisch').setDescription('Hiển thị bảng chọn script Fisch ẩn danh'),
         
+        // NÂNG CẤP LỆNH ĐƯỜNG ỐNG: Cho phép chọn Kênh Nguồn (Đầu vào) và Kênh Đích (Đầu ra nhận log)
         new SlashCommandBuilder()
             .setName('ticket-dubo')
-            .setDescription('Lệnh cấu hình đăng bài viết Ticket (Chỉ Chủ Bot mới có quyền)')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-            
-        // ✨ THÊM LỆNH MỚI: XOÁ KÊNH TRÙNG NHAU (CHỈ ÔNG HOẶC ADMIN SỬ DỤNG)
-        new SlashCommandBuilder()
-            .setName('clear-duplicate-channels')
-            .setDescription('Quét và xoá các kênh trùng tên trong server nhanh chóng')
-            .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
+            .setDescription('Thiết lập đường ống gửi bài viết và nhận ticket (Chỉ Chủ Bot)')
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .addChannelOption(option => 
+                option.setName('kenh-dang-embed')
+                    .setDescription('Chọn kênh đầu vào để đăng bài Embed kèm nút tạo Ticket')
+                    .addChannelTypes(ChannelType.GuildText)
+                    .setRequired(true)
+            )
+            .addChannelOption(option => 
+                option.setName('kenh-nhan-log')
+                    .setDescription('Chọn kênh đầu ra để bot tự động chuyển thông tin tố cáo/ticket về')
+                    .addChannelTypes(ChannelType.GuildText)
+                    .setRequired(true)
+            )
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
@@ -275,60 +284,58 @@ function getScriptByIndex(list, selectValue) {
 // =========================================================================
 client.on('interactionCreate', async interaction => {
     
+    // 1. XỬ LÝ SLASH COMMAND
     if (interaction.isChatInputCommand()) {
         
-        // 🛠️ XỬ LÝ LỆNH XOÁ KÊNH TRÙNG NHAU
-        if (interaction.commandName === 'clear-duplicate-channels') {
-            // Check nếu người gọi lệnh không phải là chủ bot HOẶC không có quyền Quản lý kênh
-            if (interaction.user.id !== OWNER_ID && !interaction.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
-                return interaction.reply({ content: '❌ Bạn không được chủ cấp quyền hoặc không có quyền `Quản lý kênh` để dùng lệnh này!', ephemeral: true });
-            }
-
-            await interaction.deferReply({ ephemeral: true });
-
-            try {
-                // Tải lại bộ nhớ cache kênh của server để đảm bảo dữ liệu mới nhất
-                const channels = await interaction.guild.channels.fetch();
-                const processedNames = new Set();
-                let deletedCount = 0;
-
-                for (const [id, channel] of channels) {
-                    // Chỉ xử lý kênh văn bản và kênh thoại (bỏ qua Category)
-                    if (channel.type === ChannelType.GuildText || channel.type === ChannelType.GuildVoice) {
-                        // Tạo ra một key định danh duy nhất gồm "TênKênh_LoạiKênh" (ví dụ: "chat_0")
-                        const channelKey = `${channel.name.toLowerCase()}_${channel.type}`;
-
-                        if (processedNames.has(channelKey)) {
-                            // Nếu tên này đã xuất hiện trước đó, tiến hành xóa kênh trùng lặp này đi
-                            await channel.delete(`Xoá kênh trùng lặp tự động bởi lệnh của hệ thống`);
-                            deletedCount++;
-                        } else {
-                            // Nếu chưa có, lưu tên này vào danh sách đã quét để giữ lại kênh đầu tiên
-                            processedNames.add(channelKey);
-                        }
-                    }
-                }
-
-                return interaction.editReply({ content: `✅ **Đã hoàn tất dọn dẹp!** Hệ thống đã quét và xóa sạch **${deletedCount}** kênh bị trùng tên trong server.` });
-
-            } catch (error) {
-                console.error("Lỗi khi xóa kênh trùng:", error);
-                return interaction.editReply({ content: `❌ Thất bại: Bot thiếu quyền \`Manage Channels\` cao nhất hoặc gặp lỗi hệ thống khi xóa.` });
-            }
-        }
-
+        // KIỂM TRA ĐỘC QUYỀN LỆNH /ticket-dubo BẰNG ID CỦA ÔNG
         if (interaction.commandName === 'ticket-dubo') {
             if (interaction.user.id !== OWNER_ID) {
                 return interaction.reply({ content: '❌ Lệnh ẩn danh này đã bị khóa bằng ID phần cứng! Bạn không có quyền sử dụng.', ephemeral: true });
             }
             
-            const channelSelect = new ChannelSelectMenuBuilder()
-                .setCustomId('select_ticket_channel')
-                .setPlaceholder('Chọn kênh bạn muốn hú bài viết Ticket...')
-                .addChannelTypes(ChannelType.GuildText);
+            // 🛡️ [FIX 1] Báo nhận lệnh ngay lập tức để chống lỗi 3 giây phản hồi
+            await interaction.deferReply({ ephemeral: true });
 
-            const row = new ActionRowBuilder().addComponents(channelSelect);
-            return interaction.reply({ content: 'Hãy chọn kênh văn bản để bot đăng khung Embed Ticket:', components: [row], ephemeral: true });
+            const sourceChannel = interaction.options.getChannel('kenh-dang-embed');
+            const targetChannel = interaction.options.getChannel('kenh-nhan-log');
+
+            // Cập nhật ID Kênh nhận log đầu ra vào biến hệ thống toàn cục
+            TICKET_LOG_CHANNEL_ID = targetChannel.id;
+
+            // Tạo nút tạo Ticket màu đỏ đậm rực rỡ
+            const ticketButton = new ButtonBuilder()
+                .setCustomId('open_ticket_modal')
+                .setLabel('🎫 Ticket Support')
+                .setStyle(ButtonStyle.Danger); 
+
+            const row = new ActionRowBuilder().addComponents(ticketButton);
+
+            // Tạo Khung Embed màu xanh biển đậm rực rỡ
+            const ticketEmbed = new EmbedBuilder()
+                .setColor('#0055ff') 
+                .setTitle('🛠️ HỆ THỐNG HỖ TRỢ & TỐ CÁO | SUPPORT SYSTEM')
+                .setDescription(
+                    `**[VN] Hướng dẫn gửi yêu cầu:**\n` +
+                    `Nhấn nút tạo ticket ở dưới, ghi rõ bằng chứng lý do và kèm link video để bằng chứng rõ ràng, để chúng tôi thực hiện sự trừng phạt đối với họ.\n\n` +
+                    `--------------------------------------------------\n\n` +
+                    `**[ENG] Request Guide:**\n` +
+                    `*Click the button below to create a ticket stating the reason and attaching a video link to make it clear, so that we can punish them.*`
+                )
+                .setFooter({ text: 'Dubo Bypass Script Hub • Click Button Below' })
+                .setTimestamp();
+
+            // Tiến hành hú Khung Embed đầu vào sang kênh nguồn
+            try {
+                await sourceChannel.send({ embeds: [ticketEmbed], components: [row] });
+                
+                // Trả lời lại bằng editReply sau khi dùng deferReply thành công
+                return interaction.editReply({ 
+                    content: `✅ **Đường ống thiết lập thành công!**\n📥 **Đầu vào (Embed):** Đã hú bảng Ticket tại ${sourceChannel}\n📤 **Đầu ra (Nhận Log):** Đã chuyển hướng toàn bộ ticket về ${targetChannel}`
+                });
+            } catch (err) {
+                console.error(err);
+                return interaction.editReply({ content: '❌ Thất bại! Vui lòng kiểm tra quyền hạn của Bot tại kênh đã chọn.' });
+            }
         }
 
         if (interaction.commandName === 'help') {
@@ -359,36 +366,7 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ content: `**Select script | ${titleName} (1-${menuOptions.length})**\nChọn mục bên dưới để nhận code:`, components: [new ActionRowBuilder().addComponents(selectMenu)], ephemeral: true });
     }
 
-    if (interaction.isChannelSelectMenu() && interaction.customId === 'select_ticket_channel') {
-        const targetChannelId = interaction.values[0];
-        const targetChannel = interaction.guild.channels.cache.get(targetChannelId);
-
-        if (!targetChannel) return interaction.reply({ content: '❌ Không tìm thấy kênh đã chọn.', ephemeral: true });
-
-        const ticketButton = new ButtonBuilder()
-            .setCustomId('open_ticket_modal')
-            .setLabel('🎫 Ticket Support')
-            .setStyle(ButtonStyle.Danger); 
-
-        const row = new ActionRowBuilder().addComponents(ticketButton);
-
-        const ticketEmbed = new EmbedBuilder()
-            .setColor('#0055ff') 
-            .setTitle('🛠️ HỆ THỐNG HỖ TRỢ & TỐ CÁO | SUPPORT SYSTEM')
-            .setDescription(
-                `**[VN] Hướng dẫn gửi yêu cầu:**\n` +
-                `Nhấn nút tạo ticket ở dưới, ghi rõ bằng chứng lý do và kèm link video để bằng chứng rõ ràng, để chúng tôi thực hiện sự trừng phạt đối với họ.\n\n` +
-                `--------------------------------------------------\n\n` +
-                `**[ENG] Request Guide:**\n` +
-                `*Click the button below to create a ticket stating the reason and attaching a video link to make it clear, so that we can punish them.*`
-            )
-            .setFooter({ text: 'Dubo Bypass Script Hub • Click Button Below' })
-            .setTimestamp();
-
-        await targetChannel.send({ embeds: [ticketEmbed], components: [row] });
-        return interaction.reply({ content: `✅ Đã hú bảng Ticket Embed xanh rực rỡ thành công tại kênh <#${targetChannelId}>!`, ephemeral: true });
-    }
-
+    // 2. XỬ LÝ KHI USER ẤN NÚT "TICKET" MÀU ĐỎ -> HIỆN MODAL NHẬP LIỆU (Giữ nguyên showModal)
     if (interaction.isButton() && interaction.customId === 'open_ticket_modal') {
         const modal = new ModalBuilder()
             .setCustomId('ticket_submission_modal')
@@ -424,11 +402,17 @@ client.on('interactionCreate', async interaction => {
         return interaction.showModal(modal);
     }
 
+    // 3. XỬ LÝ KHI USER BẤM SEND REQUEST TRÊN MODAL -> ĐẨY VỀ ĐẦU RA ĐÃ ĐƯỢC CHỌN TRONG ĐƯỜNG ỐNG
     if (interaction.isModalSubmit() && interaction.customId === 'ticket_submission_modal') {
+        
+        // 🛡️ [FIX 2] Phải hoãn lại ngay để tránh treo lệnh quá 3s khi đang xử lý đẩy Embed đường ống đầu ra
+        await interaction.deferReply({ ephemeral: true });
+
         const userTag = interaction.fields.getTextInputValue('ticket_user_tag');
         const reason = interaction.fields.getTextInputValue('ticket_reason');
         const evidenceLink = interaction.fields.getTextInputValue('ticket_evidence_link');
 
+        // Tạo Embed gửi về cho đầu ra nhận log
         const logEmbed = new EmbedBuilder()
             .setColor('#0055ff') 
             .setTitle('🚨 ĐƠN TỐ CÁO / YÊU CẦU HỖ TRỢ MỚI')
@@ -442,16 +426,24 @@ client.on('interactionCreate', async interaction => {
             .setTimestamp()
             .setFooter({ text: 'Hệ thống Dubo Ticket Support' });
 
-        const logChannel = client.channels.cache.get(TICKET_LOG_CHANNEL_ID);
-        if (logChannel) {
-            await logChannel.send({ embeds: [logEmbed] });
-        } else {
-            console.error("LỖI: Không tìm thấy kênh Log nhận ticket! Vui lòng kiểm tra lại ID.");
+        try {
+            // 🚀 [TỐI ƯU ĐƯỜNG ỐNG ĐẦU RA]: Dùng fetch để ép bot cào thẳng dữ liệu từ API, tránh bị hụt cache khi bot khởi động lại
+            const logChannel = await client.channels.fetch(TICKET_LOG_CHANNEL_ID).catch(() => null);
+            
+            if (logChannel) {
+                await logChannel.send({ embeds: [logEmbed] });
+                return interaction.editReply({ content: '✅ Gửi yêu cầu hỗ trợ thành công! Ban quản trị sẽ sớm xử lý.' });
+            } else {
+                console.error("LỖI: Không tìm thấy hoặc bot không có quyền truy cập kênh Log nhận ticket đầu ra!");
+                return interaction.editReply({ content: '❌ Thất bại: Không kết nối được tới đường ống đầu ra (Kênh nhận Log). Vui lòng thông báo cho admin.' });
+            }
+        } catch (error) {
+            console.error("Lỗi đường ống đầu ra:", error);
+            return interaction.editReply({ content: '❌ Đã xảy ra lỗi hệ thống trong quá trình truyền dữ liệu qua đường ống.' });
         }
-
-        return interaction.reply({ content: '✅ Gửi yêu cầu hỗ trợ thành công! Ban quản trị sẽ sớm xử lý.', ephemeral: true });
     }
 
+    // 4. CÁC XỬ LÝ SELECT MENU SẴN CÓ CỦA SCRIPT (GIỮ NGUYÊN)
     if (interaction.isStringSelectMenu()) {
         if (['menu_bloxfruit', 'menu_gag2', 'menu_99night', 'menu_sailor', 'menu_gag', 'menu_forsaken', 'menu_steal_brainrot', 'menu_mm2', 'menu_fisch'].includes(interaction.customId)) {
             await interaction.deferReply({ ephemeral: true });
@@ -475,6 +467,7 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
+    // 5. CÁC XỬ LÝ NÚT SẴN CÓ CỦA SCRIPT (GIỮ NGUYÊN)
     if (interaction.isButton() && interaction.customId.startsWith('copy_')) {
         await interaction.deferReply({ ephemeral: true });
         let list = []; let idxStr = "";
@@ -494,6 +487,9 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+// =========================================================================
+// KIỂM TRA SỰ KIỆN CHÀO MỪNG THÀNH VIÊN MỚI (CHỈ CHẠY Ở SERVER CỦA BẠN)
+// =========================================================================
 client.on('guildMemberAdd', async (member) => {
     if (member.guild.id !== MY_SERVER_ID) return;
 
@@ -517,4 +513,4 @@ client.on('guildMemberAdd', async (member) => {
     }
 });
 
-client.login(BOT_TOKEN);
+client.login(BOT_TOKEN); 
