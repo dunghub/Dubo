@@ -293,7 +293,9 @@ client.on('interactionCreate', async interaction => {
                 return interaction.reply({ content: '❌ Lệnh ẩn danh này đã bị khóa bằng ID phần cứng! Bạn không có quyền sử dụng.', ephemeral: true });
             }
             
-            // XỬ LÝ ĐƯỜNG ỐNG CẤU HÌNH ĐỘNG
+            // 🛡️ [FIX 1] Báo nhận lệnh ngay lập tức để chống lỗi 3 giây phản hồi
+            await interaction.deferReply({ ephemeral: true });
+
             const sourceChannel = interaction.options.getChannel('kenh-dang-embed');
             const targetChannel = interaction.options.getChannel('kenh-nhan-log');
 
@@ -325,13 +327,14 @@ client.on('interactionCreate', async interaction => {
             // Tiến hành hú Khung Embed đầu vào sang kênh nguồn
             try {
                 await sourceChannel.send({ embeds: [ticketEmbed], components: [row] });
-                return interaction.reply({ 
-                    content: `✅ **Đường ống thiết lập thành công!**\n📥 **Đầu vào (Embed):** Đã hú bảng Ticket tại ${sourceChannel}\n📤 **Đầu ra (Nhận Log):** Đã chuyển hướng toàn bộ ticket về ${targetChannel}`, 
-                    ephemeral: true 
+                
+                // Trả lời lại bằng editReply sau khi dùng deferReply thành công
+                return interaction.editReply({ 
+                    content: `✅ **Đường ống thiết lập thành công!**\n📥 **Đầu vào (Embed):** Đã hú bảng Ticket tại ${sourceChannel}\n📤 **Đầu ra (Nhận Log):** Đã chuyển hướng toàn bộ ticket về ${targetChannel}`
                 });
             } catch (err) {
                 console.error(err);
-                return interaction.reply({ content: '❌ Thất bại! Vui lòng kiểm tra quyền hạn của Bot tại kênh đã chọn.', ephemeral: true });
+                return interaction.editReply({ content: '❌ Thất bại! Vui lòng kiểm tra quyền hạn của Bot tại kênh đã chọn.' });
             }
         }
 
@@ -363,7 +366,7 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ content: `**Select script | ${titleName} (1-${menuOptions.length})**\nChọn mục bên dưới để nhận code:`, components: [new ActionRowBuilder().addComponents(selectMenu)], ephemeral: true });
     }
 
-    // 2. XỬ LÝ KHI USER ẤN NÚT "TICKET" MÀU ĐỎ -> HIỆN MODAL NHẬP LIỆU
+    // 2. XỬ LÝ KHI USER ẤN NÚT "TICKET" MÀU ĐỎ -> HIỆN MODAL NHẬP LIỆU (Giữ nguyên showModal)
     if (interaction.isButton() && interaction.customId === 'open_ticket_modal') {
         const modal = new ModalBuilder()
             .setCustomId('ticket_submission_modal')
@@ -401,6 +404,10 @@ client.on('interactionCreate', async interaction => {
 
     // 3. XỬ LÝ KHI USER BẤM SEND REQUEST TRÊN MODAL -> ĐẨY VỀ ĐẦU RA ĐÃ ĐƯỢC CHỌN TRONG ĐƯỜNG ỐNG
     if (interaction.isModalSubmit() && interaction.customId === 'ticket_submission_modal') {
+        
+        // 🛡️ [FIX 2] Phải hoãn lại ngay để tránh treo lệnh quá 3s khi đang xử lý đẩy Embed đường ống đầu ra
+        await interaction.deferReply({ ephemeral: true });
+
         const userTag = interaction.fields.getTextInputValue('ticket_user_tag');
         const reason = interaction.fields.getTextInputValue('ticket_reason');
         const evidenceLink = interaction.fields.getTextInputValue('ticket_evidence_link');
@@ -419,15 +426,21 @@ client.on('interactionCreate', async interaction => {
             .setTimestamp()
             .setFooter({ text: 'Hệ thống Dubo Ticket Support' });
 
-        // Tự động tìm kênh nhận log đã thiết lập qua đường ống của lệnh để chuyển thẳng về
-        const logChannel = client.channels.cache.get(TICKET_LOG_CHANNEL_ID);
-        if (logChannel) {
-            await logChannel.send({ embeds: [logEmbed] });
-        } else {
-            console.error("LỖI: Không tìm thấy kênh Log nhận ticket đầu ra! Hãy kiểm tra lại ID đường ống.");
+        try {
+            // 🚀 [TỐI ƯU ĐƯỜNG ỐNG ĐẦU RA]: Dùng fetch để ép bot cào thẳng dữ liệu từ API, tránh bị hụt cache khi bot khởi động lại
+            const logChannel = await client.channels.fetch(TICKET_LOG_CHANNEL_ID).catch(() => null);
+            
+            if (logChannel) {
+                await logChannel.send({ embeds: [logEmbed] });
+                return interaction.editReply({ content: '✅ Gửi yêu cầu hỗ trợ thành công! Ban quản trị sẽ sớm xử lý.' });
+            } else {
+                console.error("LỖI: Không tìm thấy hoặc bot không có quyền truy cập kênh Log nhận ticket đầu ra!");
+                return interaction.editReply({ content: '❌ Thất bại: Không kết nối được tới đường ống đầu ra (Kênh nhận Log). Vui lòng thông báo cho admin.' });
+            }
+        } catch (error) {
+            console.error("Lỗi đường ống đầu ra:", error);
+            return interaction.editReply({ content: '❌ Đã xảy ra lỗi hệ thống trong quá trình truyền dữ liệu qua đường ống.' });
         }
-
-        return interaction.reply({ content: '✅ Gửi yêu cầu hỗ trợ thành công! Ban quản trị sẽ sớm xử lý.', ephemeral: true });
     }
 
     // 4. CÁC XỬ LÝ SELECT MENU SẴN CÓ CỦA SCRIPT (GIỮ NGUYÊN)
