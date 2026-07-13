@@ -47,7 +47,7 @@ let TICKET_LOG_CHANNEL_ID = '1526179515355893811';
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMembers, // ⚠️ BẮT BUỘC PHẢI BẬT TRÊN DEVELOPER PORTAL
         GatewayIntentBits.GuildMessages
     ] 
 });
@@ -397,7 +397,7 @@ client.on('interactionCreate', async interaction => {
         return interaction.showModal(modal);
     }
 
-    // 3. XỬ LÝ KHI USER BẤM SEND REQUEST TRÊN MODAL -> ĐẨY VỀ ĐẦU RA ĐÃ ĐƯỢC CHỌN TRONG ĐƯỜNG ỐNG kèm 3 NÚT ADMIN QUẢN TRỊ
+    // 3. XỬ LÝ KHI USER BẤM SEND REQUEST TRÊN MODAL
     if (interaction.isModalSubmit() && interaction.customId === 'ticket_submission_modal') {
         await interaction.deferReply({ ephemeral: true });
 
@@ -418,7 +418,6 @@ client.on('interactionCreate', async interaction => {
             .setTimestamp()
             .setFooter({ text: 'Hệ thống Hỗ trợ Ticket' });
 
-        // Tích hợp hàng nút quản lý xử phạt nhanh dành riêng cho admin tại kênh Log đầu ra
         const replyButton = new ButtonBuilder()
             .setCustomId(`reply_ticket_${interaction.user.id}`)
             .setLabel('Gửi tin nhắn')
@@ -502,7 +501,7 @@ client.on('interactionCreate', async interaction => {
 
         const userInput = new TextInputBuilder()
             .setCustomId('mute_target_name')
-            .setLabel('Nhập Tên, Tag hoặc ID (Có hoặc không có @ đều được)')
+            .setLabel('Nhập Tên, Tag hoặc ID')
             .setPlaceholder('Ví dụ: nguyenvana, @nguyenvana hoặc 84930129...')
             .setStyle(TextInputStyle.Short)
             .setRequired(true);
@@ -539,7 +538,7 @@ client.on('interactionCreate', async interaction => {
 
         const userInput = new TextInputBuilder()
             .setCustomId('ban_target_name')
-            .setLabel('Nhập Tên, Tag hoặc ID (Có hoặc không có @ đều được)')
+            .setLabel('Nhập Tên, Tag hoặc ID')
             .setPlaceholder('Ví dụ: nguyenvana, @nguyenvana hoặc 84930129...')
             .setStyle(TextInputStyle.Short)
             .setRequired(true);
@@ -569,27 +568,30 @@ client.on('interactionCreate', async interaction => {
         });
     }
 
-    // --- D. THỰC THI QUÉT MUTE SAU KHI CHỌN THỜI GIAN VÀ CẤM ---
+    // --- D. THỰC THI QUÉT MUTE SAU KHI CHỌN THỜI GIAN ---
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith('select_mute_time_')) {
         await interaction.deferReply({ ephemeral: true });
         const targetTag = interaction.customId.replace('select_mute_time_', '');
         const duration = parseInt(interaction.values[0]);
+        
+        // Làm sạch ký tự lạ trong ID
         const cleanIdOrName = targetTag.replace(/[<@!>]/g, '');
 
         try {
+            // SỬA LỖI TÌM KIẾM: Quét danh sách thành viên tối ưu hơn
             const members = await interaction.guild.members.fetch();
             const targetMember = members.find(m => 
-                m.user.tag === targetTag || 
-                m.user.username === targetTag || 
-                m.user.username === cleanIdOrName ||
-                m.id === cleanIdOrName
+                m.id === cleanIdOrName || 
+                m.user.username === cleanIdOrName || 
+                m.user.tag === targetTag
             );
 
             if (!targetMember) {
                 return interaction.editReply({ content: `❌ Không tìm thấy người dùng \`${targetTag}\` trong server này.` });
             }
 
-            await targetMember.timeout(duration, `Bị xử phạt bởi Admin ${interaction.user.username}`);
+            // Thực hiện Timeout (Mute phiên bản mới của discord.js v14)
+            await targetMember.timeout(duration, `Bị phạt bởi Admin ${interaction.user.username}`);
 
             const minutes = duration / 60000;
             let timeString = `${minutes} phút`;
@@ -608,11 +610,12 @@ client.on('interactionCreate', async interaction => {
 
             return interaction.editReply({ embeds: [muteEmbed] });
         } catch (err) {
-            return interaction.editReply({ content: '❌ Lỗi hệ thống! Bot không đủ quyền hạn xử lý thành viên này.' });
+            console.error(err);
+            return interaction.editReply({ content: '❌ Thất bại! Bot không đủ quyền (Role của bot phải xếp trên người bị Mute).' });
         }
     }
 
-    // --- E. THỰC THI QUÉT BAN SAU KHI CHỌN THỜI GIAN VÀ TRỤC XUẤT ---
+    // --- E. THỰC THI QUÉT BAN SAU KHI CHỌN THỜI GIAN ---
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith('select_ban_time_')) {
         await interaction.deferReply({ ephemeral: true });
         const targetTag = interaction.customId.replace('select_ban_time_', '');
@@ -623,22 +626,20 @@ client.on('interactionCreate', async interaction => {
             const guild = interaction.guild;
             const members = await guild.members.fetch();
             const targetMember = members.find(m => 
-                m.user.tag === targetTag || 
-                m.user.username === targetTag || 
-                m.user.username === cleanIdOrName ||
-                m.id === cleanIdOrName
+                m.id === cleanIdOrName || 
+                m.user.username === cleanIdOrName || 
+                m.user.tag === targetTag
             );
 
             let targetUser = targetMember ? targetMember.user : null;
 
-            if (!targetUser) {
-                if (cleanIdOrName.length >= 17 && !isNaN(cleanIdOrName)) {
-                    targetUser = await client.users.fetch(cleanIdOrName).catch(() => null);
-                }
+            // Nếu không tìm thấy trong server, cố tìm bằng ID global
+            if (!targetUser && cleanIdOrName.length >= 17 && !isNaN(cleanIdOrName)) {
+                targetUser = await client.users.fetch(cleanIdOrName).catch(() => null);
             }
 
             if (!targetUser) {
-                return interaction.editReply({ content: `❌ Không tìm thấy thông tin của \`${targetTag}\` trên Discord để ban.` });
+                return interaction.editReply({ content: `❌ Không tìm thấy thông tin của \`${targetTag}\` để tiến hành ban.` });
             }
 
             const banEmbed = new EmbedBuilder()
@@ -674,7 +675,8 @@ client.on('interactionCreate', async interaction => {
                 return interaction.editReply({ embeds: [banEmbed] });
             }
         } catch (err) {
-            return interaction.editReply({ content: '❌ Thất bại! Vui lòng kiểm tra lại quyền hạn hoặc phân cấp Role của bot.' });
+            console.error(err);
+            return interaction.editReply({ content: '❌ Thất bại! Vui lòng kiểm tra quyền hạn ban hoặc thứ tự Role của bot.' });
         }
     }
 
