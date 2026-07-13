@@ -9,7 +9,13 @@ const {
     StringSelectMenuOptionBuilder,
     EmbedBuilder,
     ButtonBuilder, 
-    ButtonStyle
+    ButtonStyle,
+    ModalBuilder,
+    TextInputBuilder,
+    TextInputStyle,
+    ChannelSelectMenuBuilder,
+    ChannelType,
+    PermissionFlagsBits
 } = require('discord.js');
 const http = require('http');
 
@@ -31,10 +37,11 @@ if (!BOT_TOKEN) {
     process.exit(1);
 }
 
-// 🎯 ID SERVER CỦA BẠN (Dùng cho sự kiện chào mừng thành viên)
+// 🎯 CẤU HÌNH ID QUAN TRỌNG ĐÃ CẬP NHẬT THEO YÊU CẦU
 const MY_SERVER_ID = '1509197460512309298'; 
+const OWNER_ID = '1501730680613114048'; // ID của ông (Độc quyền dùng lệnh ẩn danh)
+const TICKET_LOG_CHANNEL_ID = '1526153529755177051'; // Kênh nhận log support từ link ông gửi
 
-// Cấu hình đầy đủ các Intent bắt buộc
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds,
@@ -224,6 +231,8 @@ const fischList = [
 client.once('ready', async () => {
     console.log(`Bot Dubo script va Web Server da Online: ${client.user.tag}`);
     
+    // Đăng ký lệnh ẩn danh /ticket-dubo với quyền mặc định là Admin
+    // Nhưng bên dưới phần On Interaction ta check ID chặt chẽ nữa nên chỉ duy nhất ông dùng được!
     const commands = [
         new SlashCommandBuilder().setName('help').setDescription('Hiển thị hướng dẫn sử dụng bot bằng tiếng Việt và Anh'),
         new SlashCommandBuilder().setName('script-bloxfruit').setDescription('Hiển thị bảng chọn script Blox Fruit ẩn danh'),
@@ -234,7 +243,13 @@ client.once('ready', async () => {
         new SlashCommandBuilder().setName('script-forsaken').setDescription('Hiển thị bảng chọn script Forsaken ẩn danh'),
         new SlashCommandBuilder().setName('script-steal-a-brainrot').setDescription('Hiển thị bảng chọn script Steal a Brainrot ẩn danh'),
         new SlashCommandBuilder().setName('script-murder-mystery-2').setDescription('Hiển thị bảng chọn script Murder Mystery 2 ẩn danh'),
-        new SlashCommandBuilder().setName('script-fisch').setDescription('Hiển thị bảng chọn script Fisch ẩn danh')
+        new SlashCommandBuilder().setName('script-fisch').setDescription('Hiển thị bảng chọn script Fisch ẩn danh'),
+        
+        // LỆNH ĐỘC QUYỀN AN TOÀN
+        new SlashCommandBuilder()
+            .setName('ticket-dubo')
+            .setDescription('Lệnh cấu hình đăng bài viết Ticket (Chỉ Chủ Bot mới có quyền)')
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) 
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
@@ -256,7 +271,26 @@ function getScriptByIndex(list, selectValue) {
 // XỬ LÝ SỰ KIỆN LỆNH / MENU / NÚT
 // =========================================================================
 client.on('interactionCreate', async interaction => {
+    
+    // 1. XỬ LÝ SLASH COMMAND
     if (interaction.isChatInputCommand()) {
+        
+        // KIỂM TRA ĐỘC QUYỀN LỆNH /ticket-dubo BẰNG ID CỦA ÔNG VỚI CÁC SERVER KHÁC
+        if (interaction.commandName === 'ticket-dubo') {
+            if (interaction.user.id !== OWNER_ID) {
+                return interaction.reply({ content: '❌ Lệnh ẩn danh này đã bị khóa bằng ID phần cứng! Bạn không có quyền sử dụng.', ephemeral: true });
+            }
+            
+            // Hiện Menu chọn kênh trong máy chủ để đăng bài Ticket
+            const channelSelect = new ChannelSelectMenuBuilder()
+                .setCustomId('select_ticket_channel')
+                .setPlaceholder('Chọn kênh bạn muốn hú bài viết Ticket...')
+                .addChannelTypes(ChannelType.GuildText);
+
+            const row = new ActionRowBuilder().addComponents(channelSelect);
+            return interaction.reply({ content: 'Hãy chọn kênh văn bản để bot đăng khung Embed Ticket:', components: [row], ephemeral: true });
+        }
+
         if (interaction.commandName === 'help') {
             const helpMessage = 
                 `**VN:** Chọn một kho kịch bản của 1 trò chơi mà bạn yêu thích, chọn kịch bản trong danh sách mà bạn muốn và nhấn coppy ở dưới để nhận kịch bản.\n` +
@@ -285,28 +319,133 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ content: `**Select script | ${titleName} (1-${menuOptions.length})**\nChọn mục bên dưới để nhận code:`, components: [new ActionRowBuilder().addComponents(selectMenu)], ephemeral: true });
     }
 
-    if (interaction.isStringSelectMenu()) {
-        await interaction.deferReply({ ephemeral: true });
-        let list = []; let embedColor = "#000000"; let prefix = "";
-        if (interaction.customId === 'menu_bloxfruit') { list = bloxfruitList; embedColor = '#00ffcc'; prefix = "copy_bf_"; }
-        if (interaction.customId === 'menu_gag2') { list = gag2List; embedColor = '#ff9900'; prefix = "copy_gag2_"; }
-        if (interaction.customId === 'menu_99night') { list = night99List; embedColor = '#ff0055'; prefix = "copy_99night_"; }
-        if (interaction.customId === 'menu_sailor') { list = sailorList; embedColor = '#0099ff'; prefix = "copy_sailor_"; }
-        if (interaction.customId === 'menu_gag') { list = gagList; embedColor = '#33cc33'; prefix = "copy_gag_"; }
-        if (interaction.customId === 'menu_forsaken') { list = forsakenList; embedColor = '#6600cc'; prefix = "copy_forsaken_"; }
-        if (interaction.customId === 'menu_steal_brainrot') { list = stealBrainrotList; embedColor = '#ff3399'; prefix = "copy_steal_"; }
-        if (interaction.customId === 'menu_mm2') { list = murderMysteryList; embedColor = '#cc0000'; prefix = "copy_mm2_"; }
-        if (interaction.customId === 'menu_fisch') { list = fischList; embedColor = '#00ffff'; prefix = "copy_fisch_"; }
+    // 2. XỬ LÝ CHỌN KÊNH ĐỂ HÚ BÀI TICKET (CHO OWNER)
+    if (interaction.isChannelSelectMenu() && interaction.customId === 'select_ticket_channel') {
+        const targetChannelId = interaction.values[0];
+        const targetChannel = interaction.guild.channels.cache.get(targetChannelId);
 
-        const chosenScript = getScriptByIndex(list, interaction.values[0]);
-        if (!chosenScript) return interaction.editReply({ content: 'Lỗi: Không tìm thấy dữ liệu script!' });
+        if (!targetChannel) return interaction.reply({ content: '❌ Không tìm thấy kênh đã chọn.', ephemeral: true });
 
-        const embed = new EmbedBuilder().setColor(embedColor).setTitle(`🤖 Dubo script | Cấp mã thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code:', value: `\`\`\`lua\n${chosenScript.code || "-- Trống"}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
-        const copyButton = new ButtonBuilder().setCustomId(`${prefix}${interaction.values[0]}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success);
-        await interaction.editReply({ embeds: [embed], components: [new ActionRowBuilder().addComponents(copyButton)] });
+        // Tạo nút tạo Ticket màu đỏ đậm rực rỡ
+        const ticketButton = new ButtonBuilder()
+            .setCustomId('open_ticket_modal')
+            .setLabel('🎫 Ticket Support')
+            .setStyle(ButtonStyle.Danger); 
+
+        const row = new ActionRowBuilder().addComponents(ticketButton);
+
+        // Tạo Khung Embed màu xanh biển đậm rực rỡ, sáng sủa và scannable theo đúng ý ông!
+        const ticketEmbed = new EmbedBuilder()
+            .setColor('#0055ff') // Xanh biển đậm rực rỡ sáng sủa
+            .setTitle('🛠️ HỆ THỐNG HỖ TRỢ & TỐ CÁO | SUPPORT SYSTEM')
+            .setDescription(
+                `**[VN] Hướng dẫn gửi yêu cầu:**\n` +
+                `Nhấn nút tạo ticket ở dưới, ghi rõ bằng chứng lý do và kèm link video để bằng chứng rõ ràng, để chúng tôi thực hiện sự trừng phạt đối với họ.\n\n` +
+                `--------------------------------------------------\n\n` +
+                `**[ENG] Request Guide:**\n` +
+                `*Click the button below to create a ticket stating the reason and attaching a video link to make it clear, so that we can punish them.*`
+            )
+            .setFooter({ text: 'Dubo Bypass Script Hub • Click Button Below' })
+            .setTimestamp();
+
+        // Tiến hành hú Khung Embed đẹp đẽ kèm nút sang kênh đã chọn
+        await targetChannel.send({ embeds: [ticketEmbed], components: [row] });
+        return interaction.reply({ content: `✅ Đã hú bảng Ticket Embed xanh rực rỡ thành công tại kênh <#${targetChannelId}>!`, ephemeral: true });
     }
 
-    if (interaction.isButton()) {
+    // 3. XỬ LÝ KHI USER ẤN NÚT "TICKET" MÀU ĐỎ -> HIỆN MODAL NHẬP LIỆU
+    if (interaction.isButton() && interaction.customId === 'open_ticket_modal') {
+        const modal = new ModalBuilder()
+            .setCustomId('ticket_submission_modal')
+            .setTitle('Support - Tố Cáo & Hỗ Trợ');
+
+        const field1 = new TextInputBuilder()
+            .setCustomId('ticket_user_tag')
+            .setLabel('Tag/Tên người dùng tố cáo | User Tag')
+            .setPlaceholder('Ví dụ: @abcxyz hoặc tên tài khoản...')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true);
+
+        const field2 = new TextInputBuilder()
+            .setCustomId('ticket_reason')
+            .setLabel('Lý do gặp phải | Reason')
+            .setPlaceholder('Ghi rõ vấn đề hoặc hành vi vi phạm tại đây...')
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true);
+
+        const field3 = new TextInputBuilder()
+            .setCustomId('ticket_evidence_link')
+            .setLabel('Link ảnh hoặc Video bằng chứng | Evidence')
+            .setPlaceholder('Dán link video/hình ảnh chứng minh vào đây...')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true);
+
+        modal.addComponents(
+            new ActionRowBuilder().addComponents(field1),
+            new ActionRowBuilder().addComponents(field2),
+            new ActionRowBuilder().addComponents(field3)
+        );
+
+        return interaction.showModal(modal);
+    }
+
+    // 4. XỬ LÝ KHI USER BẤM SEND REQUEST TRÊN MODAL -> CHUYỂN LOG VỀ KÊNH CHO ADMIN
+    if (interaction.isModalSubmit() && interaction.customId === 'ticket_submission_modal') {
+        const userTag = interaction.fields.getTextInputValue('ticket_user_tag');
+        const reason = interaction.fields.getTextInputValue('ticket_reason');
+        const evidenceLink = interaction.fields.getTextInputValue('ticket_evidence_link');
+
+        // Tạo Embed gửi về cho Admin nhận log
+        const logEmbed = new EmbedBuilder()
+            .setColor('#0055ff') // Màu xanh biển đậm rực rỡ đồng bộ
+            .setTitle('🚨 ĐƠN TỐ CÁO / YÊU CẦU HỖ TRỢ MỚI')
+            .setThumbnail(interaction.user.displayAvatarURL())
+            .addFields(
+                { name: '👤 Người gửi đơn:', value: `${interaction.user} (ID: ${interaction.user.id})`, inline: true },
+                { name: '🎯 Đối tượng bị tố cáo:', value: `\`${userTag}\``, inline: true },
+                { name: '📝 Lý do chi tiết:', value: `${reason}` },
+                { name: '🎥 Link bằng chứng (Ảnh/Video):', value: `${evidenceLink}` }
+            )
+            .setTimestamp()
+            .setFooter({ text: 'Hệ thống Dubo Ticket Support' });
+
+        // Tự động tìm kênh nhận log đã cấu hình để chuyển thẳng về Admin
+        const logChannel = client.channels.cache.get(TICKET_LOG_CHANNEL_ID);
+        if (logChannel) {
+            await logChannel.send({ embeds: [logEmbed] });
+        } else {
+            console.error("LỖI: Không tìm thấy kênh Log nhận ticket! Vui lòng kiểm tra lại ID.");
+        }
+
+        return interaction.reply({ content: '✅ Gửi yêu cầu hỗ trợ thành công! Ban quản trị sẽ sớm xử lý.', ephemeral: true });
+    }
+
+    // 5. CÁC XỬ LÝ SELECT MENU SẴN CÓ CỦA SCRIPT (GIỮ NGUYÊN)
+    if (interaction.isStringSelectMenu()) {
+        if (['menu_bloxfruit', 'menu_gag2', 'menu_99night', 'menu_sailor', 'menu_gag', 'menu_forsaken', 'menu_steal_brainrot', 'menu_mm2', 'menu_fisch'].includes(interaction.customId)) {
+            await interaction.deferReply({ ephemeral: true });
+            let list = []; let embedColor = "#000000"; let prefix = "";
+            if (interaction.customId === 'menu_bloxfruit') { list = bloxfruitList; embedColor = '#00ffcc'; prefix = "copy_bf_"; }
+            if (interaction.customId === 'menu_gag2') { list = gag2List; embedColor = '#ff9900'; prefix = "copy_gag2_"; }
+            if (interaction.customId === 'menu_99night') { list = night99List; embedColor = '#ff0055'; prefix = "copy_99night_"; }
+            if (interaction.customId === 'menu_sailor') { list = sailorList; embedColor = '#0099ff'; prefix = "copy_sailor_"; }
+            if (interaction.customId === 'menu_gag') { list = gagList; embedColor = '#33cc33'; prefix = "copy_gag_"; }
+            if (interaction.customId === 'menu_forsaken') { list = forsakenList; embedColor = '#6600cc'; prefix = "copy_forsaken_"; }
+            if (interaction.customId === 'menu_steal_brainrot') { list = stealBrainrotList; embedColor = '#ff3399'; prefix = "copy_steal_"; }
+            if (interaction.customId === 'menu_mm2') { list = murderMysteryList; embedColor = '#cc0000'; prefix = "copy_mm2_"; }
+            if (interaction.customId === 'menu_fisch') { list = fischList; embedColor = '#00ffff'; prefix = "copy_fisch_"; }
+
+            const chosenScript = getScriptByIndex(list, interaction.values[0]);
+            if (!chosenScript) return interaction.editReply({ content: 'Lỗi: Không tìm thấy dữ liệu script!' });
+
+            const embed = new EmbedBuilder().setColor(embedColor).setTitle(`🤖 Dubo script | Cấp mã thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code:', value: `\`\`\`lua\n${chosenScript.code || "-- Trống"}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
+            const copyButton = new ButtonBuilder().setCustomId(`${prefix}${interaction.values[0]}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success);
+            await interaction.editReply({ embeds: [embed], components: [new ActionRowBuilder().addComponents(copyButton)] });
+        }
+    }
+
+    // 6. CÁC XỬ LÝ NÚT SẴN CÓ CỦA SCRIPT (GIỮ NGUYÊN)
+    if (interaction.isButton() && interaction.customId.startsWith('copy_')) {
         await interaction.deferReply({ ephemeral: true });
         let list = []; let idxStr = "";
         if (interaction.customId.startsWith('copy_bf_')) { list = bloxfruitList; idxStr = interaction.customId.replace('copy_bf_', ''); }
