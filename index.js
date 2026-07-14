@@ -248,11 +248,11 @@ client.once('ready', async () => {
         new SlashCommandBuilder().setName('script-murder-mystery-2').setDescription('Hiển thị bảng chọn script Murder Mystery 2 ẩn danh'),
         new SlashCommandBuilder().setName('script-fisch').setDescription('Hiển thị bảng chọn script Fisch ẩn danh'),
         
-        // 🔒 CHẶN QUYỀN MẶC ĐỊNH BẰNG .setDefaultMemberPermissions(0) ĐỂ ẨN HOÀN TOÀN CÁC LỆNH DƯỚI ĐÂY
+        // 🔒 CHẶN QUYỀN MẶC ĐỊNH BẰNG .setDefaultMemberPermissions(0) ĐỂ ẨN HOÀN TOÀN CÁC LỆNH QUẢN TRỊ
         new SlashCommandBuilder()
             .setName('ticket-dubo')
             .setDescription('Thiết lập đường ống gửi bài viết và nhận ticket (Chỉ Chủ Bot)')
-            .setDefaultMemberPermissions(0) // Khóa quyền mặc định của mọi thành viên
+            .setDefaultMemberPermissions(0)
             .addChannelOption(option => 
                 option.setName('kenh-dang-embed')
                     .setDescription('Chọn kênh đầu vào để đăng bài Embed kèm nút tạo Ticket')
@@ -269,26 +269,51 @@ client.once('ready', async () => {
         new SlashCommandBuilder()
             .setName('mute')
             .setDescription('Hạn chế chat (Mute) một thành viên trong server')
-            .setDefaultMemberPermissions(0) // Khóa quyền mặc định của mọi thành viên
+            .setDefaultMemberPermissions(0)
             .addUserOption(option => option.setName('user').setDescription('Thành viên cần Mute').setRequired(true)),
 
         new SlashCommandBuilder()
             .setName('unmute')
             .setDescription('Gỡ hạn chế chat (Unmute) một thành viên trong server')
-            .setDefaultMemberPermissions(0) // Khóa quyền mặc định của mọi thành viên
+            .setDefaultMemberPermissions(0)
             .addUserOption(option => option.setName('user').setDescription('Thành viên cần Unmute').setRequired(true)),
 
         new SlashCommandBuilder()
             .setName('ban')
             .setDescription('Trục xuất và chặn truy cập (Ban) một thành viên')
-            .setDefaultMemberPermissions(0) // Khóa quyền mặc định của mọi thành viên
+            .setDefaultMemberPermissions(0)
             .addUserOption(option => option.setName('user').setDescription('Thành viên cần Ban').setRequired(true)),
 
         new SlashCommandBuilder()
             .setName('unban')
             .setDescription('Gỡ chặn (Unban) cho một tài khoản bằng ID')
-            .setDefaultMemberPermissions(0) // Khóa quyền mặc định của mọi thành viên
-            .addStringOption(option => option.setName('id').setDescription('Nhập ID tài khoản cần Unban').setRequired(true))
+            .setDefaultMemberPermissions(0)
+            .addStringOption(option => option.setName('id').setDescription('Nhập ID tài khoản cần Unban').setRequired(true)),
+
+        // 🛡️ LỆNH /role ĐƯỢC CẬP NHẬT: THÊM LỰA CHỌN CẤP HOẶC XÓA RÕ RÀNG
+        new SlashCommandBuilder()
+            .setName('role')
+            .setDescription('Quản lý vai trò (Cấp hoặc Xóa) của một thành viên (Chỉ Chủ Bot)')
+            .setDefaultMemberPermissions(0)
+            .addUserOption(option => 
+                option.setName('user')
+                    .setDescription('Chọn thành viên cần xử lý')
+                    .setRequired(true)
+            )
+            .addRoleOption(option => 
+                option.setName('role')
+                    .setDescription('Chọn vai trò (Role)')
+                    .setRequired(true)
+            )
+            .addStringOption(option =>
+                option.setName('action')
+                    .setDescription('Chọn hành động muốn thực hiện')
+                    .setRequired(true)
+                    .addChoices(
+                        { name: 'Cấp vai trò (Add)', value: 'add' },
+                        { name: 'Xóa vai trò (Remove)', value: 'remove' }
+                    )
+            )
             
     ].map(command => command.toJSON());
 
@@ -316,9 +341,63 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isChatInputCommand()) {
         
         // --- CHẶN QUYỀN TRUY CẬP ĐỘC QUYỀN BẰNG CODE (ĐỀ PHÒNG BYPASS) ---
-        if (['ticket-dubo', 'mute', 'unmute', 'ban', 'unban'].includes(interaction.commandName)) {
+        if (['ticket-dubo', 'mute', 'unmute', 'ban', 'unban', 'role'].includes(interaction.commandName)) {
             if (interaction.user.id !== OWNER_ID) {
                 return interaction.reply({ content: '❌ Lệnh ẩn danh này đã bị khóa bằng ID phần cứng! Bạn không có quyền sử dụng.', ephemeral: true });
+            }
+        }
+
+        // --- LỆNH SLASH: /role (ĐÃ ĐƯỢC PHÂN LOẠI CẤP / XÓA) ---
+        if (interaction.commandName === 'role') {
+            await interaction.deferReply({ ephemeral: true });
+            const targetUser = interaction.options.getUser('user');
+            const targetRole = interaction.options.getRole('role');
+            const action = interaction.options.getString('action'); // 'add' hoặc 'remove'
+
+            try {
+                const targetMember = await interaction.guild.members.fetch(targetUser.id);
+                if (!targetMember) {
+                    return interaction.editReply({ content: '❌ Không tìm thấy thành viên này trong server.' });
+                }
+
+                // Kiểm tra xem vị trí vai trò của Bot có cao hơn Role muốn sửa đổi không
+                const botMember = await interaction.guild.members.fetch(client.user.id);
+                if (targetRole.position >= botMember.roles.highest.position) {
+                    return interaction.editReply({ content: `❌ Thất bại: Vai trò \`${targetRole.name}\` nằm cao hơn hoặc bằng vai trò cao nhất của Bot. Vui lòng kéo Role của Bot lên cao hơn trong cài đặt server.` });
+                }
+
+                // --- XỬ LÝ CHỌN HÀNH ĐỘNG CẤP VAI TRÒ ---
+                if (action === 'add') {
+                    if (targetMember.roles.cache.has(targetRole.id)) {
+                        return interaction.editReply({ content: `ℹ️ Thành viên này đã có sẵn vai trò ${targetRole} từ trước.` });
+                    }
+                    
+                    await targetMember.roles.add(targetRole, `Được cấp bởi Admin ${interaction.user.username}`);
+                    const addEmbed = new EmbedBuilder()
+                        .setColor('#33ff33')
+                        .setTitle('🛡️ CẤP VAI TRÒ (ROLE ADDED)')
+                        .setDescription(`Đã **cấp** vai trò ${targetRole} cho thành viên ${targetUser} thành công!`)
+                        .setTimestamp();
+                    return interaction.editReply({ embeds: [addEmbed] });
+                } 
+
+                // --- XỬ LÝ CHỌN HÀNH ĐỘNG XÓA VAI TRÒ ---
+                else if (action === 'remove') {
+                    if (!targetMember.roles.cache.has(targetRole.id)) {
+                        return interaction.editReply({ content: `ℹ️ Thành viên ${targetUser} vốn dĩ không có vai trò ${targetRole} này.` });
+                    }
+
+                    await targetMember.roles.remove(targetRole, `Bị xóa bởi Admin ${interaction.user.username}`);
+                    const removeEmbed = new EmbedBuilder()
+                        .setColor('#ff3333')
+                        .setTitle('🛡️ XÓA VAI TRÒ (ROLE REMOVED)')
+                        .setDescription(`Đã **xóa** vai trò ${targetRole} khỏi thành viên ${targetUser} thành công!`)
+                        .setTimestamp();
+                    return interaction.editReply({ embeds: [removeEmbed] });
+                }
+
+            } catch (err) {
+                return interaction.editReply({ content: `❌ Lỗi hệ thống khi cập nhật Role: ${err.message}` });
             }
         }
 
@@ -339,7 +418,7 @@ client.on('interactionCreate', async interaction => {
 
             try {
                 await sourceChannel.send({ embeds: [ticketEmbed], components: [row] });
-                return interaction.editReply({ content: `✅ **Đường ống thiết lập thành công!**\n📥 **Đầu vào (Embed):** Đã hú bảng Ticket tại ${sourceChannel}\n📤 **Đầu ra (Nhận Log):** Đã chuyển hướng toàn bộ ticket về ${targetChannel}` });
+                return interaction.editReply({ content: `✅ **Đường ống thiết làm thành công!**\n📥 **Đầu vào (Embed):** Đã hú bảng Ticket tại ${sourceChannel}\n📤 **Đầu ra (Nhận Log):** Đã chuyển hướng toàn bộ ticket về ${targetChannel}` });
             } catch (err) {
                 return interaction.editReply({ content: '❌ Thất bại! Vui lòng kiểm tra quyền hạn của Bot tại kênh đã chọn.' });
             }
