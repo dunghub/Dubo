@@ -231,7 +231,7 @@ const fischList = [
 ];
 
 // =========================================================================
-// ĐỒNG BỘ SLASH COMMANDS (THÊM CHÍNH THỨC 4 LỆNH QUẢN TRỊ MỚI)
+// ĐỒNG BỘ SLASH COMMANDS & THIẾT LẬP ẨN CHO LỆNH QUẢN TRỊ
 // =========================================================================
 client.once('ready', async () => {
     console.log(`Bot Dubo script va Web Server da Online: ${client.user.tag}`);
@@ -248,10 +248,11 @@ client.once('ready', async () => {
         new SlashCommandBuilder().setName('script-murder-mystery-2').setDescription('Hiển thị bảng chọn script Murder Mystery 2 ẩn danh'),
         new SlashCommandBuilder().setName('script-fisch').setDescription('Hiển thị bảng chọn script Fisch ẩn danh'),
         
+        // 🔒 CHẶN QUYỀN MẶC ĐỊNH BẰNG .setDefaultMemberPermissions(0) ĐỂ ẨN HOÀN TOÀN CÁC LỆNH DƯỚI ĐÂY
         new SlashCommandBuilder()
             .setName('ticket-dubo')
             .setDescription('Thiết lập đường ống gửi bài viết và nhận ticket (Chỉ Chủ Bot)')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setDefaultMemberPermissions(0) // Khóa quyền mặc định của mọi thành viên
             .addChannelOption(option => 
                 option.setName('kenh-dang-embed')
                     .setDescription('Chọn kênh đầu vào để đăng bài Embed kèm nút tạo Ticket')
@@ -265,28 +266,28 @@ client.once('ready', async () => {
                     .setRequired(true)
             ),
 
-        // 🌟 LỆNH SLASH /mute CHÍNH THỨC
         new SlashCommandBuilder()
             .setName('mute')
             .setDescription('Hạn chế chat (Mute) một thành viên trong server')
+            .setDefaultMemberPermissions(0) // Khóa quyền mặc định của mọi thành viên
             .addUserOption(option => option.setName('user').setDescription('Thành viên cần Mute').setRequired(true)),
 
-        // 🌟 LỆNH SLASH /unmute CHÍNH THỨC
         new SlashCommandBuilder()
             .setName('unmute')
             .setDescription('Gỡ hạn chế chat (Unmute) một thành viên trong server')
+            .setDefaultMemberPermissions(0) // Khóa quyền mặc định của mọi thành viên
             .addUserOption(option => option.setName('user').setDescription('Thành viên cần Unmute').setRequired(true)),
 
-        // 🌟 LỆNH SLASH /ban CHÍNH THỨC
         new SlashCommandBuilder()
             .setName('ban')
             .setDescription('Trục xuất và chặn truy cập (Ban) một thành viên')
+            .setDefaultMemberPermissions(0) // Khóa quyền mặc định của mọi thành viên
             .addUserOption(option => option.setName('user').setDescription('Thành viên cần Ban').setRequired(true)),
 
-        // 🌟 LỆNH SLASH /unban CHÍNH THỨC
         new SlashCommandBuilder()
             .setName('unban')
             .setDescription('Gỡ chặn (Unban) cho một tài khoản bằng ID')
+            .setDefaultMemberPermissions(0) // Khóa quyền mặc định của mọi thành viên
             .addStringOption(option => option.setName('id').setDescription('Nhập ID tài khoản cần Unban').setRequired(true))
             
     ].map(command => command.toJSON());
@@ -294,7 +295,7 @@ client.once('ready', async () => {
     const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
     try {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        console.log('Đồng bộ thành công hệ thống lệnh bao gồm 4 lệnh slash quản trị!');
+        console.log('Đồng bộ thành công hệ thống lệnh! Đã khóa quyền mặc định các lệnh quản trị.');
     } catch (error) {
         console.error('Lỗi đồng bộ lệnh:', error);
     }
@@ -314,7 +315,7 @@ client.on('interactionCreate', async interaction => {
     // 1. XỬ LÝ CÁC LỆNH SLASH COMMAND (CHAT COMMANDS)
     if (interaction.isChatInputCommand()) {
         
-        // --- CHẶN QUYỀN TRUY CẬP ĐỘC QUYỀN ---
+        // --- CHẶN QUYỀN TRUY CẬP ĐỘC QUYỀN BẰNG CODE (ĐỀ PHÒNG BYPASS) ---
         if (['ticket-dubo', 'mute', 'unmute', 'ban', 'unban'].includes(interaction.commandName)) {
             if (interaction.user.id !== OWNER_ID) {
                 return interaction.reply({ content: '❌ Lệnh ẩn danh này đã bị khóa bằng ID phần cứng! Bạn không có quyền sử dụng.', ephemeral: true });
