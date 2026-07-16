@@ -47,7 +47,7 @@ let TICKET_LOG_CHANNEL_ID = '1526179515355893811';
 
 // --- BỘ NHỚ LƯU TRỮ CHO TÍNH NĂNG INVITE TRACKER (DÙNG CHUNG NHIỀU SERVER) ---
 const invitesCache = new Map(); // Lưu mã mời: GuildID -> Map(Code -> Uses)
-const serverLogChannels = new Map(); // Lưu cấu hình kênh hiển thị: GuildID -> ChannelID
+const serverLogChannels = new Map(); // Lưu cấu hình kênh hiển thị: GuildID -> { logChannelId, thongBaoChannelId, quyTacChannelId }
 
 const client = new Client({ 
     intents: [
@@ -285,14 +285,26 @@ client.once('ready', async () => {
                     .setRequired(true)
             ),
 
-        // ⚙️ LỆNH /setup-invite: THIẾT LẬP KÊNH HIỂN THỊ DANH SÁCH NGƯỜI MỜI (CHO TỪNG SERVER)
+        // ⚙️ LỆNH MỚI /invites-cache CHUẨN 3 MỤC CHỌN KÊNH THEO YÊU CẦU
         new SlashCommandBuilder()
-            .setName('setup-invite')
-            .setDescription('Thiết lập kênh hiển thị log theo dõi người mời (Chỉ Chủ Bot)')
+            .setName('invites-cache')
+            .setDescription('Thiết lập kênh log chào mừng, thông báo và luật (Chỉ Chủ Bot)')
             .setDefaultMemberPermissions(0)
             .addChannelOption(option => 
                 option.setName('kenh-hien-thi')
-                    .setDescription('Chọn kênh để bot gửi thông tin người mời')
+                    .setDescription('Chọn kênh để bot gửi tin nhắn chào mừng y như ảnh')
+                    .addChannelTypes(ChannelType.GuildText)
+                    .setRequired(true)
+            )
+            .addChannelOption(option => 
+                option.setName('kenh-thong-bao')
+                    .setDescription('Chọn kênh thông báo của server')
+                    .addChannelTypes(ChannelType.GuildText)
+                    .setRequired(true)
+            )
+            .addChannelOption(option => 
+                option.setName('kenh-quy-tac')
+                    .setDescription('Chọn kênh rules/quy tắc của server')
                     .addChannelTypes(ChannelType.GuildText)
                     .setRequired(true)
             ),
@@ -390,26 +402,37 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isChatInputCommand()) {
         
         // --- CHẶN QUYỀN TRUY CẬP ĐỘC QUYỀN BẰNG CODE (ĐỀ PHÒNG BYPASS) ---
-        if (['ticket-dubo', 'setup-invite', 'mute', 'unmute', 'ban', 'unban', 'role'].includes(interaction.commandName)) {
+        if (['ticket-dubo', 'invites-cache', 'mute', 'unmute', 'ban', 'unban', 'role'].includes(interaction.commandName)) {
             if (interaction.user.id !== OWNER_ID) {
                 return interaction.reply({ content: '❌ Lệnh ẩn danh này đã bị khóa bằng ID phần cứng! Bạn không có quyền sử dụng.', ephemeral: true });
             }
         }
 
-        // --- LỆNH SLASH: /setup-invite (CÀI ĐẶT KÊNH INVITE LOG) ---
-        if (interaction.commandName === 'setup-invite') {
+        // --- LỆNH SLASH: /invites-cache (CÀI ĐẶT 3 KÊNH CHÀO MỪNG, THÔNG BÁO, LUẬT) ---
+        if (interaction.commandName === 'invites-cache') {
             await interaction.deferReply({ ephemeral: true });
-            const targetChannel = interaction.options.getChannel('kenh-hien-thi');
+            const logChannel = interaction.options.getChannel('kenh-hien-thi');
+            const thongBaoChannel = interaction.options.getChannel('kenh-thong-bao');
+            const quyTacChannel = interaction.options.getChannel('kenh-quy-tac');
             const guildId = interaction.guild.id;
             const serverName = interaction.guild.name;
 
-            // Lưu ID kênh vào cấu hình Map theo đúng Server ID đang thực hiện lệnh
-            serverLogChannels.set(guildId, targetChannel.id);
+            // Lưu cấu hình cả 3 kênh vào Map theo Server ID
+            serverLogChannels.set(guildId, {
+                logChannelId: logChannel.id,
+                thongBaoChannelId: thongBaoChannel.id,
+                quyTacChannelId: quyTacChannel.id
+            });
 
             const setupEmbed = new EmbedBuilder()
                 .setColor('#00ffcc')
-                .setTitle(`⚙️ CẤU HÌNH INVITE TRACKER | ${serverName.toUpperCase()}`)
-                .setDescription(`Đã liên kết thành công hệ thống theo dõi người mời vào kênh ${targetChannel} của server **${serverName}**!\n\n*Hệ thống sẽ tự động nhận diện và gửi thông tin thành viên mới tham gia server này!*`)
+                .setTitle(`⚙️ CẤU HÌNH HỆ THỐNG CHÀO MỪNG | ${serverName.toUpperCase()}`)
+                .setDescription(
+                    `Đã thiết lập thành công cấu hình chào mừng cho server **${serverName}**!\n\n` +
+                    `📥 **Kênh chào mừng:** ${logChannel}\n` +
+                    `📣 **Kênh thông báo:** ${thongBaoChannel}\n` +
+                    `📜 **Kênh quy tắc:** ${quyTacChannel}`
+                )
                 .setFooter({ text: `Hệ thống quản lý tự động của ${serverName}` })
                 .setTimestamp();
 
@@ -863,7 +886,7 @@ client.on('interactionCreate', async interaction => {
 // =========================================================================
 client.on('guildMemberAdd', async (member) => {
     const guild = member.guild;
-    const serverName = guild.name; // Tên server hiện tại đang có thành viên vào
+    const serverName = guild.name; // Tự động lấy tên server hiện tại đang có thành viên vào
     const cachedInvites = invitesCache.get(guild.id);
 
     // --- 1. GỬI TIN NHẮN CHÀO MỪNG DÙNG RIÊNG CHO SERVER ID MẶC ĐỊNH (GIỮ NGUYÊN) ---
@@ -878,9 +901,11 @@ client.on('guildMemberAdd', async (member) => {
         } catch (error) {}
     }
 
-    // --- 2. GỬI TIN NHẮN LOG THEO DÕI NGƯỜI MỜI CHO TỪNG SERVER ĐÃ SETUP ---
-    const logChannelId = serverLogChannels.get(guild.id);
-    if (!logChannelId) return; // Nếu server này chưa cấu hình kênh hiển thị invite thì bỏ qua
+    // --- 2. GỬI TIN NHẮN LOG THEO DÕI NGƯỜI MỜI CHO TỪNG SERVER ĐÃ SETUP QUA /invites-cache ---
+    const config = serverLogChannels.get(guild.id);
+    if (!config) return; // Nếu server này chưa cấu hình bằng lệnh /invites-cache thì bỏ qua
+
+    const { logChannelId, thongBaoChannelId, quyTacChannelId } = config;
 
     try {
         const currentInvites = await guild.invites.fetch();
@@ -902,29 +927,39 @@ client.on('guildMemberAdd', async (member) => {
         const logChannel = guild.channels.cache.get(logChannelId);
         if (!logChannel) return;
 
-        if (usedInvite) {
-            const inviter = usedInvite.inviter;
+        // Định dạng hiển thị kênh thông báo và quy tắc dưới dạng <#ID>
+        const thongBaoMention = thongBaoChannelId ? `<#${thongBaoChannelId}>` : `#📣• thông-báo`;
+        const quyTacMention = quyTacChannelId ? `<#${quyTacChannelId}>` : `#📜• rules`;
 
-            const welcomeInviteEmbed = new EmbedBuilder()
-                .setColor('#00ff55')
-                .setTitle(`👋 CHÀO MỪNG ĐẾN VỚI ${serverName.toUpperCase()}`)
-                .setDescription(`Thành viên **${member.user.username}** vừa tham gia server!\n\n👤 **Người mời:** ${inviter ? inviter : 'Không rõ'} (${inviter ? `ID: \`${inviter.id}\`` : ''})\n🔗 **Mã mời đã dùng:** \`${usedInvite.code}\` (Lượt dùng: \`${usedInvite.uses}\`)`)
-                .setThumbnail(member.user.displayAvatarURL())
-                .setFooter({ text: `Chào mừng bạn đến với ${serverName}!` })
-                .setTimestamp();
+        // Lấy tên người mời
+        const inviter = usedInvite ? usedInvite.inviter : null;
+        const inviterText = inviter ? `Được mời bởi: ${inviter.username}` : "Không rõ người mời";
 
-            await logChannel.send({ embeds: [welcomeInviteEmbed] });
-        } else {
-            const fallbackInviteEmbed = new EmbedBuilder()
-                .setColor('#ffaa00')
-                .setTitle(`👋 CHÀO MỪNG ĐẾN VỚI ${serverName.toUpperCase()}`)
-                .setDescription(`Thành viên **${member.user.username}** vừa tham gia server!\n*(Không phát hiện được nguồn mời cụ thể)*`)
-                .setThumbnail(member.user.displayAvatarURL())
-                .setFooter({ text: `Chào mừng bạn đến với ${serverName}!` })
-                .setTimestamp();
+        // 1. PHẦN ĐẦU: Tên người được mời tham gia server
+        const headerMessage = `Có thành viên **${member.user.username}** mới vào nè 🐱`;
 
-            await logChannel.send({ embeds: [fallbackInviteEmbed] });
-        }
+        // 2. EMBED CHÀO MỪNG CHUẨN GIAO DIỆN NHƯ TRONG ẢNH (Tự động thay "Dolphin" bằng tên server động)
+        const welcomeInviteEmbed = new EmbedBuilder()
+            .setColor('#2ecc71') // Màu xanh lá cây thanh lịch bên lề trái
+            .setAuthor({ 
+                name: serverName, 
+                iconURL: guild.iconURL() || undefined 
+            })
+            .setDescription(
+                `Chào mừng ${member} 🐧🐧🐧🐧🐧🐧🐧🐧 đã đến với **${serverName}**\n` +
+                `chúc bạn vui vẻ trong server và 1 ngày tốt lành nhé\n\n` +
+                `### Cập nhật thông báo mới nhất của ${serverName} tại\n` +
+                `${thongBaoMention}\n\n` +
+                `### Xem qua những quy tắc của ${serverName} tại\n` +
+                `${quyTacMention}`
+            )
+            .setFooter({ 
+                text: `${serverName} | ${inviterText}` // Hiển thị người đã mời ở cuối cùng
+            })
+            .setTimestamp();
+
+        // Gửi nội dung y chang ảnh lên kênh log chào mừng đã chọn
+        await logChannel.send({ content: headerMessage, embeds: [welcomeInviteEmbed] });
 
     } catch (err) {
         console.error(`Lỗi khi theo dõi lượt mời tại server ${serverName}:`, err);
