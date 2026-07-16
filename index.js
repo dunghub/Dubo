@@ -45,7 +45,7 @@ const OWNER_ID = '1501730680613114048'; // ID độc quyền dùng lệnh quản
 // ĐƯỜNG ỐNG ĐẦU RA MẶC ĐỊNH (Sẽ tự động cập nhật động khi chạy lệnh /ticket-dubo)
 let TICKET_LOG_CHANNEL_ID = '1526179515355893811'; 
 
-// --- BỘ NHỚ LƯU TRỮ CHO TÍNH NĂNG INVITE TRACKER (DÙNG CHUNG NHIỀU SERVER) ---
+// --- BỘ NHỚ LƯU TRỮ CHO TÍNH NĂNG INVITE TRACKER ---
 const invitesCache = new Map(); // Lưu mã mời: GuildID -> Map(Code -> Uses)
 const serverLogChannels = new Map(); // Lưu cấu hình kênh hiển thị: GuildID -> { logChannelId, thongBaoChannelId, quyTacChannelId }
 
@@ -285,7 +285,7 @@ client.once('ready', async () => {
                     .setRequired(true)
             ),
 
-        // ⚙️ LỆNH MỚI /invites-cache CHUẨN 3 MỤC CHỌN KÊNH THEO YÊU CẦU
+        // ⚙️ LỆNH /invites-cache CHUẨN 3 MỤC CHỌN KÊNH
         new SlashCommandBuilder()
             .setName('invites-cache')
             .setDescription('Thiết lập kênh log chào mừng, thông báo và luật (Chỉ Chủ Bot)')
@@ -308,6 +308,12 @@ client.once('ready', async () => {
                     .addChannelTypes(ChannelType.GuildText)
                     .setRequired(true)
             ),
+
+        // 🔴 LỆNH MỚI: /stop-invite ĐỂ TẮT HỆ THỐNG LOG CHÀO MỪNG
+        new SlashCommandBuilder()
+            .setName('stop-invite')
+            .setDescription('Tắt hệ thống chào mừng và theo dõi lượt mời (Chỉ Chủ Bot)')
+            .setDefaultMemberPermissions(0),
 
         new SlashCommandBuilder()
             .setName('mute')
@@ -333,7 +339,7 @@ client.once('ready', async () => {
             .setDefaultMemberPermissions(0)
             .addStringOption(option => option.setName('id').setDescription('Nhập ID tài khoản cần Unban').setRequired(true)),
 
-        // 🛡️ LỆNH /role ĐƯỢC CẬP NHẬT: THÊM LỰA CHỌN CẤP HOẶC XÓA RÕ RÀNG
+        // 🛡️ LỆNH /role
         new SlashCommandBuilder()
             .setName('role')
             .setDescription('Quản lý vai trò (Cấp hoặc Xóa) của một thành viên (Chỉ Chủ Bot)')
@@ -363,7 +369,7 @@ client.once('ready', async () => {
     const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
     try {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        console.log('Đồng bộ thành công hệ thống lệnh! Đã khóa quyền mặc định các lệnh quản trị.');
+        console.log('Đồng bộ thành công hệ thống lệnh! Đã cập nhật /stop-invite và các cấu hình mới.');
     } catch (error) {
         console.error('Lỗi đồng bộ lệnh:', error);
     }
@@ -401,14 +407,27 @@ client.on('interactionCreate', async interaction => {
     // 1. XỬ LÝ CÁC LỆNH SLASH COMMAND (CHAT COMMANDS)
     if (interaction.isChatInputCommand()) {
         
-        // --- CHẶN QUYỀN TRUY CẬP ĐỘC QUYỀN BẰNG CODE (ĐỀ PHÒNG BYPASS) ---
-        if (['ticket-dubo', 'invites-cache', 'mute', 'unmute', 'ban', 'unban', 'role'].includes(interaction.commandName)) {
+        // --- CHẶN QUYỀN TRUY CẬP ĐỘC QUYỀN BẰNG CODE ---
+        if (['ticket-dubo', 'invites-cache', 'stop-invite', 'mute', 'unmute', 'ban', 'unban', 'role'].includes(interaction.commandName)) {
             if (interaction.user.id !== OWNER_ID) {
-                return interaction.reply({ content: '❌ Lệnh ẩn danh này đã bị khóa bằng ID phần cứng! Bạn không có quyền sử dụng.', ephemeral: true });
+                return interaction.reply({ content: '❌ Lệnh quản trị ẩn danh này đã bị khóa bằng ID phần cứng! Bạn không có quyền sử dụng.', ephemeral: true });
             }
         }
 
-        // --- LỆNH SLASH: /invites-cache (CÀI ĐẶT 3 KÊNH CHÀO MỪNG, THÔNG BÁO, LUẬT) ---
+        // --- LỆNH SLASH: /stop-invite (TẮT HỆ THỐNG LOG CHÀO MỪNG) ---
+        if (interaction.commandName === 'stop-invite') {
+            await interaction.deferReply({ ephemeral: true });
+            const guildId = interaction.guild.id;
+
+            if (serverLogChannels.has(guildId)) {
+                serverLogChannels.delete(guildId);
+                return interaction.editReply({ content: '✅ Đã tắt và hủy bỏ cấu hình hệ thống log chào mừng / invite-tracker thành công cho server này!' });
+            } else {
+                return interaction.editReply({ content: '❌ Server này hiện đang không cài đặt hệ thống log chào mừng.' });
+            }
+        }
+
+        // --- LỆNH SLASH: /invites-cache ---
         if (interaction.commandName === 'invites-cache') {
             await interaction.deferReply({ ephemeral: true });
             const logChannel = interaction.options.getChannel('kenh-hien-thi');
@@ -417,7 +436,7 @@ client.on('interactionCreate', async interaction => {
             const guildId = interaction.guild.id;
             const serverName = interaction.guild.name;
 
-            // Lưu cấu hình cả 3 kênh vào Map theo Server ID
+            // Lưu cấu hình cả 3 kênh
             serverLogChannels.set(guildId, {
                 logChannelId: logChannel.id,
                 thongBaoChannelId: thongBaoChannel.id,
@@ -443,12 +462,12 @@ client.on('interactionCreate', async interaction => {
             }
         }
 
-        // --- LỆNH SLASH: /role (ĐÃ ĐƯỢC PHÂN LOẠI CẤP / XÓA) ---
+        // --- LỆNH SLASH: /role ---
         if (interaction.commandName === 'role') {
             await interaction.deferReply({ ephemeral: true });
             const targetUser = interaction.options.getUser('user');
             const targetRole = interaction.options.getRole('role');
-            const action = interaction.options.getString('action'); // 'add' hoặc 'remove'
+            const action = interaction.options.getString('action');
 
             try {
                 const targetMember = await interaction.guild.members.fetch(targetUser.id);
@@ -456,13 +475,11 @@ client.on('interactionCreate', async interaction => {
                     return interaction.editReply({ content: '❌ Không tìm thấy thành viên này trong server.' });
                 }
 
-                // Kiểm tra xem vị trí vai trò của Bot có cao hơn Role muốn sửa đổi không
                 const botMember = await interaction.guild.members.fetch(client.user.id);
                 if (targetRole.position >= botMember.roles.highest.position) {
-                    return interaction.editReply({ content: `❌ Thất bại: Vai trò \`${targetRole.name}\` nằm cao hơn hoặc bằng vai trò cao nhất của Bot. Vui lòng kéo Role của Bot lên cao hơn trong cài đặt server.` });
+                    return interaction.editReply({ content: `❌ Thất bại: Vai trò \`${targetRole.name}\` nằm cao hơn hoặc bằng vai trò cao nhất của Bot.` });
                 }
 
-                // --- XỬ LÝ CHỌN HÀNH ĐỘNG CẤP VAI TRÒ ---
                 if (action === 'add') {
                     if (targetMember.roles.cache.has(targetRole.id)) {
                         return interaction.editReply({ content: `ℹ️ Thành viên này đã có sẵn vai trò ${targetRole} từ trước.` });
@@ -477,7 +494,6 @@ client.on('interactionCreate', async interaction => {
                     return interaction.editReply({ embeds: [addEmbed] });
                 } 
 
-                // --- XỬ LÝ CHỌN HÀNH ĐỘNG XÓA VAI TRÒ ---
                 else if (action === 'remove') {
                     if (!targetMember.roles.cache.has(targetRole.id)) {
                         return interaction.editReply({ content: `ℹ️ Thành viên ${targetUser} vốn dĩ không có vai trò ${targetRole} này.` });
@@ -642,7 +658,7 @@ client.on('interactionCreate', async interaction => {
         return interaction.showModal(modal);
     }
 
-    // 3. XỬ LÝ KHI GỬI MODAL TICKET LÊN KÊNH LOG ĐẦU RA
+    // 3. XỬ LÝ KHI GỬI MODAL TICKET
     if (interaction.isModalSubmit() && interaction.customId === 'ticket_submission_modal') {
         await interaction.deferReply({ ephemeral: true });
         const userTag = interaction.fields.getTextInputValue('ticket_user_tag');
@@ -706,7 +722,7 @@ client.on('interactionCreate', async interaction => {
         } catch (error) { return interaction.editReply({ content: `❌ Thất bại: Người này đã khóa DM.` }); }
     }
 
-    // --- NÚT BẤM MUTE/UNMUTE/BAN/UNBAN PHỤ TRỢ TRÊN KHUNG LOG ---
+    // --- NÚT BẤM MUTE/UNMUTE/BAN/UNBAN PHỤ TRỢ ---
     if (interaction.isButton() && interaction.customId === 'mute_target_direct') {
         const modal = new ModalBuilder().setCustomId('admin_mute_input_modal').setTitle('Nhập Đối Tượng Cần Mute');
         modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('mute_target_name').setLabel('Nhập Tên, Tag hoặc ID').setStyle(TextInputStyle.Short).setRequired(true)));
@@ -840,7 +856,7 @@ client.on('interactionCreate', async interaction => {
         } catch (err) { return interaction.editReply({ content: '❌ Thất bại: Không có quyền Ban hoặc Role bot quá thấp.' }); }
     }
 
-    // --- GIỮ NGUYÊN HỆ THỐNG PHẢN HỒI LẤY SCRIPT CŨ ---
+    // --- HỆ THỐNG PHẢN HỒI LẤY SCRIPT ---
     if (interaction.isStringSelectMenu() && ['menu_bloxfruit', 'menu_gag2', 'menu_99night', 'menu_sailor', 'menu_gag', 'menu_forsaken', 'menu_steal_brainrot', 'menu_mm2', 'menu_fisch'].includes(interaction.customId)) {
         await interaction.deferReply({ ephemeral: true });
         let list = []; let embedColor = "#000000"; let prefix = "";
@@ -886,10 +902,10 @@ client.on('interactionCreate', async interaction => {
 // =========================================================================
 client.on('guildMemberAdd', async (member) => {
     const guild = member.guild;
-    const serverName = guild.name; // Tự động lấy tên server hiện tại đang có thành viên vào
+    const serverName = guild.name; 
     const cachedInvites = invitesCache.get(guild.id);
 
-    // --- 1. GỬI TIN NHẮN CHÀO MỪNG DÙNG RIÊNG CHO SERVER ID MẶC ĐỊNH (GIỮ NGUYÊN) ---
+    // --- 1. GỬI TIN NHẮN CHÀO MỪNG RIÊNG CHO SERVER ĐỘC QUYỀN (GIỮ NGUYÊN) ---
     if (guild.id === MY_SERVER_ID) {
         try {
             const welcomeEmbed = new EmbedBuilder()
@@ -901,9 +917,9 @@ client.on('guildMemberAdd', async (member) => {
         } catch (error) {}
     }
 
-    // --- 2. GỬI TIN NHẮN LOG THEO DÕI NGƯỜI MỜI CHO TỪNG SERVER ĐÃ SETUP QUA /invites-cache ---
+    // --- 2. GỬI TIN NHẮN LOG THEO DÕI NGƯỜI MỜI CHO TỪNG SERVER ---
     const config = serverLogChannels.get(guild.id);
-    if (!config) return; // Nếu server này chưa cấu hình bằng lệnh /invites-cache thì bỏ qua
+    if (!config) return; 
 
     const { logChannelId, thongBaoChannelId, quyTacChannelId } = config;
 
@@ -912,14 +928,13 @@ client.on('guildMemberAdd', async (member) => {
         let usedInvite = null;
 
         if (cachedInvites) {
-            // Tìm link mời có lượt sử dụng tăng so với lúc trước
             usedInvite = currentInvites.find(inv => {
                 const prevUses = cachedInvites.get(inv.code) || 0;
                 return inv.uses > prevUses;
             });
         }
 
-        // Cập nhật lại bộ nhớ đệm cache cho server này
+        // Cập nhật lại bộ nhớ đệm
         const newInviteMap = new Map();
         currentInvites.forEach(inv => newInviteMap.set(inv.code, inv.uses));
         invitesCache.set(guild.id, newInviteMap);
@@ -927,38 +942,35 @@ client.on('guildMemberAdd', async (member) => {
         const logChannel = guild.channels.cache.get(logChannelId);
         if (!logChannel) return;
 
-        // Định dạng hiển thị kênh thông báo và quy tắc dưới dạng <#ID>
         const thongBaoMention = thongBaoChannelId ? `<#${thongBaoChannelId}>` : `#📣• thông-báo`;
         const quyTacMention = quyTacChannelId ? `<#${quyTacChannelId}>` : `#📜• rules`;
 
-        // Lấy tên người mời
+        // Tạo thẻ tag người mời trực tiếp bằng ID (@User)
         const inviter = usedInvite ? usedInvite.inviter : null;
-        const inviterText = inviter ? `Được mời bởi: ${inviter.username}` : "Không rõ người mời";
+        const inviterTag = inviter ? `<@${inviter.id}>` : "Không rõ người mời";
 
-        // 1. PHẦN ĐẦU: Tên người được mời tham gia server
+        // Tin nhắn text ở đầu
         const headerMessage = `Có thành viên **${member.user.username}** mới vào nè 🐱`;
 
-        // 2. EMBED CHÀO MỪNG CHUẨN GIAO DIỆN NHƯ TRONG ẢNH (Tự động thay "Dolphin" bằng tên server động)
+        // EMBED CHÀO MỪNG (ĐÃ SỬA: Loại bỏ chim cánh cụt, tag thẳng người vào ở đầu và tag thẳng người mời ở cuối)
         const welcomeInviteEmbed = new EmbedBuilder()
-            .setColor('#2ecc71') // Màu xanh lá cây thanh lịch bên lề trái
+            .setColor('#2ecc71') 
             .setAuthor({ 
                 name: serverName, 
                 iconURL: guild.iconURL() || undefined 
             })
             .setDescription(
-                `Chào mừng ${member} 🐧🐧🐧🐧🐧🐧🐧🐧 đã đến với **${serverName}**\n` +
-                `chúc bạn vui vẻ trong server và 1 ngày tốt lành nhé\n\n` +
+                `Chào mừng ${member} đã đến với **${serverName}**\n` +
+                `chúc bạn vui vẻ trong server và một ngày tốt lành nhé\n\n` +
                 `### Cập nhật thông báo mới nhất của ${serverName} tại\n` +
                 `${thongBaoMention}\n\n` +
                 `### Xem qua những quy tắc của ${serverName} tại\n` +
-                `${quyTacMention}`
+                `${quyTacMention}\n\n` +
+                `**Người mời:** ${inviterTag}` // Tag người mời hiển thị trực tiếp ở cuối Embed
             )
-            .setFooter({ 
-                text: `${serverName} | ${inviterText}` // Hiển thị người đã mời ở cuối cùng
-            })
+            .setFooter({ text: serverName })
             .setTimestamp();
 
-        // Gửi nội dung y chang ảnh lên kênh log chào mừng đã chọn
         await logChannel.send({ content: headerMessage, embeds: [welcomeInviteEmbed] });
 
     } catch (err) {
