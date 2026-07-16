@@ -15,7 +15,8 @@ const {
     TextInputStyle,
     ChannelSelectMenuBuilder,
     ChannelType,
-    PermissionFlagsBits
+    PermissionFlagsBits,
+    PermissionsBitField
 } = require('discord.js');
 const http = require('http');
 
@@ -44,11 +45,16 @@ const OWNER_ID = '1501730680613114048'; // ID độc quyền dùng lệnh quản
 // ĐƯỜNG ỐNG ĐẦU RA MẶC ĐỊNH (Sẽ tự động cập nhật động khi chạy lệnh /ticket-dubo)
 let TICKET_LOG_CHANNEL_ID = '1526179515355893811'; 
 
+// --- BỘ NHỚ LƯU TRỮ CHO TÍNH NĂNG INVITE TRACKER (DÙNG CHUNG NHIỀU SERVER) ---
+const invitesCache = new Map(); // Lưu mã mời: GuildID -> Map(Code -> Uses)
+const serverLogChannels = new Map(); // Lưu cấu hình kênh hiển thị: GuildID -> ChannelID
+
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers, // ⚠️ BẮT BUỘC PHẢI BẬT TRÊN DEVELOPER PORTAL
-        GatewayIntentBits.GuildMessages
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildInvites // ⚠️ BẮT BUỘC ĐỂ ĐỌC SỰ KIỆN TẠO/XÓA LINK MỜI
     ] 
 });
 
@@ -236,6 +242,19 @@ const fischList = [
 client.once('ready', async () => {
     console.log(`Bot Dubo script va Web Server da Online: ${client.user.tag}`);
     
+    // Nạp cache danh sách invite ban đầu của toàn bộ các Server
+    for (const [guildId, guild] of client.guilds.cache) {
+        try {
+            const invites = await guild.invites.fetch();
+            const inviteMap = new Map();
+            invites.forEach(inv => inviteMap.set(inv.code, inv.uses));
+            invitesCache.set(guildId, inviteMap);
+            console.log(`[Cache Invite] Đã nạp ${invites.size} link mời của Server: ${guild.name}`);
+        } catch (err) {
+            console.log(`[Cache Invite Error] Không thể nạp link mời từ Server ${guild.name}:`, err.message);
+        }
+    }
+
     const commands = [
         new SlashCommandBuilder().setName('help').setDescription('Hiển thị hướng dẫn sử dụng bot bằng tiếng Việt và Anh'),
         new SlashCommandBuilder().setName('script-bloxfruit').setDescription('Hiển thị bảng chọn script Blox Fruit ẩn danh'),
@@ -262,6 +281,18 @@ client.once('ready', async () => {
             .addChannelOption(option => 
                 option.setName('kenh-nhan-log')
                     .setDescription('Chọn kênh đầu ra để bot tự động chuyển thông tin tố cáo/ticket về')
+                    .addChannelTypes(ChannelType.GuildText)
+                    .setRequired(true)
+            ),
+
+        // ⚙️ LỆNH /setup-invite: THIẾT LẬP KÊNH HIỂN THỊ DANH SÁCH NGƯỜI MỜI (CHO TỪNG SERVER)
+        new SlashCommandBuilder()
+            .setName('setup-invite')
+            .setDescription('Thiết lập kênh hiển thị log theo dõi người mời (Chỉ Chủ Bot)')
+            .setDefaultMemberPermissions(0)
+            .addChannelOption(option => 
+                option.setName('kenh-hien-thi')
+                    .setDescription('Chọn kênh để bot gửi thông tin người mời')
                     .addChannelTypes(ChannelType.GuildText)
                     .setRequired(true)
             ),
@@ -333,6 +364,24 @@ function getScriptByIndex(list, selectValue) {
 }
 
 // =========================================================================
+// ĐỒNG BỘ CẬP NHẬT CACHE KHI CÓ LINK MỜI MỚI HOẶC BỊ XÓA
+// =========================================================================
+client.on('inviteCreate', async (invite) => {
+    if (!invite.guild) return;
+    const guildInvites = invitesCache.get(invite.guild.id) || new Map();
+    guildInvites.set(invite.code, invite.uses);
+    invitesCache.set(invite.guild.id, guildInvites);
+});
+
+client.on('inviteDelete', async (invite) => {
+    if (!invite.guild) return;
+    const guildInvites = invitesCache.get(invite.guild.id);
+    if (guildInvites) {
+        guildInvites.delete(invite.code);
+    }
+});
+
+// =========================================================================
 // XỬ LÝ SỰ KIỆN LỆNH / MENU / NÚT
 // =========================================================================
 client.on('interactionCreate', async interaction => {
@@ -341,9 +390,33 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isChatInputCommand()) {
         
         // --- CHẶN QUYỀN TRUY CẬP ĐỘC QUYỀN BẰNG CODE (ĐỀ PHÒNG BYPASS) ---
-        if (['ticket-dubo', 'mute', 'unmute', 'ban', 'unban', 'role'].includes(interaction.commandName)) {
+        if (['ticket-dubo', 'setup-invite', 'mute', 'unmute', 'ban', 'unban', 'role'].includes(interaction.commandName)) {
             if (interaction.user.id !== OWNER_ID) {
                 return interaction.reply({ content: '❌ Lệnh ẩn danh này đã bị khóa bằng ID phần cứng! Bạn không có quyền sử dụng.', ephemeral: true });
+            }
+        }
+
+        // --- LỆNH SLASH: /setup-invite (CÀI ĐẶT KÊNH INVITE LOG) ---
+        if (interaction.commandName === 'setup-invite') {
+            await interaction.deferReply({ ephemeral: true });
+            const targetChannel = interaction.options.getChannel('kenh-hien-thi');
+            const guildId = interaction.guild.id;
+            const serverName = interaction.guild.name;
+
+            // Lưu ID kênh vào cấu hình Map theo đúng Server ID đang thực hiện lệnh
+            serverLogChannels.set(guildId, targetChannel.id);
+
+            const setupEmbed = new EmbedBuilder()
+                .setColor('#00ffcc')
+                .setTitle(`⚙️ CẤU HÌNH INVITE TRACKER | ${serverName.toUpperCase()}`)
+                .setDescription(`Đã liên kết thành công hệ thống theo dõi người mời vào kênh ${targetChannel} của server **${serverName}**!\n\n*Hệ thống sẽ tự động nhận diện và gửi thông tin thành viên mới tham gia server này!*`)
+                .setFooter({ text: `Hệ thống quản lý tự động của ${serverName}` })
+                .setTimestamp();
+
+            try {
+                await interaction.editReply({ embeds: [setupEmbed] });
+            } catch (err) {
+                return interaction.editReply({ content: `❌ Lỗi thiết lập: ${err.message}` });
             }
         }
 
@@ -786,14 +859,76 @@ client.on('interactionCreate', async interaction => {
 });
 
 // =========================================================================
-// KIỂM TRA SỰ KIỆN CHÀO MỪNG THÀNH VIÊN MỚI (CHỈ CHẠY Ở SERVER CỦA BẠN)
+// KIỂM TRA SỰ KIỆN CHÀO MỪNG THÀNH VIÊN MỚI & THEO DÕI NGUỒN INVITE
 // =========================================================================
 client.on('guildMemberAdd', async (member) => {
-    if (member.guild.id !== MY_SERVER_ID) return;
+    const guild = member.guild;
+    const serverName = guild.name; // Tên server hiện tại đang có thành viên vào
+    const cachedInvites = invitesCache.get(guild.id);
+
+    // --- 1. GỬI TIN NHẮN CHÀO MỪNG DÙNG RIÊNG CHO SERVER ID MẶC ĐỊNH (GIỮ NGUYÊN) ---
+    if (guild.id === MY_SERVER_ID) {
+        try {
+            const welcomeEmbed = new EmbedBuilder()
+                .setColor('#ffaa00')
+                .setTitle(`👋 ${member.user.username} Welcome TO DUBO BOT BYPASS`)
+                .setDescription(`Cảm ơn bạn đã tham gia server của tôi!\nThank you for joining my server!`)
+                .setTimestamp();
+            await member.send({ embeds: [welcomeEmbed] });
+        } catch (error) {}
+    }
+
+    // --- 2. GỬI TIN NHẮN LOG THEO DÕI NGƯỜI MỜI CHO TỪNG SERVER ĐÃ SETUP ---
+    const logChannelId = serverLogChannels.get(guild.id);
+    if (!logChannelId) return; // Nếu server này chưa cấu hình kênh hiển thị invite thì bỏ qua
+
     try {
-        const welcomeEmbed = new EmbedBuilder().setColor('#ffaa00').setTitle(`👋 ${member.user.username} Welcome TO DUBO BOT BYPASS`).setDescription(`Cảm ơn bạn đã tham gia server của tôi!\nThank you for joining my server!`).setTimestamp();
-        await member.send({ embeds: [welcomeEmbed] });
-    } catch (error) {}
+        const currentInvites = await guild.invites.fetch();
+        let usedInvite = null;
+
+        if (cachedInvites) {
+            // Tìm link mời có lượt sử dụng tăng so với lúc trước
+            usedInvite = currentInvites.find(inv => {
+                const prevUses = cachedInvites.get(inv.code) || 0;
+                return inv.uses > prevUses;
+            });
+        }
+
+        // Cập nhật lại bộ nhớ đệm cache cho server này
+        const newInviteMap = new Map();
+        currentInvites.forEach(inv => newInviteMap.set(inv.code, inv.uses));
+        invitesCache.set(guild.id, newInviteMap);
+
+        const logChannel = guild.channels.cache.get(logChannelId);
+        if (!logChannel) return;
+
+        if (usedInvite) {
+            const inviter = usedInvite.inviter;
+
+            const welcomeInviteEmbed = new EmbedBuilder()
+                .setColor('#00ff55')
+                .setTitle(`👋 CHÀO MỪNG ĐẾN VỚI ${serverName.toUpperCase()}`)
+                .setDescription(`Thành viên **${member.user.username}** vừa tham gia server!\n\n👤 **Người mời:** ${inviter ? inviter : 'Không rõ'} (${inviter ? `ID: \`${inviter.id}\`` : ''})\n🔗 **Mã mời đã dùng:** \`${usedInvite.code}\` (Lượt dùng: \`${usedInvite.uses}\`)`)
+                .setThumbnail(member.user.displayAvatarURL())
+                .setFooter({ text: `Chào mừng bạn đến với ${serverName}!` })
+                .setTimestamp();
+
+            await logChannel.send({ embeds: [welcomeInviteEmbed] });
+        } else {
+            const fallbackInviteEmbed = new EmbedBuilder()
+                .setColor('#ffaa00')
+                .setTitle(`👋 CHÀO MỪNG ĐẾN VỚI ${serverName.toUpperCase()}`)
+                .setDescription(`Thành viên **${member.user.username}** vừa tham gia server!\n*(Không phát hiện được nguồn mời cụ thể)*`)
+                .setThumbnail(member.user.displayAvatarURL())
+                .setFooter({ text: `Chào mừng bạn đến với ${serverName}!` })
+                .setTimestamp();
+
+            await logChannel.send({ embeds: [fallbackInviteEmbed] });
+        }
+
+    } catch (err) {
+        console.error(`Lỗi khi theo dõi lượt mời tại server ${serverName}:`, err);
+    }
 });
 
 client.login(BOT_TOKEN);
