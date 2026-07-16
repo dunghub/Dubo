@@ -49,10 +49,14 @@ let TICKET_LOG_CHANNEL_ID = '1526179515355893811';
 const invitesCache = new Map(); // Lưu mã mời: GuildID -> Map(Code -> Uses)
 const serverLogChannels = new Map(); // Lưu cấu hình kênh hiển thị: GuildID -> { logChannelId, thongBaoChannelId, quyTacChannelId }
 
+// --- BỘ LƯU TRỮ LỊCH SỬ THÀNH VIÊN ĐỂ TRÁNH TRÙNG LẶP ---
+// GuildID -> Set(MEMBER_ID)
+const serverMembersHistory = new Map(); 
+
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers, // ⚠️ BẮT BUỘC PHẢI BẬT TRÊN DEVELOPER PORTAL
+        GatewayIntentBits.GuildMembers, // ⚠️ BẮT BUỘC PHẢI BẬT TRÊN DEVELOPER PORTAL (3 CÁI CÔNG TẮC XANH)
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildInvites // ⚠️ BẮT BUỘC ĐỂ ĐỌC SỰ KIỆN TẠO/XÓA LINK MỜI
     ] 
@@ -245,13 +249,22 @@ client.once('ready', async () => {
     // Nạp cache danh sách invite ban đầu của toàn bộ các Server
     for (const [guildId, guild] of client.guilds.cache) {
         try {
+            // 1. Nạp cache lời mời ban đầu
             const invites = await guild.invites.fetch();
             const inviteMap = new Map();
             invites.forEach(inv => inviteMap.set(inv.code, inv.uses));
             invitesCache.set(guildId, inviteMap);
             console.log(`[Cache Invite] Đã nạp ${invites.size} link mời của Server: ${guild.name}`);
+
+            // 2. Tự động Quét & Lưu tất cả thành viên hiện tại trong server vào bộ nhớ lịch sử
+            const members = await guild.members.fetch();
+            const historySet = new Set();
+            members.forEach(member => historySet.add(member.id));
+            serverMembersHistory.set(guildId, historySet);
+            console.log(`[Cache History] Đã lưu lịch sử ${members.size} thành viên hiện tại của: ${guild.name}`);
+
         } catch (err) {
-            console.log(`[Cache Invite Error] Không thể nạp link mời từ Server ${guild.name}:`, err.message);
+            console.log(`[Cache Error] Lỗi khi nạp dữ liệu từ server ${guild.name}:`, err.message);
         }
     }
 
@@ -414,11 +427,12 @@ client.on('interactionCreate', async interaction => {
             }
         }
 
-        // --- LỆNH SLASH: /stop-invite (TẮT HỆ THỐNG LOG CHÀO MỪNG) ---
+        // --- LỆNH SLASH: /stop-invite (TẮT HỆ THỐNG LOG CHÀO MỪNG - ĐÃ SỬA ĐỒNG BỘ) ---
         if (interaction.commandName === 'stop-invite') {
             await interaction.deferReply({ ephemeral: true });
             const guildId = interaction.guild.id;
 
+            // Xóa trực tiếp cấu hình trong Map lưu chung của Bot
             if (serverLogChannels.has(guildId)) {
                 serverLogChannels.delete(guildId);
                 return interaction.editReply({ content: '✅ Đã tắt và hủy bỏ cấu hình hệ thống log chào mừng / invite-tracker thành công cho server này!' });
@@ -427,7 +441,7 @@ client.on('interactionCreate', async interaction => {
             }
         }
 
-        // --- LỆNH SLASH: /invites-cache ---
+        // --- LỆNH SLASH: /invites-cache (CÀI ĐẶT HỆ THỐNG CHÀO MỪNG - ĐÃ SỬA ĐỒNG BỘ) ---
         if (interaction.commandName === 'invites-cache') {
             await interaction.deferReply({ ephemeral: true });
             const logChannel = interaction.options.getChannel('kenh-hien-thi');
@@ -436,7 +450,7 @@ client.on('interactionCreate', async interaction => {
             const guildId = interaction.guild.id;
             const serverName = interaction.guild.name;
 
-            // Lưu cấu hình cả 3 kênh
+            // Lưu cấu hình cả 3 kênh đúng vị trí đồng bộ
             serverLogChannels.set(guildId, {
                 logChannelId: logChannel.id,
                 thongBaoChannelId: thongBaoChannel.id,
@@ -927,6 +941,7 @@ client.on('guildMemberAdd', async (member) => {
         const currentInvites = await guild.invites.fetch();
         let usedInvite = null;
 
+        // Quét tìm xem link mời nào vừa tăng số lượt dùng lên
         if (cachedInvites) {
             usedInvite = currentInvites.find(inv => {
                 const prevUses = cachedInvites.get(inv.code) || 0;
@@ -934,7 +949,7 @@ client.on('guildMemberAdd', async (member) => {
             });
         }
 
-        // Cập nhật lại bộ nhớ đệm
+        // Cập nhật lại bộ nhớ đệm lời mời
         const newInviteMap = new Map();
         currentInvites.forEach(inv => newInviteMap.set(inv.code, inv.uses));
         invitesCache.set(guild.id, newInviteMap);
@@ -945,14 +960,34 @@ client.on('guildMemberAdd', async (member) => {
         const thongBaoMention = thongBaoChannelId ? `<#${thongBaoChannelId}>` : `#📣• thông-báo`;
         const quyTacMention = quyTacChannelId ? `<#${quyTacChannelId}>` : `#📜• rules`;
 
-        // Tạo thẻ tag người mời trực tiếp bằng ID (@User)
+        // 🧠 TÍNH NĂNG ĐỘC QUYỀN TRÁNH TRÙNG LẶP:
+        // Kiểm tra xem ID của thành viên này đã từng xuất hiện trong lịch sử của Server này chưa
+        const historySet = serverMembersHistory.get(guild.id) || new Set();
+        let isRepeatedMember = false;
+
+        if (historySet.has(member.id)) {
+            // Đã từng có mặt trong server trước đây!
+            isRepeatedMember = true;
+        } else {
+            // Thành viên hoàn toàn mới -> Lưu ID của họ vào lịch sử
+            historySet.add(member.id);
+            serverMembersHistory.set(guild.id, historySet);
+        }
+
+        // Tìm tag người mời trực tiếp bằng ID
         const inviter = usedInvite ? usedInvite.inviter : null;
-        const inviterTag = inviter ? `<@${inviter.id}>` : "Không rõ người mời";
+        
+        let inviterTag = "Không rõ người mời";
+        if (isRepeatedMember) {
+            inviterTag = "Thành viên cũ quay lại, không tính lượt mời! ❌";
+        } else if (inviter) {
+            inviterTag = `<@${inviter.id}>`;
+        }
 
         // Tin nhắn text ở đầu
         const headerMessage = `Có thành viên **${member.user.username}** mới vào nè 🐱`;
 
-        // EMBED CHÀO MỪNG (ĐÃ SỬA: Loại bỏ chim cánh cụt, tag thẳng người vào ở đầu và tag thẳng người mời ở cuối)
+        // EMBED CHÀO MỪNG (Loại bỏ chim cánh cụt, hiển thị tag người mời ở cuối)
         const welcomeInviteEmbed = new EmbedBuilder()
             .setColor('#2ecc71') 
             .setAuthor({ 
@@ -966,7 +1001,7 @@ client.on('guildMemberAdd', async (member) => {
                 `${thongBaoMention}\n\n` +
                 `### Xem qua những quy tắc của ${serverName} tại\n` +
                 `${quyTacMention}\n\n` +
-                `**Người mời:** ${inviterTag}` // Tag người mời hiển thị trực tiếp ở cuối Embed
+                `**Người mời:** ${inviterTag}`
             )
             .setFooter({ text: serverName })
             .setTimestamp();
@@ -975,6 +1010,17 @@ client.on('guildMemberAdd', async (member) => {
 
     } catch (err) {
         console.error(`Lỗi khi theo dõi lượt mời tại server ${serverName}:`, err);
+    }
+});
+
+// Cập nhật danh sách lịch sử khi có người thoát ra (Đảm bảo khi họ vào lại vẫn nhận diện được là trùng)
+client.on('guildMemberRemove', async (member) => {
+    const guild = member.guild;
+    const historySet = serverMembersHistory.get(guild.id);
+    if (historySet) {
+        // Vẫn GIỮ LẠI ID của họ trong Set lịch sử để nếu họ vào lại lần sau bằng link mời khác, Bot sẽ nhận diện được ngay!
+        historySet.add(member.id); 
+        serverMembersHistory.set(guild.id, historySet);
     }
 });
 
