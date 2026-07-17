@@ -46,12 +46,16 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers, // ⚠️ BẮT BUỘC PHẢI BẬT TRÊN DEVELOPER PORTAL (3 CÁI CÔNG TẮC XANH)
-        GatewayIntentBits.GuildMessages
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildInvites // 🔍 THÊM INTENT ĐỂ THEO DÕI LINK LỜI MỜI (INVITES)
     ] 
 });
 
 // Bộ lưu trữ các thời gian tự động Unban khi admin ban có thời hạn
 const unbanSchedules = new Map();
+
+// 📁 BỘ LƯU TRỮ HOẠT ĐỘNG LINK MỜI ĐỂ THEO DÕI AI LÀ NGƯỜI MỜI
+const invitesCache = new Map();
 
 // =========================================================================
 // DATA SCRIPTS (GIỮ NGUYÊN HOÀN TOÀN ĐẦY ĐỦ KHÔNG RÚT GỌN)
@@ -224,7 +228,7 @@ const fischList = [
     { name: "Mercury hub", code: `loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/c019f214a19894b50f0b8e817b70d25f.lua"))()` },
     { name: "Goomba hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/JustLevel/goombahub/main/fisch.lua"))()` },
     { name: "Solix hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/debunked69/Solixreworkkeysystem/refs/heads/main/solix%20new%20keyui.lua"))()` },
-    { name: "Average hub", code: `loadstring(game:HttpGet("https://gist.githubusercontent.com/AverageHub/1980eccce4133d77fb24d166dc296125/raw/2d9c88acc21a302d92aed0e8b6f0dcd287c8b96b/gistfile1.txt"))()` },
+    { name: "Average hub", value: `loadstring(game:HttpGet("https://gist.githubusercontent.com/AverageHub/1980eccce4133d77fb24d166dc296125/raw/2d9c88acc21a302d92aed0e8b6f0dcd287c8b96b/gistfile1.txt"))()` },
     { name: "Mean hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Alton012/Fisch.Script/refs/heads/main/Mean%20Hub"))()` }
 ];
 
@@ -233,6 +237,18 @@ const fischList = [
 // =========================================================================
 client.once('ready', async () => {
     console.log(`Bot Dubo script va Web Server da Online: ${client.user.tag}`);
+
+    // --- 🔍 LẤY VÀ CACHE TOÀN BỘ LINK MỜI KHI KHỞI ĐỘNG ---
+    try {
+        const guild = await client.guilds.fetch(MY_SERVER_ID).catch(() => null);
+        if (guild) {
+            const invites = await guild.invites.fetch();
+            invites.forEach(invite => invitesCache.set(invite.code, invite.uses));
+            console.log(`Đã nạp cache thành công ${invites.size} link lời mời!`);
+        }
+    } catch (e) {
+        console.error('Không thể nạp danh sách invite:', e);
+    }
 
     const commands = [
         new SlashCommandBuilder().setName('help').setDescription('Hiển thị hướng dẫn sử dụng bot bằng tiếng Việt và Anh'),
@@ -318,11 +334,15 @@ client.once('ready', async () => {
     const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
     try {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        console.log('Đồng bộ thành công hệ thống lệnh! Toàn bộ code Invite và lệnh liên quan đã bị dọn sạch.');
+        console.log('Đồng bộ thành công hệ thống lệnh!');
     } catch (error) {
         console.error('Lỗi đồng bộ lệnh:', error);
     }
 });
+
+// Cập nhật bộ nhớ cache lời mời khi có ai đó tạo link mới hoặc xóa link
+client.on('inviteCreate', invite => invitesCache.set(invite.code, invite.uses));
+client.on('inviteDelete', invite => invitesCache.delete(invite.code));
 
 function getScriptByIndex(list, selectValue) {
     const validList = list.filter(s => s.name && s.name.trim() !== "");
@@ -781,20 +801,55 @@ client.on('interactionCreate', async interaction => {
 });
 
 // =========================================================================
-// KIỂM TRA SỰ KIỆN CHÀO MỪNG ĐỘC QUYỀN (GIỮ NGUYÊN)
+// KIỂM TRA SỰ KIỆN CHÀO MỪNG ĐỘC QUYỀN (ĐÃ CẬP NHẬT THEO DÕI LINK MỜI)
 // =========================================================================
 client.on('guildMemberAdd', async (member) => {
     const guild = member.guild;
 
     if (guild.id === MY_SERVER_ID) {
+        let inviterName = "Không rõ / Không xác định";
+        let inviteUrlUsed = "https://discord.gg/dubobypass"; // Link mặc định nếu không quét được
+        
         try {
+            // Lấy danh sách link mời mới nhất từ server
+            const newInvites = await guild.invites.fetch();
+            
+            // Tìm xem link nào vừa tăng số lần sử dụng (uses) lên 1 đơn vị
+            const usedInvite = newInvites.find(inv => {
+                const cachedUses = invitesCache.get(inv.code);
+                return cachedUses !== undefined && inv.uses > cachedUses;
+            });
+
+            // Cập nhật lại cache toàn bộ link mời hiện tại
+            newInvites.forEach(inv => invitesCache.set(inv.code, inv.uses));
+
+            if (usedInvite) {
+                inviteUrlUsed = usedInvite.url;
+                if (usedInvite.inviter) {
+                    // Tag trực tiếp người tạo ra link mời
+                    inviterName = `<@${usedInvite.inviter.id}>`; 
+                }
+            }
+        } catch (err) {
+            console.error('Lỗi khi phân tích link mời sử dụng:', err);
+        }
+
+        try {
+            // Tạo Embed Chào Mừng theo đúng định dạng yêu cầu của bạn
             const welcomeEmbed = new EmbedBuilder()
                 .setColor('#ffaa00')
-                .setTitle(`👋 ${member.user.username} Welcome TO DUBO BOT BYPASS`)
-                .setDescription(`Cảm ơn bạn đã tham gia server của tôi!\nThank you for joining my server!`)
+                .setTitle(`👋 Chào mừng bạn đã tham gia server!`)
+                .setDescription(
+                    `Chào mừng ${member} đã tham gia vào hệ thống bằng link mời:\n👉 ${inviteUrlUsed}\n\n` +
+                    `--------------------------------------------------\n\n` +
+                    `**Quy định:** Người mời bạn là ${inviterName}. Vui lòng đọc kỹ nội quy server để tránh bị phạt.`
+                )
                 .setTimestamp();
+                
             await member.send({ embeds: [welcomeEmbed] });
-        } catch (error) {}
+        } catch (error) {
+            console.error('Không thể gửi tin nhắn chào mừng (Thành viên khoá DM):', error.message);
+        }
     }
 });
 
