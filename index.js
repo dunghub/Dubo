@@ -37,33 +37,24 @@ if (!BOT_TOKEN) {
 
 // 🎯 CẤU HÌNH ID QUAN TRỌNG ĐÃ CẬP NHẬT THEO YÊU CẦU
 const MY_SERVER_ID = '1509197460512309298'; 
-const OWNER_ID = '1501730680613114048';
+const OWNER_ID = '1501730680613114048'; // ID độc quyền dùng lệnh quản trị ẩn danh
 
-// ĐƯỜNG ỐNG ĐẦU RA MẶC ĐỊNH
+// ĐƯỜNG ỐNG ĐẦU RA MẶC ĐỊNH (Sẽ tự động cập nhật động khi chạy lệnh /ticket-dubo)
 let TICKET_LOG_CHANNEL_ID = '1526179515355893811'; 
 
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers, 
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.GuildInvites // Đã thêm
+        GatewayIntentBits.GuildMembers, // ⚠️ BẮT BUỘC PHẢI BẬT TRÊN DEVELOPER PORTAL (3 CÁI CÔNG TẮC XANH)
+        GatewayIntentBits.GuildMessages
     ] 
 });
 
+// Bộ lưu trữ các thời gian tự động Unban khi admin ban có thời hạn
 const unbanSchedules = new Map();
-const inviteCache = new Map(); // Cache Invite
-
-// Hàm hỗ trợ Invite Cache
-async function cacheInvites(guild) {
-    const invites = await guild.invites.fetch();
-    const codes = new Map();
-    invites.each(invite => codes.set(invite.code, invite.uses));
-    inviteCache.set(guild.id, codes);
-}
 
 // =========================================================================
-// DATA SCRIPTS (GIỮ NGUYÊN)
+// DATA SCRIPTS (GIỮ NGUYÊN HOÀN TOÀN ĐẦY ĐỦ KHÔNG RÚT GỌN)
 // =========================================================================
 const bloxfruitList = [
     { name: "gravity hub ☄️", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/MainPremium.lua"))()` },
@@ -237,85 +228,574 @@ const fischList = [
     { name: "Mean hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Alton012/Fisch.Script/refs/heads/main/Mean%20Hub"))()` }
 ];
 
+// =========================================================================
+// ĐỒNG BỘ SLASH COMMANDS & THIẾT LẬP ẨN CHO LỆNH QUẢN TRỊ
+// =========================================================================
 client.once('ready', async () => {
     console.log(`Bot Dubo script va Web Server da Online: ${client.user.tag}`);
-    
-    // Khởi tạo Cache Invite
-    client.guilds.cache.forEach(guild => {
-        cacheInvites(guild);
-    });
 
     const commands = [
-        new SlashCommandBuilder().setName('help').setDescription('Hiển thị hướng dẫn sử dụng bot'),
-        new SlashCommandBuilder().setName('script-bloxfruit').setDescription('Script Blox Fruit'),
-        new SlashCommandBuilder().setName('script-gag2').setDescription('Script GAG2'),
-        new SlashCommandBuilder().setName('script-99night').setDescription('Script 99 Night'),
-        new SlashCommandBuilder().setName('script-sailorpice').setDescription('Script Sailor Piece'),
-        new SlashCommandBuilder().setName('script-gag').setDescription('Script GAG'),
-        new SlashCommandBuilder().setName('script-forsaken').setDescription('Script Forsaken'),
-        new SlashCommandBuilder().setName('script-steal-a-brainrot').setDescription('Script Steal a Brainrot'),
-        new SlashCommandBuilder().setName('script-murder-mystery-2').setDescription('Script Murder Mystery 2'),
-        new SlashCommandBuilder().setName('script-fisch').setDescription('Script Fisch'),
+        new SlashCommandBuilder().setName('help').setDescription('Hiển thị hướng dẫn sử dụng bot bằng tiếng Việt và Anh'),
+        new SlashCommandBuilder().setName('script-bloxfruit').setDescription('Hiển thị bảng chọn script Blox Fruit ẩn danh'),
+        new SlashCommandBuilder().setName('script-gag2').setDescription('Hiển thị bảng chọn script GAG2 ẩn danh'),
+        new SlashCommandBuilder().setName('script-99night').setDescription('Hiển thị bảng chọn script 99 Night ẩn danh'),
+        new SlashCommandBuilder().setName('script-sailorpice').setDescription('Hiển thị bảng chọn script Sailor Piece ẩn danh'),
+        new SlashCommandBuilder().setName('script-gag').setDescription('Hiển thị bảng chọn script GAG ẩn danh'),
+        new SlashCommandBuilder().setName('script-forsaken').setDescription('Hiển thị bảng chọn script Forsaken ẩn danh'),
+        new SlashCommandBuilder().setName('script-steal-a-brainrot').setDescription('Hiển thị bảng chọn script Steal a Brainrot ẩn danh'),
+        new SlashCommandBuilder().setName('script-murder-mystery-2').setDescription('Hiển thị bảng chọn script Murder Mystery 2 ẩn danh'),
+        new SlashCommandBuilder().setName('script-fisch').setDescription('Hiển thị bảng chọn script Fisch ẩn danh'),
         
+        // 🔒 CHẶN QUYỀN MẶC ĐỊNH BẰNG .setDefaultMemberPermissions(0) ĐỂ ẨN HOÀN TOÀN CÁC LỆNH QUẢN TRỊ
         new SlashCommandBuilder()
             .setName('ticket-dubo')
-            .setDescription('Thiết lập đường ống gửi bài viết (Chỉ Chủ Bot)')
+            .setDescription('Thiết lập đường ống gửi bài viết và nhận ticket (Chỉ Chủ Bot)')
             .setDefaultMemberPermissions(0)
-            .addChannelOption(option => option.setName('kenh-dang-embed').setRequired(true))
-            .addChannelOption(option => option.setName('kenh-nhan-log').setRequired(true)),
+            .addChannelOption(option => 
+                option.setName('kenh-dang-embed')
+                    .setDescription('Chọn kênh đầu vào để đăng bài Embed kèm nút tạo Ticket')
+                    .addChannelTypes(ChannelType.GuildText)
+                    .setRequired(true)
+            )
+            .addChannelOption(option => 
+                option.setName('kenh-nhan-log')
+                    .setDescription('Chọn kênh đầu ra để bot tự động chuyển thông tin tố cáo/ticket về')
+                    .addChannelTypes(ChannelType.GuildText)
+                    .setRequired(true)
+            ),
 
-        new SlashCommandBuilder().setName('mute').setDescription('Mute').setDefaultMemberPermissions(0).addUserOption(o => o.setName('user').setRequired(true)),
-        new SlashCommandBuilder().setName('unmute').setDescription('Unmute').setDefaultMemberPermissions(0).addUserOption(o => o.setName('user').setRequired(true)),
-        new SlashCommandBuilder().setName('ban').setDescription('Ban').setDefaultMemberPermissions(0).addUserOption(o => o.setName('user').setRequired(true)),
-        new SlashCommandBuilder().setName('unban').setDescription('Unban').setDefaultMemberPermissions(0).addStringOption(o => o.setName('id').setRequired(true)),
+        new SlashCommandBuilder()
+            .setName('mute')
+            .setDescription('Hạn chế chat (Mute) một thành viên trong server')
+            .setDefaultMemberPermissions(0)
+            .addUserOption(option => option.setName('user').setDescription('Thành viên cần Mute').setRequired(true)),
+
+        new SlashCommandBuilder()
+            .setName('unmute')
+            .setDescription('Gỡ hạn chế chat (Unmute) một thành viên trong server')
+            .setDefaultMemberPermissions(0)
+            .addUserOption(option => option.setName('user').setDescription('Thành viên cần Unmute').setRequired(true)),
+
+        new SlashCommandBuilder()
+            .setName('ban')
+            .setDescription('Trục xuất và chặn truy cập (Ban) một thành viên')
+            .setDefaultMemberPermissions(0)
+            .addUserOption(option => option.setName('user').setDescription('Thành viên cần Ban').setRequired(true)),
+
+        new SlashCommandBuilder()
+            .setName('unban')
+            .setDescription('Gỡ chặn (Unban) cho một tài khoản bằng ID')
+            .setDefaultMemberPermissions(0)
+            .addStringOption(option => option.setName('id').setDescription('Nhập ID tài khoản cần Unban').setRequired(true)),
+
+        // 🛡️ LỆNH /role
         new SlashCommandBuilder()
             .setName('role')
-            .setDescription('Quản lý vai trò')
+            .setDescription('Quản lý vai trò (Cấp hoặc Xóa) của một thành viên (Chỉ Chủ Bot)')
             .setDefaultMemberPermissions(0)
-            .addUserOption(o => o.setName('user').setRequired(true))
-            .addRoleOption(o => o.setName('role').setRequired(true))
-            .addStringOption(o => o.setName('action').setRequired(true).addChoices({ name: 'Add', value: 'add' }, { name: 'Remove', value: 'remove' }))
+            .addUserOption(option => 
+                option.setName('user')
+                    .setDescription('Chọn thành viên cần xử lý')
+                    .setRequired(true)
+            )
+            .addRoleOption(option => 
+                option.setName('role')
+                    .setDescription('Chọn vai trò (Role)')
+                    .setRequired(true)
+            )
+            .addStringOption(option =>
+                option.setName('action')
+                    .setDescription('Chọn hành động muốn thực hiện')
+                    .setRequired(true)
+                    .addChoices(
+                        { name: 'Cấp vai trò (Add)', value: 'add' },
+                        { name: 'Xóa vai trò (Remove)', value: 'remove' }
+                    )
+            )
             
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
     try {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        console.log('Đồng bộ lệnh thành công!');
+        console.log('Đồng bộ thành công hệ thống lệnh! Toàn bộ code Invite và lệnh liên quan đã bị dọn sạch.');
     } catch (error) {
-        console.error('Lỗi đồng bộ:', error);
+        console.error('Lỗi đồng bộ lệnh:', error);
     }
 });
 
 function getScriptByIndex(list, selectValue) {
-    return list[parseInt(selectValue)] || null;
+    const validList = list.filter(s => s.name && s.name.trim() !== "");
+    const idx = parseInt(selectValue);
+    return validList[idx] || null;
 }
 
-client.on('inviteCreate', invite => cacheInvites(invite.guild));
-client.on('inviteDelete', invite => cacheInvites(invite.guild));
-client.on('guildMemberAdd', async member => {
-    // Logic Invite
-    const newInvites = await member.guild.invites.fetch();
-    const oldInvites = inviteCache.get(member.guild.id);
-    const invite = newInvites.find(i => i.uses > (oldInvites.get(i.code) || 0));
-    if (invite) console.log(`${member.user.tag} duoc moi boi ${invite.inviter.tag} qua link ${invite.code}`);
-    cacheInvites(member.guild);
+// =========================================================================
+// XỬ LÝ SỰ KIỆN LỆNH / MENU / NÚT
+// =========================================================================
+client.on('interactionCreate', async interaction => {
+    
+    // 1. XỬ LÝ CÁC LỆNH SLASH COMMAND (CHAT COMMANDS)
+    if (interaction.isChatInputCommand()) {
+        
+        // --- CHẶN QUYỀP TRUY CẬP ĐỘC QUYỀN BẰNG CODE ---
+        if (['ticket-dubo', 'mute', 'unmute', 'ban', 'unban', 'role'].includes(interaction.commandName)) {
+            if (interaction.user.id !== OWNER_ID) {
+                return interaction.reply({ content: '❌ Lệnh quản trị ẩn danh này đã bị khóa bằng ID phần cứng! Bạn không có quyền sử dụng.', ephemeral: true });
+            }
+        }
 
-    // Logic Chào mừng cũ
-    if (member.guild.id === MY_SERVER_ID) {
-        try {
-            await member.send({
-                embeds: [new EmbedBuilder().setColor('#ffaa00').setTitle(`👋 ${member.user.username} Welcome TO DUBO BOT BYPASS`).setDescription(`Cảm ơn bạn đã tham gia!`).setTimestamp()]
+        // --- LỆNH SLASH: /role ---
+        if (interaction.commandName === 'role') {
+            await interaction.deferReply({ ephemeral: true });
+            const targetUser = interaction.options.getUser('user');
+            const targetRole = interaction.options.getRole('role');
+            const action = interaction.options.getString('action');
+
+            try {
+                const targetMember = await interaction.guild.members.fetch(targetUser.id);
+                if (!targetMember) {
+                    return interaction.editReply({ content: '❌ Không tìm thấy thành viên này trong server.' });
+                }
+
+                const botMember = await interaction.guild.members.fetch(client.user.id);
+                if (targetRole.position >= botMember.roles.highest.position) {
+                    return interaction.editReply({ content: `❌ Thất bại: Vai trò \`${targetRole.name}\` nằm cao hơn hoặc bằng vai trò cao nhất của Bot.` });
+                }
+
+                if (action === 'add') {
+                    if (targetMember.roles.cache.has(targetRole.id)) {
+                        return interaction.editReply({ content: `ℹ️ Thành viên này đã có sẵn vai trò ${targetRole} từ trước.` });
+                    }
+                    
+                    await targetMember.roles.add(targetRole, `Được cấp bởi Admin ${interaction.user.username}`);
+                    const addEmbed = new EmbedBuilder()
+                        .setColor('#33ff33')
+                        .setTitle('🛡️ CẤP VAI TRÒ (ROLE ADDED)')
+                        .setDescription(`Đã **cấp** vai trò ${targetRole} cho thành viên ${targetUser} thành công!`)
+                        .setTimestamp();
+                    return interaction.editReply({ embeds: [addEmbed] });
+                } 
+
+                else if (action === 'remove') {
+                    if (!targetMember.roles.cache.has(targetRole.id)) {
+                        return interaction.editReply({ content: `ℹ️ Thành viên ${targetUser} vốn dĩ không có vai trò ${targetRole} này.` });
+                    }
+
+                    await targetMember.roles.remove(targetRole, `Bị xóa bởi Admin ${interaction.user.username}`);
+                    const removeEmbed = new EmbedBuilder()
+                        .setColor('#ff3333')
+                        .setTitle('🛡️ XÓA VAI TRÒ (ROLE REMOVED)')
+                        .setDescription(`Đã **xóa** vai trò ${targetRole} khỏi thành viên ${targetUser} thành công!`)
+                        .setTimestamp();
+                    return interaction.editReply({ embeds: [removeEmbed] });
+                }
+
+            } catch (err) {
+                return interaction.editReply({ content: `❌ Lỗi hệ thống khi cập nhật Role: ${err.message}` });
+            }
+        }
+
+        // --- LỆNH SLASH: TICKET-DUBO ---
+        if (interaction.commandName === 'ticket-dubo') {
+            await interaction.deferReply({ ephemeral: true });
+            const sourceChannel = interaction.options.getChannel('kenh-dang-embed');
+            const targetChannel = interaction.options.getChannel('kenh-nhan-log');
+            TICKET_LOG_CHANNEL_ID = targetChannel.id;
+
+            const ticketButton = new ButtonBuilder().setCustomId('open_ticket_modal').setLabel('🎫 Ticket Support').setStyle(ButtonStyle.Danger); 
+            const row = new ActionRowBuilder().addComponents(ticketButton);
+            const ticketEmbed = new EmbedBuilder()
+                .setColor('#0055ff') 
+                .setTitle('🛠️ HỆ THỐNG HỖ TRỢ & TỐ CÁO | SUPPORT SYSTEM')
+                .setDescription(`**[VN] Hướng dẫn gửi yêu cầu:**\nNhấn nút tạo ticket ở dưới, ghi rõ bằng chứng lý do và kèm link video để bằng chứng rõ ràng, để chúng tôi thực hiện sự trừng phạt đối với họ.\n\n--------------------------------------------------\n\n**[ENG] Request Guide:**\n*Click the button below to create a ticket stating the reason and attaching a video link to make it clear, so that we can punish them.*`)
+                .setFooter({ text: 'Dubo Bypass Script Hub • Click Button Below' }).setTimestamp();
+
+            try {
+                await sourceChannel.send({ embeds: [ticketEmbed], components: [row] });
+                return interaction.editReply({ content: `✅ **Đường ống thiết làm thành công!**\n📥 **Đầu vào (Embed):** Đã hú bảng Ticket tại ${sourceChannel}\n📤 **Đầu ra (Nhận Log):** Đã chuyển hướng toàn bộ ticket về ${targetChannel}` });
+            } catch (err) {
+                return interaction.editReply({ content: '❌ Thất bại! Vui lòng kiểm tra quyền hạn của Bot tại kênh đã chọn.' });
+            }
+        }
+
+        // --- LỆNH SLASH: /mute CHÍNH THỨC ---
+        if (interaction.commandName === 'mute') {
+            const targetUser = interaction.options.getUser('user');
+            const selectMute = new StringSelectMenuBuilder()
+                .setCustomId(`select_mute_time_${targetUser.id}`) 
+                .setPlaceholder(`Mute đối tượng: ${targetUser.username}...`)
+                .addOptions(
+                    new StringSelectMenuOptionBuilder().setLabel('1 Giờ').setValue('3600000'),
+                    new StringSelectMenuOptionBuilder().setLabel('1 Ngày').setValue('86400000'),
+                    new StringSelectMenuOptionBuilder().setLabel('7 Ngày').setValue('604800000'),
+                    new StringSelectMenuOptionBuilder().setLabel('30 Ngày (Max)').setValue('2419200000')
+                );
+
+            return interaction.reply({ 
+                content: `⏱️ **Chọn thời gian Mute** cho tài khoản ${targetUser}:`, 
+                components: [new ActionRowBuilder().addComponents(selectMute)], 
+                ephemeral: true 
             });
-        } catch (e) {}
+        }
+
+        // --- LỆNH SLASH: /unmute CHÍNH THỨC ---
+        if (interaction.commandName === 'unmute') {
+            await interaction.deferReply({ ephemeral: true });
+            const targetUser = interaction.options.getUser('user');
+
+            try {
+                const targetMember = await interaction.guild.members.fetch(targetUser.id);
+                if (!targetMember) return interaction.editReply({ content: `❌ Không tìm thấy thành viên này trong server.` });
+
+                await targetMember.timeout(null, `Được gỡ phạt bằng lệnh /unmute của Admin ${interaction.user.username}`);
+
+                try {
+                    await targetMember.send({
+                        embeds: [new EmbedBuilder().setColor('#00ff00').setTitle('✅ THÔNG BÁO GỠ PHẠT (UNMUTE)').setDescription(`Bạn đã được gỡ hạn chế chat (Unmute) trong server **${interaction.guild.name}**.`).setTimestamp()]
+                    });
+                } catch (dmErr) {}
+
+                const unmuteEmbed = new EmbedBuilder().setColor('#00ff00').setTitle('🔊 UNMUTE USER SUCCESS 🔊').setDescription(`Đã mở khóa chat thành công cho ${targetUser}!`).setTimestamp();
+                return interaction.editReply({ embeds: [unmuteEmbed] });
+            } catch (err) {
+                return interaction.editReply({ content: `❌ Không thể thực thi: ${err.message}` });
+            }
+        }
+
+        // --- LỆNH SLASH: /ban CHÍNH THỨC ---
+        if (interaction.commandName === 'ban') {
+            const targetUser = interaction.options.getUser('user');
+            const selectBan = new StringSelectMenuBuilder()
+                .setCustomId(`select_ban_time_${targetUser.id}`) 
+                .setPlaceholder(`Ban đối tượng: ${targetUser.username}...`)
+                .addOptions(
+                    new StringSelectMenuOptionBuilder().setLabel('1 Giờ').setValue('1'),
+                    new StringSelectMenuOptionBuilder().setLabel('1 Ngày').setValue('24'),
+                    new StringSelectMenuOptionBuilder().setLabel('7 Ngày').setValue('168'),
+                    new StringSelectMenuOptionBuilder().setLabel('30 Ngày').setValue('720'),
+                    new StringSelectMenuOptionBuilder().setLabel('🔨 Ban Vĩnh Viễn').setValue('0')
+                );
+
+            return interaction.reply({ 
+                content: `🔨 **Chọn thời gian Ban** cho tài khoản ${targetUser}:`, 
+                components: [new ActionRowBuilder().addComponents(selectBan)], 
+                ephemeral: true 
+            });
+        }
+
+        // --- LỆNH SLASH: /unban CHÍNH THỨC ---
+        if (interaction.commandName === 'unban') {
+            await interaction.deferReply({ ephemeral: true });
+            const targetId = interaction.options.getString('id').trim();
+
+            try {
+                await interaction.guild.members.unban(targetId, `Được gỡ Ban bằng lệnh /unban của Admin ${interaction.user.username}`);
+                try {
+                    const targetUser = await client.users.fetch(targetId);
+                    if (targetUser) {
+                        await targetUser.send({ embeds: [new EmbedBuilder().setColor('#00ff00').setTitle('✅ THÔNG BÁO GỠ BAN (UNBAN)').setDescription(`Tài khoản của bạn đã được gỡ chặn (Unban) tại server **${interaction.guild.name}**!`).setTimestamp()] });
+                    }
+                } catch (dmErr) {}
+
+                const unbanEmbed = new EmbedBuilder().setColor('#00ff00').setTitle('🛡️ UNBAN USER SUCCESS 🛡️').setDescription(`Đã mở khóa và gỡ chặn truy cập thành công cho ID \`${targetId}\`!`).setTimestamp();
+                return interaction.editReply({ embeds: [unbanEmbed] });
+            } catch (err) {
+                return interaction.editReply({ content: `❌ Không gỡ ban được. Vui lòng kiểm tra lại ID: ${err.message}` });
+            }
+        }
+
+        // --- LỆNH SLASH: HELP ---
+        if (interaction.commandName === 'help') {
+            const helpMessage = `**VN:** Chọn một kho kịch bản của 1 trò chơi mà bạn yêu thích, chọn kịch bản trong danh sách mà bạn muốn và nhấn coppy ở dưới để nhận kịch bản.\n**ENG:** Choose a script repository of your favourite game, choose the script in the list that you want and click coppy below to get the script`;
+            return interaction.reply({ content: helpMessage, ephemeral: true });
+        }
+
+        // --- HỆ THỐNG CÁC LỆNH MENU SCRIPT ---
+        let currentList = []; let titleName = ""; let customMenuId = "";
+        if (interaction.commandName === 'script-bloxfruit') { currentList = bloxfruitList; titleName = "Blox Fruit"; customMenuId = "menu_bloxfruit"; }
+        else if (interaction.commandName === 'script-gag2') { currentList = gag2List; titleName = "GAG2"; customMenuId = "menu_gag2"; }
+        else if (interaction.commandName === 'script-99night') { currentList = night99List; titleName = "99 Night"; customMenuId = "menu_99night"; }
+        else if (interaction.commandName === 'script-sailorpice') { currentList = sailorList; titleName = "Sailor Piece"; customMenuId = "menu_sailor"; }
+        else if (interaction.commandName === 'script-gag') { currentList = gagList; titleName = "GAG"; customMenuId = "menu_gag"; }
+        else if (interaction.commandName === 'script-forsaken') { currentList = forsakenList; titleName = "Forsaken"; customMenuId = "menu_forsaken"; }
+        else if (interaction.commandName === 'script-steal-a-brainrot') { currentList = stealBrainrotList; titleName = "Steal a Brainrot"; customMenuId = "menu_steal_brainrot"; }
+        else if (interaction.commandName === 'script-murder-mystery-2') { currentList = murderMysteryList; titleName = "Murder Mystery 2"; customMenuId = "menu_mm2"; }
+        else if (interaction.commandName === 'script-fisch') { currentList = fischList; titleName = "Fisch"; customMenuId = "menu_fisch"; }
+
+        const validList = currentList.filter(s => s.name && s.name.trim() !== "");
+        if (validList.length === 0) return interaction.reply({ content: `Hiện tại chưa có script nào cho ${titleName}!`, ephemeral: true });
+
+        const menuOptions = validList.slice(0, 25).map((script, index) => new StringSelectMenuOptionBuilder().setLabel(script.name).setDescription(`Bấm để lấy mã code của: ${script.name}`).setValue(index.toString()));
+        const selectMenu = new StringSelectMenuBuilder().setCustomId(customMenuId).setPlaceholder(`Select script | 1-${menuOptions.length}`).setMinValues(1).setMaxValues(1).addOptions(menuOptions);
+        await interaction.reply({ content: `**Select script | ${titleName} (1-${menuOptions.length})**\nChọn mục bên dưới để nhận code:`, components: [new ActionRowBuilder().addComponents(selectMenu)], ephemeral: true });
+    }
+
+    // 2. XỬ LÝ KHI USER ẤN NÚT TẠO TICKET
+    if (interaction.isButton() && interaction.customId === 'open_ticket_modal') {
+        const modal = new ModalBuilder().setCustomId('ticket_submission_modal').setTitle('Support - Tố Cáo & Hỗ Trợ');
+        const field1 = new TextInputBuilder().setCustomId('ticket_user_tag').setLabel('Tag/Tên người dùng tố cáo | User Tag').setPlaceholder('Ví dụ: @abcxyz...').setStyle(TextInputStyle.Short).setRequired(true);
+        const field2 = new TextInputBuilder().setCustomId('ticket_reason').setLabel('Lý do gặp phải | Reason').setPlaceholder('Ghi rõ hành vi vi phạm tại đây...').setStyle(TextInputStyle.Paragraph).setRequired(true);
+        const field3 = new TextInputBuilder().setCustomId('ticket_evidence_link').setLabel('Link ảnh hoặc Video bằng chứng | Evidence').setPlaceholder('Dán link bằng chứng vào đây...').setStyle(TextInputStyle.Short).setRequired(true);
+        modal.addComponents(new ActionRowBuilder().addComponents(field1), new ActionRowBuilder().addComponents(field2), new ActionRowBuilder().addComponents(field3));
+        return interaction.showModal(modal);
+    }
+
+    // 3. XỬ LÝ KHI GỬI MODAL TICKET
+    if (interaction.isModalSubmit() && interaction.customId === 'ticket_submission_modal') {
+        await interaction.deferReply({ ephemeral: true });
+        const userTag = interaction.fields.getTextInputValue('ticket_user_tag');
+        const reason = interaction.fields.getTextInputValue('ticket_reason');
+        const evidenceLink = interaction.fields.getTextInputValue('ticket_evidence_link');
+
+        const logEmbed = new EmbedBuilder()
+            .setColor('#0055ff').setTitle('🚨 ĐƠN TỐ CÁO / YÊU CẦU HỖ TRỢ MỚI').setThumbnail(interaction.user.displayAvatarURL())
+            .addFields(
+                { name: '👤 Người gửi đơn:', value: `${interaction.user} (ID: ${interaction.user.id})`, inline: true },
+                { name: '🎯 Đối tượng bị tố cáo:', value: `\`${userTag}\``, inline: true },
+                { name: '📝 Lý do chi tiết:', value: `${reason}` },
+                { name: '🎥 Link bằng chứng (Ảnh/Video):', value: `${evidenceLink}` }
+            ).setTimestamp();
+
+        const replyButton = new ButtonBuilder().setCustomId(`reply_ticket_${interaction.user.id}`).setLabel('Gửi tin nhắn').setStyle(ButtonStyle.Success);
+        const muteButton = new ButtonBuilder().setCustomId('mute_target_direct').setLabel('Mute').setStyle(ButtonStyle.Primary);
+        const unmuteButton = new ButtonBuilder().setCustomId('unmute_target_direct').setLabel('Unmute').setStyle(ButtonStyle.Secondary);
+        const banButton = new ButtonBuilder().setCustomId('ban_target_direct').setLabel('Ban').setStyle(ButtonStyle.Danger);
+        const unbanButton = new ButtonBuilder().setCustomId('unban_target_direct').setLabel('Unban').setStyle(ButtonStyle.Danger);
+
+        const actionRow1 = new ActionRowBuilder().addComponents(replyButton, muteButton, unmuteButton);
+        const actionRow2 = new ActionRowBuilder().addComponents(banButton, unbanButton);
+
+        try {
+            const logChannel = await client.channels.fetch(TICKET_LOG_CHANNEL_ID).catch(() => null);
+            if (logChannel) {
+                await logChannel.send({ embeds: [logEmbed], components: [actionRow1, actionRow2] });
+                return interaction.editReply({ content: '✅ Gửi yêu cầu hỗ trợ thành công! Ban quản trị sẽ sớm xử lý.' });
+            }
+            return interaction.editReply({ content: '❌ Thất bại: Không kết nối được tới đường ống đầu ra.' });
+        } catch (error) {
+            return interaction.editReply({ content: '❌ Đã xảy ra lỗi hệ thống khi truyền dữ liệu.' });
+        }
+    }
+
+    // --- XỬ LÝ CÁC NÚT BẤM TRỰC TIẾP TRÊN BẢNG LOG TICKET ---
+    if (interaction.isButton() && interaction.user.id !== OWNER_ID && ['mute_target_direct', 'unmute_target_direct', 'ban_target_direct', 'unban_target_direct'].some(id => interaction.customId.startsWith(id) || interaction.customId === id)) {
+        return interaction.reply({ content: '❌ Bạn không có quyền sử dụng chức năng này!', ephemeral: true });
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith('reply_ticket_')) {
+        if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: '❌ Bạn không có quyền sử dụng chức năng này!', ephemeral: true });
+        const targetUserId = interaction.customId.replace('reply_ticket_', '');
+        const modal = new ModalBuilder().setCustomId(`admin_reply_modal_${targetUserId}`).setTitle('Gửi Phản Hồi Ticket');
+        const messageInput = new TextInputBuilder().setCustomId('admin_reply_content').setLabel('Nội dung nhắn gửi đến thành viên').setPlaceholder('Nhập tin nhắn...').setStyle(TextInputStyle.Paragraph).setRequired(true);
+        modal.addComponents(new ActionRowBuilder().addComponents(messageInput));
+        return interaction.showModal(modal);
+    }
+
+    if (interaction.isModalSubmit() && interaction.customId.startsWith('admin_reply_modal_')) {
+        await interaction.deferReply({ ephemeral: true });
+        const targetUserId = interaction.customId.replace('admin_reply_modal_', '');
+        const replyContent = interaction.fields.getTextInputValue('admin_reply_content');
+        try {
+            const targetUser = await client.users.fetch(targetUserId);
+            if (targetUser) {
+                await targetUser.send({ embeds: [new EmbedBuilder().setColor('#00ff55').setTitle('📩 PHẢN HỒI TỪ BAN QUẢN TRỊ').setDescription(`Chào bạn, đây là tin nhắn phản hồi về đơn Ticket của bạn:\n\n**Nội dung:** ${replyContent}`).setTimestamp()] });
+                return interaction.editReply({ content: `✅ Đã gửi thành công tin nhắn đến người dùng!` });
+            }
+        } catch (error) { return interaction.editReply({ content: `❌ Thất bại: Người này đã khóa DM.` }); }
+    }
+
+    // --- NÚT BẤM MUTE/UNMUTE/BAN/UNBAN PHỤ TRỢ ---
+    if (interaction.isButton() && interaction.customId === 'mute_target_direct') {
+        const modal = new ModalBuilder().setCustomId('admin_mute_input_modal').setTitle('Nhập Đối Tượng Cần Mute');
+        modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('mute_target_name').setLabel('Nhập Tên, Tag hoặc ID').setStyle(TextInputStyle.Short).setRequired(true)));
+        return interaction.showModal(modal);
+    }
+    if (interaction.isModalSubmit() && interaction.customId === 'admin_mute_input_modal') {
+        const targetTag = interaction.fields.getTextInputValue('mute_target_name').trim();
+        const selectMute = new StringSelectMenuBuilder().setCustomId(`select_mute_time_${targetTag}`).setPlaceholder(`Mute đối tượng...`).addOptions(new StringSelectMenuOptionBuilder().setLabel('1 Giờ').setValue('3600000'), new StringSelectMenuOptionBuilder().setLabel('1 Ngày').setValue('86400000'), new StringSelectMenuOptionBuilder().setLabel('7 Ngày').setValue('604800000'), new StringSelectMenuOptionBuilder().setLabel('30 Ngày (Max)').setValue('2419200000'));
+        return interaction.reply({ content: `⏱️ **Chọn thời gian Mute** cho \`${targetTag}\`:`, components: [new ActionRowBuilder().addComponents(selectMute)], ephemeral: true });
+    }
+
+    if (interaction.isButton() && interaction.customId === 'unmute_target_direct') {
+        const modal = new ModalBuilder().setCustomId('admin_unmute_input_modal').setTitle('Nhập Đối Tượng Cần Unmute');
+        modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('unmute_target_name').setLabel('Nhập Tên, Tag hoặc ID').setStyle(TextInputStyle.Short).setRequired(true)));
+        return interaction.showModal(modal);
+    }
+    if (interaction.isModalSubmit() && interaction.customId === 'admin_unmute_input_modal') {
+        await interaction.deferReply({ ephemeral: true });
+        const targetTag = interaction.fields.getTextInputValue('unmute_target_name').trim();
+        const cleanIdOrName = targetTag.replace(/[<@!>]/g, '');
+        try {
+            const members = await interaction.guild.members.fetch();
+            const targetMember = members.find(m => m.id === cleanIdOrName || m.user.username === cleanIdOrName || m.user.tag === targetTag);
+            if (!targetMember) return interaction.editReply({ content: `❌ Không tìm thấy người dùng.` });
+            await targetMember.timeout(null);
+            try { await targetMember.send({ embeds: [new EmbedBuilder().setColor('#00ff00').setTitle('✅ UNMUTE').setDescription(`Bạn đã được gỡ giới hạn chat!`).setTimestamp()] }); } catch (e) {}
+            return interaction.editReply({ embeds: [new EmbedBuilder().setColor('#00ff00').setTitle('🔊 UNMUTE SUCCESS').setDescription(`Tài khoản ${targetMember} đã được mở khóa chat!`)] });
+        } catch (err) { return interaction.editReply({ content: `Lỗi: ${err.message}` }); }
+    }
+
+    if (interaction.isButton() && interaction.customId === 'ban_target_direct') {
+        const modal = new ModalBuilder().setCustomId('admin_ban_input_modal').setTitle('Nhập Đối Tượng Cần Ban');
+        modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ban_target_name').setLabel('Nhập Tên, Tag hoặc ID').setStyle(TextInputStyle.Short).setRequired(true)));
+        return interaction.showModal(modal);
+    }
+    if (interaction.isModalSubmit() && interaction.customId === 'admin_ban_input_modal') {
+        const targetTag = interaction.fields.getTextInputValue('ban_target_name').trim();
+        const selectBan = new StringSelectMenuBuilder().setCustomId(`select_ban_time_${targetTag}`).setPlaceholder(`Ban đối tượng...`).addOptions(new StringSelectMenuOptionBuilder().setLabel('1 Giờ').setValue('1'), new StringSelectMenuOptionBuilder().setLabel('1 Ngày').setValue('24'), new StringSelectMenuOptionBuilder().setLabel('7 Ngày').setValue('168'), new StringSelectMenuOptionBuilder().setLabel('30 Ngày').setValue('720'), new StringSelectMenuOptionBuilder().setLabel('🔨 Ban Vĩnh Viễn').setValue('0'));
+        return interaction.reply({ content: `🔨 **Chọn thời gian Ban** cho \`${targetTag}\`:`, components: [new ActionRowBuilder().addComponents(selectBan)], ephemeral: true });
+    }
+
+    if (interaction.isButton() && interaction.customId === 'unban_target_direct') {
+        const modal = new ModalBuilder().setCustomId('admin_unban_input_modal').setTitle('Gỡ Ban Người Dùng');
+        modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('unban_target_id').setLabel('ID Tài Khoản').setStyle(TextInputStyle.Short).setRequired(true)));
+        return interaction.showModal(modal);
+    }
+    if (interaction.isModalSubmit() && interaction.customId === 'admin_unban_input_modal') {
+        await interaction.deferReply({ ephemeral: true });
+        const targetId = interaction.fields.getTextInputValue('unban_target_id').trim();
+        try {
+            await interaction.guild.members.unban(targetId);
+            try { const u = await client.users.fetch(targetId); if (u) await u.send({ embeds: [new EmbedBuilder().setColor('#00ff00').setTitle('✅ UNBAN').setDescription(`Bạn đã được gỡ Ban.`).setTimestamp()] }); } catch (e) {}
+            return interaction.editReply({ embeds: [new EmbedBuilder().setColor('#00ff00').setTitle('🛡️ UNBAN SUCCESS').setDescription(`Đã gỡ chặn thành công cho ID \`${targetId}\``)] });
+        } catch (err) { return interaction.editReply({ content: `Lỗi: ${err.message}` }); }
+    }
+
+    // --- THỰC THI CHỨC NĂNG XỬ LÝ MUTE KHI CHỌN MENU THỜI GIAN ---
+    if (interaction.isStringSelectMenu() && interaction.customId.startsWith('select_mute_time_')) {
+        await interaction.deferReply({ ephemeral: true });
+        const targetTag = interaction.customId.replace('select_mute_time_', '');
+        const duration = parseInt(interaction.values[0]);
+        const cleanIdOrName = targetTag.replace(/[<@!>]/g, '');
+
+        try {
+            const members = await interaction.guild.members.fetch();
+            const targetMember = members.find(m => m.id === cleanIdOrName || m.user.username === cleanIdOrName || m.user.tag === targetTag);
+
+            if (!targetMember) return interaction.editReply({ content: `❌ Không tìm thấy người dùng \`${targetTag}\` trong hệ thống server.` });
+
+            const minutes = duration / 60000;
+            let timeString = `${minutes} phút`;
+            if (minutes >= 60) timeString = `${minutes / 60} giờ`;
+            if (minutes >= 1440) timeString = `${minutes / 1440} ngày`;
+
+            try {
+                await targetMember.send({
+                    embeds: [new EmbedBuilder().setColor('#ffaa00').setTitle('🚨 THÔNG BÁO HẠN CHẾ CHAT (MUTE)').setDescription(`Bạn đã bị mute **${timeString}** trong sever discord của chúng tôi (${interaction.guild.name}).`).setTimestamp()]
+                });
+            } catch (e) {}
+
+            await targetMember.timeout(duration, `Bị phạt bởi lệnh điều hành`);
+            return interaction.editReply({ embeds: [new EmbedBuilder().setColor(0xFF0000).setTitle('🚨 MUTE USER SUCCESS 🚨').addFields({ name: '👤 Thành viên:', value: `${targetMember}`, inline: true }, { name: '⏱️ Thời hạn:', value: `**${timeString}**`, inline: true }).setTimestamp()] });
+        } catch (err) { return interaction.editReply({ content: '❌ Lỗi: Bot thiếu quyền xử lý Timeout hoặc Role của Bot xếp dưới tài khoản này.' }); }
+    }
+
+    // --- THỰC THI CHỨC NĂNG XỬ LÝ BAN KHI CHỌN MENU THỜI GIAN ---
+    if (interaction.isStringSelectMenu() && interaction.customId.startsWith('select_ban_time_')) {
+        await interaction.deferReply({ ephemeral: true });
+        const targetTag = interaction.customId.replace('select_ban_time_', '');
+        const hours = parseInt(interaction.values[0]);
+        const cleanIdOrName = targetTag.replace(/[<@!>]/g, '');
+
+        try {
+            const guild = interaction.guild;
+            const members = await guild.members.fetch();
+            let targetMember = members.find(m => m.id === cleanIdOrName || m.user.username === cleanIdOrName || m.user.tag === targetTag);
+            let targetUser = targetMember ? targetMember.user : null;
+
+            if (!targetUser && cleanIdOrName.length >= 17 && !isNaN(cleanIdOrName)) {
+                targetUser = await client.users.fetch(cleanIdOrName).catch(() => null);
+            }
+
+            if (!targetUser) return interaction.editReply({ content: `❌ Không tìm thấy thông tin tài khoản.` });
+
+            let timeString = hours === 0 ? "Vĩnh Viễn" : `${hours} Giờ`;
+
+            try {
+                await targetUser.send({
+                    embeds: [new EmbedBuilder().setColor('#ff0000').setTitle('🚨 THÔNG BÁO KHÓA TRUY CẬP (BAN)').setDescription(`Bạn đã bị Ban (${timeString}) khỏi sever discord của chúng tôi (${guild.name}).`).setTimestamp()]
+                });
+            } catch (e) {}
+
+            const banEmbed = new EmbedBuilder().setColor(0xFF0000).setTitle('🔨 BAN USER SUCCESS 🔨').addFields({ name: '👤 Mục tiêu:', value: `**${targetUser.tag}**` }, { name: '⏱️ Thời hạn:', value: `\`${timeString}\`` }).setTimestamp();
+
+            if (hours === 0) {
+                await guild.members.ban(targetUser, { deleteMessageSeconds: 3600 });
+                return interaction.editReply({ embeds: [banEmbed] });
+            } else {
+                await guild.members.ban(targetUser, { deleteMessageSeconds: 3600 });
+                const msDuration = hours * 60 * 60 * 1000;
+                if (unbanSchedules.has(targetUser.id)) clearTimeout(unbanSchedules.get(targetUser.id));
+
+                const timer = setTimeout(async () => {
+                    try { await guild.members.unban(targetUser.id); } catch (e) {}
+                    unbanSchedules.delete(targetUser.id);
+                }, msDuration);
+
+                unbanSchedules.set(targetUser.id, timer);
+                return interaction.editReply({ embeds: [banEmbed] });
+            }
+        } catch (err) { return interaction.editReply({ content: '❌ Thất bại: Không có quyền Ban hoặc Role bot quá thấp.' }); }
+    }
+
+    // --- HỆ THỐNG PHẢN HỒI LẤY SCRIPT ---
+    if (interaction.isStringSelectMenu() && ['menu_bloxfruit', 'menu_gag2', 'menu_99night', 'menu_sailor', 'menu_gag', 'menu_forsaken', 'menu_steal_brainrot', 'menu_mm2', 'menu_fisch'].includes(interaction.customId)) {
+        await interaction.deferReply({ ephemeral: true });
+        let list = []; let embedColor = "#000000"; let prefix = "";
+        if (interaction.customId === 'menu_bloxfruit') { list = bloxfruitList; embedColor = '#00ffcc'; prefix = "copy_bf_"; }
+        if (interaction.customId === 'menu_gag2') { list = gag2List; embedColor = '#ff9900'; prefix = "copy_gag2_"; }
+        if (interaction.customId === 'menu_99night') { list = night99List; embedColor = '#ff0055'; prefix = "copy_99night_"; }
+        if (interaction.customId === 'menu_sailor') { list = sailorList; embedColor = '#0099ff'; prefix = "copy_sailor_"; }
+        if (interaction.customId === 'menu_gag') { list = gagList; embedColor = '#33cc33'; prefix = "copy_gag_"; }
+        if (interaction.customId === 'menu_forsaken') { list = forsakenList; embedColor = '#6600cc'; prefix = "copy_forsaken_"; }
+        if (interaction.customId === 'menu_steal_brainrot') { list = stealBrainrotList; embedColor = '#ff3399'; prefix = "copy_steal_"; }
+        if (interaction.customId === 'menu_mm2') { list = murderMysteryList; embedColor = '#cc0000'; prefix = "copy_mm2_"; }
+        if (interaction.customId === 'menu_fisch') { list = fischList; embedColor = '#00ffff'; prefix = "copy_fisch_"; }
+
+        const chosenScript = getScriptByIndex(list, interaction.values[0]);
+        if (!chosenScript) return interaction.editReply({ content: 'Lỗi: Không tìm thấy dữ liệu script!' });
+
+        const embed = new EmbedBuilder().setColor(embedColor).setTitle(`🤖 Dubo script | Cấp mã thành công`).addFields({ name: '📌 Tên Script:', value: `**${chosenScript.name}**` }, { name: '💻 Đoạn Code:', value: `\`\`\`lua\n${chosenScript.code || "-- Trống"}\n\`\`\`` }).setFooter({ text: 'Yêu cầu từ Dubo script • Tin nhắn bảo mật' }).setTimestamp();
+        const copyButton = new ButtonBuilder().setCustomId(`${prefix}${interaction.values[0]}`).setLabel('📄 Copy Script').setStyle(ButtonStyle.Success);
+        await interaction.editReply({ embeds: [embed], components: [new ActionRowBuilder().addComponents(copyButton)] });
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith('copy_')) {
+        await interaction.deferReply({ ephemeral: true });
+        let list = []; let idxStr = "";
+        if (interaction.customId.startsWith('copy_bf_')) { list = bloxfruitList; idxStr = interaction.customId.replace('copy_bf_', ''); }
+        else if (interaction.customId.startsWith('copy_gag2_')) { list = gag2List; idxStr = interaction.customId.replace('copy_gag2_', ''); }
+        else if (interaction.customId.startsWith('copy_99night_')) { list = night99List; idxStr = interaction.customId.replace('copy_99night_', ''); }
+        else if (interaction.customId.startsWith('copy_sailor_')) { list = sailorList; idxStr = interaction.customId.replace('copy_sailor_', ''); }
+        else if (interaction.customId.startsWith('copy_gag_')) { list = gagList; idxStr = interaction.customId.replace('copy_gag_', ''); }
+        else if (interaction.customId.startsWith('copy_forsaken_')) { list = forsakenList; idxStr = interaction.customId.replace('copy_forsaken_', ''); }
+        else if (interaction.customId.startsWith('copy_steal_')) { list = stealBrainrotList; idxStr = interaction.customId.replace('copy_steal_', ''); }
+        else if (interaction.customId.startsWith('copy_mm2_')) { list = murderMysteryList; idxStr = interaction.customId.replace('copy_mm2_', ''); }
+        else if (interaction.customId.startsWith('copy_fisch_')) { list = fischList; idxStr = interaction.customId.replace('copy_fisch_', ''); }
+
+        const chosenScript = getScriptByIndex(list, idxStr);
+        if (!chosenScript) return interaction.editReply({ content: 'Lỗi: Không tìm thấy dữ liệu sao chép!' });
+        await interaction.editReply({ content: `${chosenScript.code || "-- Trống"}` });
     }
 });
 
-client.on('interactionCreate', async interaction => {
-    // (Phần code xử lý interaction của bạn giữ nguyên từ đây trở xuống)
-    // ...
-    // Note: Vì giới hạn ký tự, bạn dán phần code xử lý command cũ của bạn vào tiếp theo tại đây.
-    // ...
+// =========================================================================
+// KIỂM TRA SỰ KIỆN CHÀO MỪNG ĐỘC QUYỀN (GIỮ NGUYÊN)
+// =========================================================================
+client.on('guildMemberAdd', async (member) => {
+    const guild = member.guild;
+
+    if (guild.id === MY_SERVER_ID) {
+        try {
+            const welcomeEmbed = new EmbedBuilder()
+                .setColor('#ffaa00')
+                .setTitle(`👋 ${member.user.username} Welcome TO DUBO BOT BYPASS`)
+                .setDescription(`Cảm ơn bạn đã tham gia server của tôi!\nThank you for joining my server!`)
+                .setTimestamp();
+            await member.send({ embeds: [welcomeEmbed] });
+        } catch (error) {}
+    }
 });
 
 client.login(BOT_TOKEN);
