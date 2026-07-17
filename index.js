@@ -233,7 +233,7 @@ const fischList = [
 ];
 
 // =========================================================================
-// ĐỒNG BỘ SLASH COMMANDS & THIẾT LẬP ẨN CHO LỆNH QUẢN TRỊ
+// ĐỒNG BỘ SLASH COMMANDS VÀ THIẾT LẬP ẨN CHO LỆNH QUẢN TRỊ
 // =========================================================================
 client.once('ready', async () => {
     console.log(`Bot Dubo script va Web Server da Online: ${client.user.tag}`);
@@ -250,6 +250,7 @@ client.once('ready', async () => {
         console.error('Không thể nạp danh sách invite:', e);
     }
 
+    // --- 🛠️ ĐỊNH NGHĨA DANH SÁCH LỆNH SLASH COMMAND ---
     const commands = [
         new SlashCommandBuilder().setName('help').setDescription('Hiển thị hướng dẫn sử dụng bot bằng tiếng Việt và Anh'),
         new SlashCommandBuilder().setName('script-bloxfruit').setDescription('Hiển thị bảng chọn script Blox Fruit ẩn danh'),
@@ -331,12 +332,20 @@ client.once('ready', async () => {
             
     ].map(command => command.toJSON());
 
+    // --- 🚀 TỰ ĐỘNG DEPLOY LỆNH KHI BOT ONLINE ---
     const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
     try {
-        await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        console.log('Đồng bộ thành công hệ thống lệnh!');
+        console.log('🔄 Đang tự động đăng ký lệnh Slash (/) lên Discord API...');
+        
+        // Đăng ký lệnh trực tiếp cho Server Test của bạn để hiển thị NGAY LẬP TỨC
+        await rest.put(
+            Routes.applicationGuildCommands(client.user.id, MY_SERVER_ID), 
+            { body: commands }
+        );
+        
+        console.log('✅ Đã đồng bộ và kích hoạt thành công hệ thống lệnh Slash tại server!');
     } catch (error) {
-        console.error('Lỗi đồng bộ lệnh:', error);
+        console.error('❌ Lỗi tự động đăng ký lệnh Slash:', error);
     }
 });
 
