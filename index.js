@@ -41,11 +41,13 @@ const OWNER_ID = '1501730680613114048'; // ID độc quyền dùng lệnh quản
 
 // ĐƯỜNG ỐNG ĐẦU RA MẶC ĐỊNH (Sẽ tự động cập nhật động khi chạy lệnh /ticket-dubo)
 let TICKET_LOG_CHANNEL_ID = '1526179515355893811'; 
+// Thêm biến cho phần code cũ
+let WELCOME_CHANNEL_ID = null;
 
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers, // ⚠️ BẮT BUỘC PHẢI BẬT TRÊN DEVELOPER PORTAL (3 CÁI CÔNG TẮC XANH)
+        GatewayIntentBits.GuildMembers, 
         GatewayIntentBits.GuildMessages
     ] 
 });
@@ -246,7 +248,9 @@ client.once('ready', async () => {
         new SlashCommandBuilder().setName('script-murder-mystery-2').setDescription('Hiển thị bảng chọn script Murder Mystery 2 ẩn danh'),
         new SlashCommandBuilder().setName('script-fisch').setDescription('Hiển thị bảng chọn script Fisch ẩn danh'),
         
-        // 🔒 CHẶN QUYỀN MẶC ĐỊNH BẰNG .setDefaultMemberPermissions(0) ĐỂ ẨN HOÀN TOÀN CÁC LỆNH QUẢN TRỊ
+        // Thêm lệnh từ code cũ (welcome-setup)
+        new SlashCommandBuilder().setName('welcome-setup').setDescription('Setup kênh chào mừng').setDefaultMemberPermissions(0).addChannelOption(o => o.setName('channel').setRequired(true).addChannelTypes(ChannelType.GuildText)),
+
         new SlashCommandBuilder()
             .setName('ticket-dubo')
             .setDescription('Thiết lập đường ống gửi bài viết và nhận ticket (Chỉ Chủ Bot)')
@@ -288,7 +292,6 @@ client.once('ready', async () => {
             .setDefaultMemberPermissions(0)
             .addStringOption(option => option.setName('id').setDescription('Nhập ID tài khoản cần Unban').setRequired(true)),
 
-        // 🛡️ LỆNH /role
         new SlashCommandBuilder()
             .setName('role')
             .setDescription('Quản lý vai trò (Cấp hoặc Xóa) của một thành viên (Chỉ Chủ Bot)')
@@ -318,7 +321,7 @@ client.once('ready', async () => {
     const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
     try {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        console.log('Đồng bộ thành công hệ thống lệnh! Toàn bộ code Invite và lệnh liên quan đã bị dọn sạch.');
+        console.log('Đồng bộ thành công hệ thống lệnh!');
     } catch (error) {
         console.error('Lỗi đồng bộ lệnh:', error);
     }
@@ -343,6 +346,13 @@ client.on('interactionCreate', async interaction => {
             if (interaction.user.id !== OWNER_ID) {
                 return interaction.reply({ content: '❌ Lệnh quản trị ẩn danh này đã bị khóa bằng ID phần cứng! Bạn không có quyền sử dụng.', ephemeral: true });
             }
+        }
+
+        // --- XỬ LÝ LỆNH TỪ CODE CŨ ---
+        if (interaction.commandName === 'welcome-setup') {
+            if (interaction.user.id !== OWNER_ID) return interaction.reply({content: '❌', ephemeral: true});
+            WELCOME_CHANNEL_ID = interaction.options.getChannel('channel').id;
+            return interaction.reply({content: `✅ Đã set kênh: <#${WELCOME_CHANNEL_ID}>`, ephemeral: true});
         }
 
         // --- LỆNH SLASH: /role ---
@@ -419,7 +429,7 @@ client.on('interactionCreate', async interaction => {
             }
         }
 
-        // --- LỆNH SLASH: /mute CHÍNH THỨC ---
+        // --- LỆNH SLASH: /mute ---
         if (interaction.commandName === 'mute') {
             const targetUser = interaction.options.getUser('user');
             const selectMute = new StringSelectMenuBuilder()
@@ -439,7 +449,7 @@ client.on('interactionCreate', async interaction => {
             });
         }
 
-        // --- LỆNH SLASH: /unmute CHÍNH THỨC ---
+        // --- LỆNH SLASH: /unmute ---
         if (interaction.commandName === 'unmute') {
             await interaction.deferReply({ ephemeral: true });
             const targetUser = interaction.options.getUser('user');
@@ -463,7 +473,7 @@ client.on('interactionCreate', async interaction => {
             }
         }
 
-        // --- LỆNH SLASH: /ban CHÍNH THỨC ---
+        // --- LỆNH SLASH: /ban ---
         if (interaction.commandName === 'ban') {
             const targetUser = interaction.options.getUser('user');
             const selectBan = new StringSelectMenuBuilder()
@@ -484,7 +494,7 @@ client.on('interactionCreate', async interaction => {
             });
         }
 
-        // --- LỆNH SLASH: /unban CHÍNH THỨC ---
+        // --- LỆNH SLASH: /unban ---
         if (interaction.commandName === 'unban') {
             await interaction.deferReply({ ephemeral: true });
             const targetId = interaction.options.getString('id').trim();
@@ -531,7 +541,7 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ content: `**Select script | ${titleName} (1-${menuOptions.length})**\nChọn mục bên dưới để nhận code:`, components: [new ActionRowBuilder().addComponents(selectMenu)], ephemeral: true });
     }
 
-    // 2. XỬ LÝ KHI USER ẤN NÚT TẠO TICKET
+    // 2. XỬ LÝ CÁC SỰ KIỆN TƯƠNG TÁC KHÁC
     if (interaction.isButton() && interaction.customId === 'open_ticket_modal') {
         const modal = new ModalBuilder().setCustomId('ticket_submission_modal').setTitle('Support - Tố Cáo & Hỗ Trợ');
         const field1 = new TextInputBuilder().setCustomId('ticket_user_tag').setLabel('Tag/Tên người dùng tố cáo | User Tag').setPlaceholder('Ví dụ: @abcxyz...').setStyle(TextInputStyle.Short).setRequired(true);
@@ -541,7 +551,6 @@ client.on('interactionCreate', async interaction => {
         return interaction.showModal(modal);
     }
 
-    // 3. XỬ LÝ KHI GỬI MODAL TICKET
     if (interaction.isModalSubmit() && interaction.customId === 'ticket_submission_modal') {
         await interaction.deferReply({ ephemeral: true });
         const userTag = interaction.fields.getTextInputValue('ticket_user_tag');
@@ -578,7 +587,6 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // --- XỬ LÝ CÁC NÚT BẤM TRỰC TIẾP TRÊN BẢNG LOG TICKET ---
     if (interaction.isButton() && interaction.user.id !== OWNER_ID && ['mute_target_direct', 'unmute_target_direct', 'ban_target_direct', 'unban_target_direct'].some(id => interaction.customId.startsWith(id) || interaction.customId === id)) {
         return interaction.reply({ content: '❌ Bạn không có quyền sử dụng chức năng này!', ephemeral: true });
     }
@@ -605,7 +613,6 @@ client.on('interactionCreate', async interaction => {
         } catch (error) { return interaction.editReply({ content: `❌ Thất bại: Người này đã khóa DM.` }); }
     }
 
-    // --- NÚT BẤM MUTE/UNMUTE/BAN/UNBAN PHỤ TRỢ ---
     if (interaction.isButton() && interaction.customId === 'mute_target_direct') {
         const modal = new ModalBuilder().setCustomId('admin_mute_input_modal').setTitle('Nhập Đối Tượng Cần Mute');
         modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('mute_target_name').setLabel('Nhập Tên, Tag hoặc ID').setStyle(TextInputStyle.Short).setRequired(true)));
@@ -662,7 +669,6 @@ client.on('interactionCreate', async interaction => {
         } catch (err) { return interaction.editReply({ content: `Lỗi: ${err.message}` }); }
     }
 
-    // --- THỰC THI CHỨC NĂNG XỬ LÝ MUTE KHI CHỌN MENU THỜI GIAN ---
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith('select_mute_time_')) {
         await interaction.deferReply({ ephemeral: true });
         const targetTag = interaction.customId.replace('select_mute_time_', '');
@@ -691,7 +697,6 @@ client.on('interactionCreate', async interaction => {
         } catch (err) { return interaction.editReply({ content: '❌ Lỗi: Bot thiếu quyền xử lý Timeout hoặc Role của Bot xếp dưới tài khoản này.' }); }
     }
 
-    // --- THỰC THI CHỨC NĂNG XỬ LÝ BAN KHI CHỌN MENU THỜI GIAN ---
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith('select_ban_time_')) {
         await interaction.deferReply({ ephemeral: true });
         const targetTag = interaction.customId.replace('select_ban_time_', '');
@@ -739,7 +744,6 @@ client.on('interactionCreate', async interaction => {
         } catch (err) { return interaction.editReply({ content: '❌ Thất bại: Không có quyền Ban hoặc Role bot quá thấp.' }); }
     }
 
-    // --- HỆ THỐNG PHẢN HỒI LẤY SCRIPT ---
     if (interaction.isStringSelectMenu() && ['menu_bloxfruit', 'menu_gag2', 'menu_99night', 'menu_sailor', 'menu_gag', 'menu_forsaken', 'menu_steal_brainrot', 'menu_mm2', 'menu_fisch'].includes(interaction.customId)) {
         await interaction.deferReply({ ephemeral: true });
         let list = []; let embedColor = "#000000"; let prefix = "";
@@ -781,12 +785,16 @@ client.on('interactionCreate', async interaction => {
 });
 
 // =========================================================================
-// KIỂM TRA SỰ KIỆN CHÀO MỪNG ĐỘC QUYỀN (GIỮ NGUYÊN)
+// KIỂM TRA SỰ KIỆN CHÀO MỪNG ĐỘC QUYỀN
 // =========================================================================
 client.on('guildMemberAdd', async (member) => {
-    const guild = member.guild;
+    // Xử lý từ code cũ
+    if (WELCOME_CHANNEL_ID) {
+        member.guild.channels.cache.get(WELCOME_CHANNEL_ID)?.send(`👋 Chào mừng ${member} đến với server!`);
+    }
 
-    if (guild.id === MY_SERVER_ID) {
+    // Xử lý từ code mới
+    if (member.guild.id === MY_SERVER_ID) {
         try {
             const welcomeEmbed = new EmbedBuilder()
                 .setColor('#ffaa00')
