@@ -39,7 +39,7 @@ if (!BOT_TOKEN) {
 const MY_SERVER_ID = '1509197460512309298'; 
 const OWNER_ID = '1501730680613114048'; // ID độc quyền dùng lệnh quản trị ẩn danh
 
-// ĐƯỜNG ỐNG ĐẦU RA MẶC ĐỊNH (Sẽ tự động cập nhật động khi chạy lệnh /ticket-dubo)
+// ĐƯỜNG ỐNG ĐẦU RA MẶC ĐỊNH
 let TICKET_LOG_CHANNEL_ID = '1526179515355893811'; 
 
 const client = new Client({ 
@@ -58,7 +58,7 @@ const unbanSchedules = new Map();
 const invitesCache = new Map();
 
 // =========================================================================
-// DATA SCRIPTS (GIỮ NGUYÊN HOÀN TOÀN ĐẦY ĐỦ KHÔNG RÚT GỌN)
+// DATA SCRIPTS (ĐÃ ĐƯỢC FIX LỖI THUỘC TÍNH KHÔNG ĐỒNG ĐỀU)
 // =========================================================================
 const bloxfruitList = [
     { name: "gravity hub ☄️", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/MainPremium.lua"))()` },
@@ -228,7 +228,8 @@ const fischList = [
     { name: "Mercury hub", code: `loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/c019f214a19894b50f0b8e817b70d25f.lua"))()` },
     { name: "Goomba hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/JustLevel/goombahub/main/fisch.lua"))()` },
     { name: "Solix hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/debunked69/Solixreworkkeysystem/refs/heads/main/solix%20new%20keyui.lua"))()` },
-    { name: "Average hub", value: `loadstring(game:HttpGet("https://gist.githubusercontent.com/AverageHub/1980eccce4133d77fb24d166dc296125/raw/2d9c88acc21a302d92aed0e8b6f0dcd287c8b96b/gistfile1.txt"))()` },
+    // 🛠️ ĐÃ SỬA: "Average hub" từ thuộc tính "value" thành "code" để tránh lỗi undefined khi parse mã
+    { name: "Average hub", code: `loadstring(game:HttpGet("https://gist.githubusercontent.com/AverageHub/1980eccce4133d77fb24d166dc296125/raw/2d9c88acc21a302d92aed0e8b6f0dcd287c8b96b/gistfile1.txt"))()` },
     { name: "Mean hub", code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/Alton012/Fisch.Script/refs/heads/main/Mean%20Hub"))()` }
 ];
 
