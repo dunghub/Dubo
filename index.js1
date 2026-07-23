@@ -8,7 +8,8 @@ const {
     ButtonStyle, 
     AuditLogEvent,
     REST,
-    Routes 
+    Routes,
+    ChannelType 
 } = require('discord.js');
 const http = require('http');
 
@@ -38,7 +39,6 @@ server.listen(PORT, () => {
 client.once('ready', async () => {
     console.log(`Bot đã đăng nhập thành công với tên: ${client.user.tag} (Shard ID: ${client.shard?.id ?? 0})`);
 
-    // Đã xóa quyền mặc định Administrator để ẩn lệnh với mọi người, chỉ Chủ Server mới thấy và dùng được
     const commands = [
         new SlashCommandBuilder()
             .setName('protect-server')
@@ -140,7 +140,15 @@ client.on('interactionCreate', async interaction => {
                     mentionable: role.mentionable
                 }));
 
-            const channelsData = guild.channels.cache.map(channel => ({
+            // Quét và sắp xếp danh mục trước, kênh con sau để lúc khôi phục đúng cấu trúc
+            const fetchedChannels = await guild.channels.fetch();
+            const sortedChannels = [...fetchedChannels.values()].sort((a, b) => a.position - b.position);
+
+            const categories = sortedChannels.filter(c => c.type === ChannelType.GuildCategory);
+            const others = sortedChannels.filter(c => c.type !== ChannelType.GuildCategory);
+
+            const channelsData = [...categories, ...others].map(channel => ({
+                id: channel.id, // Lưu lại ID cũ để khớp danh mục
                 name: channel.name,
                 type: channel.type,
                 parentId: channel.parentId,
@@ -192,7 +200,7 @@ async function triggerEmergencyLockdown(guild, reasonText) {
     }
 }
 
-// 1. Kiểm soát Webhook (Chặn app bot / người lạ tạo webhook trái phép)
+// 1. Kiểm soát Webhook
 client.on('webhookUpdate', async (channel) => {
     const guild = channel.guild;
     const guildId = guild.id;
@@ -220,7 +228,7 @@ client.on('webhookUpdate', async (channel) => {
     }
 });
 
-// 2. Chống Spam Tạo Kênh (Phát hiện ai/bot spam tạo nhiều kênh giống nhau -> Ban ngay và xóa sạch kênh rác)
+// 2. Chống Spam Tạo Kênh
 client.on('channelCreate', async (newChannel) => {
     const guild = newChannel.guild;
     const guildId = guild.id;
@@ -234,10 +242,9 @@ client.on('channelCreate', async (newChannel) => {
         const { executor } = logEntry;
         if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
 
-        const channelName = newChannel.name;
-        const duplicateChannels = guild.channels.cache.filter(c => c.name === channelName);
+        const fetchedChannels = await guild.channels.fetch();
+        const duplicateChannels = fetchedChannels.filter(c => c && c.name === newChannel.name);
         
-        // Cứ phát hiện dấu hiệu spam tạo từ 3 kênh trùng tên trở lên là xử lý lập tức
         if (duplicateChannels.size >= 3) {
             const member = await guild.members.fetch(executor.id).catch(() => null);
             if (member && member.bannable) {
@@ -255,15 +262,16 @@ client.on('channelCreate', async (newChannel) => {
     }
 });
 
-// 3. Theo dõi sự kiện Xóa kênh: Chỉ khi xóa SẠCH HẾT KÊNH mới ban, khóa link và khôi phục từ bản backup
+// 3. Theo dõi sự kiện Xóa kênh: Xóa sạch -> Ban -> Khóa link -> Khôi phục chính xác cấu trúc
 client.on('channelDelete', async (deletedChannel) => {
     const guild = deletedChannel.guild;
     const guildId = guild.id;
     if (!antiNukeStatus.get(guildId)) return;
 
     try {
-        const remainingChannels = guild.channels.cache.filter(c => c.id !== deletedChannel.id);
-        if (remainingChannels.size > 0) return; // Chưa xóa sạch hết thì bỏ qua
+        // Ép tải lại danh sách kênh từ Discord để đảm bảo chính xác tuyệt đối
+        const fetchedChannels = await guild.channels.fetch();
+        if (fetchedChannels.size > 0) return; // Nếu vẫn còn kênh thì bỏ qua
 
         const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelDelete });
         const logEntry = auditLogs.entries.first();
@@ -272,28 +280,58 @@ client.on('channelDelete', async (deletedChannel) => {
         const { executor } = logEntry;
         if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
 
-        // Ban kẻ đã quét sạch server
+        // 1. Ban ngay kẻ/tài khoản xóa sạch server
         const member = await guild.members.fetch(executor.id).catch(() => null);
         if (member && member.bannable) {
             await member.ban({ reason: 'Anti-Nuke: Deleted all channels in the server' });
         }
 
-        // Khóa khẩn cấp toàn bộ link mời
+        // 2. Khóa khẩn cấp toàn bộ link mời
         await triggerEmergencyLockdown(guild, 'Total server channels deletion');
 
-        // Khôi phục lại toàn bộ kênh từ bản backup đã lưu trước đó
+        // 3. Khôi phục lại toàn bộ cấu trúc kênh y hệt như lúc mới quét
         const backupData = serverBackups.get(guildId);
         if (!backupData) return;
 
-        for (const chData of backupData.channels) {
-            await guild.channels.create({
-                name: chData.name,
-                type: chData.type,
-                topic: chData.topic,
-                nsfw: chData.nsfw,
-                position: chData.position,
-                reason: 'Anti-Nuke: Auto restore server structure after total deletion'
-            }).catch(() => {});
+        // Bước 3.1: Tạo trước các danh mục (Categories) và lưu lại ánh xạ ID cũ sang ID mới
+        const categoryMap = new Map();
+        const categories = backupData.channels.filter(c => c.type === ChannelType.GuildCategory);
+        const others = backupData.channels.filter(c => c.type !== ChannelType.GuildCategory);
+
+        for (const catData of categories) {
+            try {
+                const newCat = await guild.channels.create({
+                    name: catData.name,
+                    type: catData.type,
+                    position: catData.position,
+                    reason: 'Anti-Nuke: Restore category'
+                });
+                categoryMap.set(catData.id, newCat.id);
+            } catch (e) {
+                console.error('Error restoring category:', e);
+            }
+        }
+
+        // Bước 3.2: Tạo các kênh con và gán lại vào đúng danh mục cũ
+        for (const chData of others) {
+            try {
+                let newParentId = null;
+                if (chData.parentId && categoryMap.has(chData.parentId)) {
+                    newParentId = categoryMap.get(chData.parentId);
+                }
+
+                await guild.channels.create({
+                    name: chData.name,
+                    type: chData.type,
+                    parent: newParentId,
+                    topic: chData.topic,
+                    nsfw: chData.nsfw,
+                    position: chData.position,
+                    reason: 'Anti-Nuke: Restore channel'
+                });
+            } catch (e) {
+                console.error('Error restoring channel:', e);
+            }
         }
 
     } catch (err) {
