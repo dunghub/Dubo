@@ -46,6 +46,7 @@ client.once('ready', async () => {
         new SlashCommandBuilder()
             .setName('stop')
             .setDescription('Dừng hệ thống chống nuke và xóa dữ liệu bộ nhớ đệm')
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) // Chỉ hiển thị cho Quản trị viên / Chủ server
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -87,6 +88,14 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'stop') {
+        // Tự động check ID chủ server, chặn tuyệt đối thành viên khác
+        if (interaction.user.id !== interaction.guild.ownerId) {
+            return await interaction.reply({
+                content: '❌ **Lỗi:** Chỉ có **Chủ server (Owner)** mới có quyền sử dụng lệnh này!',
+                ephemeral: true
+            });
+        }
+
         const guildId = interaction.guild.id;
         if (serverBackups.has(guildId) || antiNukeStatus.get(guildId)) {
             serverBackups.delete(guildId);
