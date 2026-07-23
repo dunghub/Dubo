@@ -42,7 +42,8 @@ client.once('ready', async () => {
     const commands = [
         new SlashCommandBuilder()
             .setName('protect-server')
-            .setDescription('Kích hoạt quét và bảo vệ server chống nuke'),
+            .setDescription('Kích hoạt quét và bảo vệ server chống nuke')
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Chỉ hiển thị cho Quản trị viên / Chủ server
         new SlashCommandBuilder()
             .setName('stop')
             .setDescription('Dừng hệ thống chống nuke và xóa dữ liệu bộ nhớ đệm')
@@ -68,6 +69,14 @@ client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === 'protect-server') {
+        // Chặn tuyệt đối nếu không phải chủ server
+        if (interaction.user.id !== interaction.guild.ownerId) {
+            return await interaction.reply({
+                content: '❌ **Lỗi:** Chỉ có **Chủ server (Owner)** mới có quyền sử dụng lệnh này!',
+                ephemeral: true
+            });
+        }
+
         const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
@@ -88,7 +97,7 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'stop') {
-        // Tự động check ID chủ server, chặn tuyệt đối thành viên khác
+        // Chặn tuyệt đối nếu không phải chủ server
         if (interaction.user.id !== interaction.guild.ownerId) {
             return await interaction.reply({
                 content: '❌ **Lỗi:** Chỉ có **Chủ server (Owner)** mới có quyền sử dụng lệnh này!',
