@@ -42,10 +42,12 @@ client.once('ready', async () => {
     const commands = [
         new SlashCommandBuilder()
             .setName('protect-server')
-            .setDescription('Kích hoạt quét và bảo vệ server chống nuke'),
+            .setDescription('Kích hoạt quét và bảo vệ server chống nuke')
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('stop')
             .setDescription('Dừng hệ thống chống nuke và xóa dữ liệu bộ nhớ đệm')
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -140,7 +142,6 @@ client.on('interactionCreate', async interaction => {
                     mentionable: role.mentionable
                 }));
 
-            // Quét và sắp xếp danh mục trước, kênh con sau để lúc khôi phục đúng cấu trúc
             const fetchedChannels = await guild.channels.fetch();
             const sortedChannels = [...fetchedChannels.values()].sort((a, b) => a.position - b.position);
 
@@ -148,7 +149,7 @@ client.on('interactionCreate', async interaction => {
             const others = sortedChannels.filter(c => c.type !== ChannelType.GuildCategory);
 
             const channelsData = [...categories, ...others].map(channel => ({
-                id: channel.id, // Lưu lại ID cũ để khớp danh mục
+                id: channel.id,
                 name: channel.name,
                 type: channel.type,
                 parentId: channel.parentId,
@@ -262,77 +263,81 @@ client.on('channelCreate', async (newChannel) => {
     }
 });
 
-// 3. Theo dõi sự kiện Xóa kênh: Xóa sạch -> Ban -> Khóa link -> Khôi phục chính xác cấu trúc
+// 3. Theo dõi sự kiện Xóa kênh: KIỂM TRA SẠCH SÀNH SANH TOÀN BỘ KÊNH
 client.on('channelDelete', async (deletedChannel) => {
     const guild = deletedChannel.guild;
     const guildId = guild.id;
     if (!antiNukeStatus.get(guildId)) return;
 
     try {
-        // Ép tải lại danh sách kênh từ Discord để đảm bảo chính xác tuyệt đối
-        const fetchedChannels = await guild.channels.fetch();
-        if (fetchedChannels.size > 0) return; // Nếu vẫn còn kênh thì bỏ qua
+        // Đợi một chút để API Discord đồng bộ hoàn toàn việc xóa kênh cuối cùng
+        setTimeout(async () => {
+            const fetchedChannels = await guild.channels.fetch();
+            
+            // Nếu server VẪN CÒN KÊNH thì bỏ qua (chưa xóa sạch hoàn toàn)
+            if (fetchedChannels.size > 0) return;
 
-        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelDelete });
-        const logEntry = auditLogs.entries.first();
-        if (!logEntry) return;
+            const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelDelete });
+            const logEntry = auditLogs.entries.first();
+            if (!logEntry) return;
 
-        const { executor } = logEntry;
-        if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
+            const { executor } = logEntry;
+            if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
 
-        // 1. Ban ngay kẻ/tài khoản xóa sạch server
-        const member = await guild.members.fetch(executor.id).catch(() => null);
-        if (member && member.bannable) {
-            await member.ban({ reason: 'Anti-Nuke: Deleted all channels in the server' });
-        }
-
-        // 2. Khóa khẩn cấp toàn bộ link mời
-        await triggerEmergencyLockdown(guild, 'Total server channels deletion');
-
-        // 3. Khôi phục lại toàn bộ cấu trúc kênh y hệt như lúc mới quét
-        const backupData = serverBackups.get(guildId);
-        if (!backupData) return;
-
-        // Bước 3.1: Tạo trước các danh mục (Categories) và lưu lại ánh xạ ID cũ sang ID mới
-        const categoryMap = new Map();
-        const categories = backupData.channels.filter(c => c.type === ChannelType.GuildCategory);
-        const others = backupData.channels.filter(c => c.type !== ChannelType.GuildCategory);
-
-        for (const catData of categories) {
-            try {
-                const newCat = await guild.channels.create({
-                    name: catData.name,
-                    type: catData.type,
-                    position: catData.position,
-                    reason: 'Anti-Nuke: Restore category'
-                });
-                categoryMap.set(catData.id, newCat.id);
-            } catch (e) {
-                console.error('Error restoring category:', e);
+            // 1. BAN NGAY LẬP TỨC kẻ đã xóa sạch server
+            const member = await guild.members.fetch(executor.id).catch(() => null);
+            if (member && member.bannable) {
+                await member.ban({ reason: 'Anti-Nuke: Deleted all channels in the server' });
             }
-        }
 
-        // Bước 3.2: Tạo các kênh con và gán lại vào đúng danh mục cũ
-        for (const chData of others) {
-            try {
-                let newParentId = null;
-                if (chData.parentId && categoryMap.has(chData.parentId)) {
-                    newParentId = categoryMap.get(chData.parentId);
+            // 2. KHÓA KHẨN CẤP hệ thống lời mời
+            await triggerEmergencyLockdown(guild, 'Total server channels deletion');
+
+            // 3. TỰ ĐỘNG KHÔI PHỤC LẠI TOÀN BỘ KÊNH NHƯ LÚC MỚI QUÉT
+            const backupData = serverBackups.get(guildId);
+            if (!backupData) return;
+
+            const categoryMap = new Map();
+            const categories = backupData.channels.filter(c => c.type === ChannelType.GuildCategory);
+            const others = backupData.channels.filter(c => c.type !== ChannelType.GuildCategory);
+
+            // Tạo lại danh mục trước
+            for (const catData of categories) {
+                try {
+                    const newCat = await guild.channels.create({
+                        name: catData.name,
+                        type: catData.type,
+                        position: catData.position,
+                        reason: 'Anti-Nuke: Restore category'
+                    });
+                    categoryMap.set(catData.id, newCat.id);
+                } catch (e) {
+                    console.error('Error restoring category:', e);
                 }
-
-                await guild.channels.create({
-                    name: chData.name,
-                    type: chData.type,
-                    parent: newParentId,
-                    topic: chData.topic,
-                    nsfw: chData.nsfw,
-                    position: chData.position,
-                    reason: 'Anti-Nuke: Restore channel'
-                });
-            } catch (e) {
-                console.error('Error restoring channel:', e);
             }
-        }
+
+            // Tạo lại kênh con nằm trong danh mục
+            for (const chData of others) {
+                try {
+                    let newParentId = null;
+                    if (chData.parentId && categoryMap.has(chData.parentId)) {
+                        newParentId = categoryMap.get(chData.parentId);
+                    }
+
+                    await guild.channels.create({
+                        name: chData.name,
+                        type: chData.type,
+                        parent: newParentId,
+                        topic: chData.topic,
+                        nsfw: chData.nsfw,
+                        position: chData.position,
+                        reason: 'Anti-Nuke: Restore channel'
+                    });
+                } catch (e) {
+                    console.error('Error restoring channel:', e);
+                }
+            }
+        }, 1000); // Trì hoãn 1 giây để đảm bảo kênh cuối cùng đã được xử lý xong trên Discord
 
     } catch (err) {
         console.error('Anti-nuke total deletion restore error:', err);
