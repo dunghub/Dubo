@@ -21,11 +21,13 @@ const client = new Client({
     ]
 });
 
-// Bộ nhớ đệm lưu trữ dữ liệu backup và trạng thái anti-nuke cho quy mô lớn
+// Bộ nhớ đệm lưu trữ dữ liệu backup và trạng thái anti-nuke
 const serverBackups = new Map();
 const antiNukeStatus = new Map();
+// Bộ nhớ đệm để đếm số lượng kênh giống nhau do một user tạo ra (Chống spam tạo kênh)
+const channelSpamTracker = new Map();
 
-// Web server giả lập để tích hợp UptimeRobot (Giữ bot luôn online trên Render)
+// Web server giả lập để tích hợp UptimeRobot
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Massive Anti-Nuke Bot is active!\n');
@@ -38,16 +40,15 @@ server.listen(PORT, () => {
 client.once('ready', async () => {
     console.log(`Bot đã đăng nhập thành công với tên: ${client.user.tag} (Shard ID: ${client.shard?.id ?? 0})`);
 
-    // --- TỰ ĐỘNG ĐĂNG KÝ LỆNH SLASH ---
     const commands = [
         new SlashCommandBuilder()
             .setName('protect-server')
             .setDescription('Kích hoạt quét và bảo vệ server chống nuke')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Chỉ hiển thị cho Quản trị viên / Chủ server
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('stop')
             .setDescription('Dừng hệ thống chống nuke và xóa dữ liệu bộ nhớ đệm')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) // Chỉ hiển thị cho Quản trị viên / Chủ server
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -69,7 +70,6 @@ client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === 'protect-server') {
-        // Chặn tuyệt đối nếu không phải chủ server
         if (interaction.user.id !== interaction.guild.ownerId) {
             return await interaction.reply({
                 content: '❌ **Lỗi:** Chỉ có **Chủ server (Owner)** mới có quyền sử dụng lệnh này!',
@@ -97,7 +97,6 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'stop') {
-        // Chặn tuyệt đối nếu không phải chủ server
         if (interaction.user.id !== interaction.guild.ownerId) {
             return await interaction.reply({
                 content: '❌ **Lỗi:** Chỉ có **Chủ server (Owner)** mới có quyền sử dụng lệnh này!',
@@ -133,7 +132,6 @@ client.on('interactionCreate', async interaction => {
         await interaction.deferUpdate();
 
         try {
-            // 1. Quét Roles
             const rolesData = guild.roles.cache
                 .filter(role => !role.managed && role.id !== guild.id)
                 .sort((a, b) => b.position - a.position)
@@ -145,7 +143,6 @@ client.on('interactionCreate', async interaction => {
                     mentionable: role.mentionable
                 }));
 
-            // 2. Quét Channels
             const channelsData = guild.channels.cache.map(channel => ({
                 name: channel.name,
                 type: channel.type,
@@ -155,7 +152,6 @@ client.on('interactionCreate', async interaction => {
                 nsfw: channel.nsfw || false
             }));
 
-            // 3. Quét Webhooks
             const fetchedWebhooks = await guild.fetchWebhooks();
             const webhooksData = fetchedWebhooks.map(wh => ({
                 name: wh.name,
@@ -213,13 +209,53 @@ client.on('webhookUpdate', async (channel) => {
     }
 });
 
-// 2. Theo dõi sự kiện Xóa kênh bất thường
+// 2. Chống Spam Tạo Kênh Y Hệt Nhau (> 10 kênh)
+client.on('channelCreate', async (newChannel) => {
+    const guild = newChannel.guild;
+    const guildId = guild.id;
+    if (!antiNukeStatus.get(guildId)) return;
+
+    try {
+        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelCreate });
+        const logEntry = auditLogs.entries.first();
+        if (!logEntry) return;
+
+        const { executor } = logEntry;
+        if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
+
+        const channelName = newChannel.name;
+        const key = `${executor.id}-${channelName}`;
+        
+        let count = (channelSpamTracker.get(key) || 0) + 1;
+        channelSpamTracker.set(key, count);
+
+        // Nếu tạo quá 10 kênh y hệt nhau
+        if (count > 10) {
+            const member = await guild.members.fetch(executor.id).catch(() => null);
+            if (member && member.bannable) {
+                await member.ban({ reason: 'Anti-Nuke: Spam creating identical channels (>10)' });
+            }
+            channelSpamTracker.delete(key);
+        }
+    } catch (err) {
+        console.error('Channel create spam check error:', err);
+    }
+});
+
+// 3. Theo dõi sự kiện Xóa kênh: Chỉ khi xóa SẠCH HẾT KÊNH mới tiến hành ban và khôi phục
 client.on('channelDelete', async (deletedChannel) => {
     const guild = deletedChannel.guild;
     const guildId = guild.id;
     if (!antiNukeStatus.get(guildId)) return;
 
     try {
+        // Kiểm tra xem trong server hiện tại có còn kênh nào khác không (ngoại trừ kênh vừa bị xóa)
+        const remainingChannels = guild.channels.cache.filter(c => c.id !== deletedChannel.id);
+
+        // Nếu server VẪN CÒN kênh khác thì bỏ qua (chưa xóa sạch hết), không ban vội
+        if (remainingChannels.size > 0) return;
+
+        // Nếu đã XÓA SẠCH SÀNH SANH toàn bộ kênh trong server:
         const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelDelete });
         const logEntry = auditLogs.entries.first();
         if (!logEntry) return;
@@ -227,13 +263,13 @@ client.on('channelDelete', async (deletedChannel) => {
         const { executor } = logEntry;
         if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
 
-        // Ban ngay lập tức kẻ phá hoại bằng fetch thành viên trực tiếp từ API thay vì cache
+        // Ban kẻ đã quét sạch server
         const member = await guild.members.fetch(executor.id).catch(() => null);
         if (member && member.bannable) {
-            await member.ban({ reason: 'Anti-Nuke: Deleting channels maliciously' });
+            await member.ban({ reason: 'Anti-Nuke: Deleted all channels in the server' });
         }
 
-        // Tự động đóng/tắt tất cả liên kết mời
+        // Đóng toàn bộ link mời
         const invites = await guild.invites.fetch().catch(() => null);
         if (invites) {
             for (const [code, invite] of invites) {
@@ -241,7 +277,7 @@ client.on('channelDelete', async (deletedChannel) => {
             }
         }
 
-        // Tiến hành khôi phục lại cấu trúc kênh đã lưu cực nhanh
+        // Khôi phục lại toàn bộ cấu trúc kênh đã lưu từ bản backup
         const backupData = serverBackups.get(guildId);
         if (!backupData) return;
 
@@ -252,22 +288,12 @@ client.on('channelDelete', async (deletedChannel) => {
                 topic: chData.topic,
                 nsfw: chData.nsfw,
                 position: chData.position,
-                reason: 'Anti-Nuke: Auto restore channel structure'
+                reason: 'Anti-Nuke: Auto restore server structure after total deletion'
             }).catch(() => {});
         }
 
-        // Dọn dẹp các kênh rác mới bị tạo thừa thãi trong quá trình nuke
-        const currentChannels = guild.channels.cache;
-        const validNames = new Set(backupData.channels.map(c => c.name));
-
-        for (const [id, channel] of currentChannels) {
-            if (!validNames.has(channel.name) && channel.id !== deletedChannel.id) {
-                await channel.delete('Anti-Nuke: Cleanup spam channels').catch(() => {});
-            }
-        }
-
     } catch (err) {
-        console.error('Anti-nuke restore process error:', err);
+        console.error('Anti-nuke total deletion restore error:', err);
     }
 });
 
