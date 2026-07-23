@@ -1,77 +1,232 @@
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } = require('discord.js');
-const axios = require('axios');
+const { 
+    Client, 
+    GatewayIntentBits, 
+    SlashCommandBuilder, 
+    PermissionFlagsBits, 
+    ActionRowBuilder, 
+    ButtonBuilder, 
+    ButtonStyle, 
+    AuditLogEvent 
+} = require('discord.js');
+const http = require('http');
 
-// Lấy Token và Client ID từ biến môi trường trên Render (đã cấu hình an toàn)
-const TOKEN = process.env.DISCORD_TOKEN;
-const CLIENT_ID = process.env.CLIENT_ID;
-
-// API Key Bacon Bypass của bạn
-const BACON_API_KEY = 'Bacon-55557549e001fbfe3f75-19acd0c4529a899fe7b4';
-
-// Khởi tạo client cho Discord Bot
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds]
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildModeration,
+        GatewayIntentBits.GuildWebhooks,
+        GatewayIntentBits.GuildInvites
+    ]
 });
 
-// Đăng ký lệnh slash /bypass
-const commands = [
-    new SlashCommandBuilder()
-        .setName('bypass')
-        .setDescription('Tự động bypass link bằng Bacon API của bạn')
-        .addStringOption(option =>
-            option.setName('url')
-                .setDescription('Link cần bypass')
-                .setRequired(true))
-].map(command => command.toJSON());
+// Bộ nhớ đệm lưu trữ dữ liệu backup và trạng thái anti-nuke cho quy mô lớn
+const serverBackups = new Map();
+const antiNukeStatus = new Map();
 
-const rest = new REST({ version: '10' }).setToken(TOKEN);
-
-(async () => {
-    try {
-        console.log('Đang đăng ký lệnh slash cho bot...');
-        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
-        console.log('Đăng ký lệnh thành công!');
-    } catch (error) {
-        console.error('Lỗi đăng ký lệnh:', error);
-    }
-})();
-
-client.once('ready', () => {
-    console.log(`Bot đã sẵn sàng online với tên: ${client.user.tag}`);
+// Web server giả lập để tích hợp UptimeRobot (Giữ bot luôn online trên Render)
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Massive Anti-Nuke Bot is active!\n');
+});
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Web server running on port ${PORT}`);
 });
 
-// Xử lý sự kiện khi người dùng gõ lệnh /bypass
+client.once('ready', async () => {
+    console.log(`Bot đã đăng nhập thành công với tên: ${client.user.tag} (Shard ID: ${client.shard?.id ?? 0})`);
+});
+
+// --- HỆ THỐNG LỆNH SLASH ---
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
-    if (interaction.commandName === 'bypass') {
-        const targetUrl = interaction.options.getString('url');
-        
-        // Phản hồi tạm thời để bot không bị timeout (quá thời gian 3s)
-        await interaction.deferReply();
+    if (interaction.commandName === 'protect-server') {
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('antinuke_yes')
+                    .setLabel('Yes')
+                    .setStyle(ButtonStyle.Success), // Xanh lá
+                new ButtonBuilder()
+                    .setCustomId('antinuke_no')
+                    .setLabel('No')
+                    .setStyle(ButtonStyle.Danger) // Đỏ
+            );
 
-        try {
-            // GỌI API ĐẾN SERVER BACON BYPASS
-            // Lưu ý: Nhớ kiểm tra lại đường dẫn endpoint chính xác trong API Documentation của họ
-            const response = await axios.post('https://baconbypass.online/api/v1/bypass', {
-                url: targetUrl
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${BACON_API_KEY}`,
-                    'Content-Type': 'application/json'
-                }
+        await interaction.reply({
+            content: '🛡️ **ANTI-NUKE SYSTEM:** Do you want the bot to scan and memorize all channels, roles, and webhooks of this server?',
+            components: [row],
+            ephemeral: true
+        });
+    }
+
+    if (interaction.commandName === 'stop') {
+        const guildId = interaction.guild.id;
+        if (serverBackups.has(guildId) || antiNukeStatus.get(guildId)) {
+            serverBackups.delete(guildId);
+            antiNukeStatus.set(guildId, false);
+            await interaction.reply({
+                content: '🛑 **Anti-Nuke system stopped and all cached server data has been cleared!**',
+                ephemeral: true
             });
-
-            const resultData = response.data; 
-
-            await interaction.editReply(`✅ **Bypass thành công!**\nKết quả: \`${JSON.stringify(resultData)}\``);
-
-        } catch (error) {
-            console.error(error);
-            await interaction.editReply('❌ Đã xảy ra lỗi khi gọi API bypass hoặc link không hợp lệ!');
+        } else {
+            await interaction.reply({
+                content: '⚠️ Anti-Nuke system is not currently active on this server.',
+                ephemeral: true
+            });
         }
     }
 });
 
-// Khởi chạy bot đăng nhập vào Discord
-client.login(TOKEN);
+// --- XỬ LÝ NÚM BẤM (BUTTON) ---
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isButton()) return;
+
+    if (interaction.customId === 'antinuke_yes') {
+        const guild = interaction.guild;
+        const guildId = guild.id;
+
+        await interaction.deferUpdate();
+
+        try {
+            // 1. Quét Roles
+            const rolesData = guild.roles.cache
+                .filter(role => !role.managed && role.id !== guild.id)
+                .sort((a, b) => b.position - a.position)
+                .map(role => ({
+                    name: role.name,
+                    color: role.color,
+                    permissions: role.permissions.bitfield.toString(),
+                    hoist: role.hoist,
+                    mentionable: role.mentionable
+                }));
+
+            // 2. Quét Channels
+            const channelsData = guild.channels.cache.map(channel => ({
+                name: channel.name,
+                type: channel.type,
+                parentId: channel.parentId,
+                position: channel.position,
+                topic: channel.topic || '',
+                nsfw: channel.nsfw || false
+            }));
+
+            // 3. Quét Webhooks
+            const fetchedWebhooks = await guild.fetchWebhooks();
+            const webhooksData = fetchedWebhooks.map(wh => ({
+                name: wh.name,
+                channelId: wh.channelId
+            }));
+
+            serverBackups.set(guildId, { roles: rolesData, channels: channelsData, webhooks: webhooksData });
+            antiNukeStatus.set(guildId, true);
+
+            await interaction.editReply({
+                content: `✅ **Successfully scanned and cached!**\n- Roles: ${rolesData.length}\n- Channels: ${channelsData.length}\n- Webhooks: ${webhooksData.length}\n🚀 Ready to protect the server!`,
+                components: []
+            });
+        } catch (error) {
+            console.error(error);
+            await interaction.editReply({
+                content: '❌ Error scanning data. Make sure the bot has Administrator permission!',
+                components: []
+            });
+        }
+    } else if (interaction.customId === 'antinuke_no') {
+        await interaction.update({
+            content: '❌ **Cancelled.** The bot will not cache any data.',
+            components: []
+        });
+    }
+});
+
+// --- TÍNH NĂNG CHỐNG NUKE ---
+
+// 1. Kiểm soát Webhook: Chỉ chủ server được tạo, người khác tạo lập tức bị xóa & ban
+client.on('webhookUpdate', async (channel) => {
+    const guild = channel.guild;
+    const guildId = guild.id;
+    if (!antiNukeStatus.get(guildId)) return;
+
+    try {
+        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.WebhookCreate });
+        const webhookLog = auditLogs.entries.first();
+        if (!webhookLog) return;
+
+        const { executor } = webhookLog;
+        if (executor.id !== guild.ownerId) {
+            const webhooks = await channel.fetchWebhooks();
+            const targetWebhook = webhooks.find(wh => wh.owner.id === executor.id);
+            if (targetWebhook) await targetWebhook.delete('Anti-Nuke: Unauthorized Webhook');
+
+            const member = await guild.members.fetch(executor.id).catch(() => null);
+            if (member && member.bannable) {
+                await member.ban({ reason: 'Anti-Nuke: Unauthorized Webhook creation' });
+            }
+        }
+    } catch (err) {
+        console.error('Webhook check error:', err);
+    }
+});
+
+// 2. Theo dõi sự kiện Xóa kênh bất thường -> Phản ứng chớp nhoáng
+client.on('channelDelete', async (deletedChannel) => {
+    const guild = deletedChannel.guild;
+    const guildId = guild.id;
+    if (!antiNukeStatus.get(guildId)) return;
+
+    try {
+        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelDelete });
+        const logEntry = auditLogs.entries.first();
+        if (!logEntry) return;
+
+        const { executor } = logEntry;
+        if (executor.id === guild.ownerId || executor.id === client.user.id) return;
+
+        // Ban ngay lập tức kẻ phá hoại
+        const member = await guild.members.fetch(executor.id).catch(() => null);
+        if (member && member.bannable) {
+            await member.ban({ reason: 'Anti-Nuke: Deleting channels maliciously' });
+        }
+
+        // Tự động đóng/tắt tất cả liên kết mời (Khóa phần invites ngay đầu)
+        const invites = await guild.invites.fetch().catch(() => null);
+        if (invites) {
+            for (const [code, invite] of invites) {
+                await invite.delete('Anti-Nuke: Revoke all invite links').catch(() => {});
+            }
+        }
+
+        // Tiến hành khôi phục lại cấu trúc kênh đã lưu cực nhanh
+        const backupData = serverBackups.get(guildId);
+        if (!backupData) return;
+
+        for (const chData of backupData.channels) {
+            await guild.channels.create({
+                name: chData.name,
+                type: chData.type,
+                topic: chData.topic,
+                nsfw: chData.nsfw,
+                position: chData.position,
+                reason: 'Anti-Nuke: Auto restore channel structure'
+            }).catch(() => {});
+        }
+
+        // Dọn dẹp các kênh rác mới bị tạo thừa thãi trong quá trình nuke
+        const currentChannels = guild.channels.cache;
+        const validNames = new Set(backupData.channels.map(c => c.name));
+
+        for (const [id, channel] of currentChannels) {
+            if (!validNames.has(channel.name) && channel.id !== deletedChannel.id) {
+                await channel.delete('Anti-Nuke: Cleanup spam channels').catch(() => {});
+            }
+        }
+
+    } catch (err) {
+        console.error('Anti-nuke restore process error:', err);
+    }
+});
+
+client.login(process.env.DISCORD_TOKEN);
