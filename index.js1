@@ -6,7 +6,9 @@ const {
     ActionRowBuilder, 
     ButtonBuilder, 
     ButtonStyle, 
-    AuditLogEvent 
+    AuditLogEvent,
+    REST,
+    Routes 
 } = require('discord.js');
 const http = require('http');
 
@@ -35,6 +37,29 @@ server.listen(PORT, () => {
 
 client.once('ready', async () => {
     console.log(`Bot đã đăng nhập thành công với tên: ${client.user.tag} (Shard ID: ${client.shard?.id ?? 0})`);
+
+    // --- TỰ ĐỘNG ĐĂNG KÝ LỆNH SLASH ---
+    const commands = [
+        new SlashCommandBuilder()
+            .setName('protect-server')
+            .setDescription('Kích hoạt quét và bảo vệ server chống nuke'),
+        new SlashCommandBuilder()
+            .setName('stop')
+            .setDescription('Dừng hệ thống chống nuke và xóa dữ liệu bộ nhớ đệm')
+    ].map(command => command.toJSON());
+
+    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+
+    try {
+        console.log('Đang làm mới các lệnh Slash (/) của ứng dụng...');
+        await rest.put(
+            Routes.applicationCommands(client.user.id),
+            { body: commands },
+        );
+        console.log('Đã đăng ký thành công các lệnh Slash!');
+    } catch (error) {
+        console.error('Lỗi khi đăng ký lệnh:', error);
+    }
 });
 
 // --- HỆ THỐNG LỆNH SLASH ---
@@ -109,7 +134,7 @@ client.on('interactionCreate', async interaction => {
                 parentId: channel.parentId,
                 position: channel.position,
                 topic: channel.topic || '',
-        nsfw: channel.nsfw || false
+                nsfw: channel.nsfw || false
             }));
 
             // 3. Quét Webhooks
