@@ -19,15 +19,13 @@ const client = new Client({
         GatewayIntentBits.GuildModeration,
         GatewayIntentBits.GuildWebhooks,
         GatewayIntentBits.GuildInvites,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.GuildMessages
     ]
 });
 
 const serverBackups = new Map();
 const antiNukeStatus = new Map();
-const channelDeleteQueue = new Map(); // Lưu trữ hàng đợi các kênh bị xóa
-const userMessageSpamTracker = new Map(); // Theo dõi spam chat/link
+const channelDeleteQueue = new Map();
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -179,7 +177,7 @@ async function triggerEmergencyLockdown(guild, reasonText) {
     }
 }
 
-// 1. Theo dõi sự kiện Xóa kênh: Xóa > 1 kênh hoặc sau 5 giây tự động khôi phục lại các kênh đã mất
+// 1. Tự động gom và khôi phục kênh sau 5 giây khi có người xóa
 client.on('channelDelete', async (deletedChannel) => {
     const guild = deletedChannel.guild;
     const guildId = guild.id;
@@ -194,7 +192,6 @@ client.on('channelDelete', async (deletedChannel) => {
         const { executor } = logEntry;
         if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
 
-        // Lưu thông tin kênh vừa bị xóa vào hàng đợi của server
         if (!channelDeleteQueue.has(guildId)) {
             channelDeleteQueue.set(guildId, []);
         }
@@ -209,7 +206,6 @@ client.on('channelDelete', async (deletedChannel) => {
             nsfw: deletedChannel.nsfw || false
         });
 
-        // Thiết lập bộ đếm 5 giây để khôi phục lại toàn bộ kênh bị xóa
         if (!channelDeleteQueue.has(`${guildId}_timer`)) {
             const timer = setTimeout(async () => {
                 const channelsToRestore = channelDeleteQueue.get(guildId) || [];
@@ -224,7 +220,6 @@ client.on('channelDelete', async (deletedChannel) => {
                     const categories = backupData.channels.filter(c => c.type === ChannelType.GuildCategory);
                     const others = backupData.channels.filter(c => c.type !== ChannelType.GuildCategory);
 
-                    // Tạo lại danh mục
                     for (const catData of categories) {
                         try {
                             const existing = guild.channels.cache.find(c => c.name === catData.name && c.type === ChannelType.GuildCategory);
@@ -244,7 +239,6 @@ client.on('channelDelete', async (deletedChannel) => {
                         }
                     }
 
-                    // Tạo lại kênh con
                     for (const chData of others) {
                         try {
                             const existing = guild.channels.cache.find(c => c.name === chData.name && c.type === chData.type);
@@ -269,7 +263,7 @@ client.on('channelDelete', async (deletedChannel) => {
                         }
                     }
                 }
-            }, 5000); // Đợi đúng 5 giây
+            }, 5000);
 
             channelDeleteQueue.set(`${guildId}_timer`, timer);
         }
@@ -310,50 +304,6 @@ client.on('channelCreate', async (newChannel) => {
         }
     } catch (err) {
         console.error('Channel create spam check error:', err);
-    }
-});
-
-// 3. Chống Spam Chat / Link (10 dòng nội dung y hệt nhau hoặc chứa link -> Ban ngay)
-client.on('messageCreate', async message => {
-    if (!message.guild || message.author.bot || message.author.id === message.guild.ownerId) return;
-
-    const guildId = message.guild.id;
-    if (!antiNukeStatus.get(guildId)) return;
-
-    const userId = message.author.id;
-    const content = message.content.trim();
-    if (!content) return;
-
-    // Kiểm tra xem nội dung có chứa link hay không (http/https/discord.gg/www...)
-    const urlRegex = /(https?:\/\/[^\s]+)|(discord\.gg\/[^\s]+)|(www\.[^\s]+)/gi;
-    const isLink = urlRegex.test(content);
-
-    if (!userMessageSpamTracker.has(userId)) {
-        userMessageSpamTracker.set(userId, []);
-    }
-
-    const userMsgs = userMessageSpamTracker.get(userId);
-    userMsgs.push({ content, isLink, timestamp: Date.now() });
-
-    // Lọc các tin nhắn trong vòng 15 giây gần nhất
-    const recentMsgs = userMsgs.filter(m => Date.now() - m.timestamp < 15000);
-    userMessageSpamTracker.set(userId, recentMsgs);
-
-    // Đếm số lượng tin nhắn có nội dung y hệt nhau HOẶC số lượng tin nhắn chứa link
-    const identicalCount = recentMsgs.filter(m => m.content === content).length;
-    const linkCount = recentMsgs.filter(m => m.isLink).length;
-
-    // Nếu spam y hệt nhau >= 10 dòng HOẶC spam gửi link >= 10 dòng
-    if (identicalCount >= 10 || linkCount >= 10) {
-        try {
-            const member = await message.guild.members.fetch(userId).catch(() => null);
-            if (member && member.bannable) {
-                await member.ban({ reason: 'Anti-Nuke: Spamming identical chat or mass links' });
-            }
-            userMessageSpamTracker.delete(userId);
-        } catch (err) {
-            console.error('Error banning message spammer:', err);
-        }
     }
 });
 
