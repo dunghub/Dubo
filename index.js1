@@ -18,15 +18,17 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildModeration,
         GatewayIntentBits.GuildWebhooks,
-        GatewayIntentBits.GuildInvites
+        GatewayIntentBits.GuildInvites,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
     ]
 });
 
-// Bộ nhớ đệm lưu trữ dữ liệu backup và trạng thái anti-nuke
 const serverBackups = new Map();
 const antiNukeStatus = new Map();
+const channelDeleteQueue = new Map(); // Lưu trữ hàng đợi các kênh bị xóa
+const userMessageSpamTracker = new Map(); // Theo dõi spam chat/link
 
-// Web server giả lập để tích hợp UptimeRobot (Giữ bot luôn online trên Render)
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Massive Anti-Nuke Bot is active!\n');
@@ -37,7 +39,7 @@ server.listen(PORT, () => {
 });
 
 client.once('ready', async () => {
-    console.log(`Bot đã đăng nhập thành công với tên: ${client.user.tag} (Shard ID: ${client.shard?.id ?? 0})`);
+    console.log(`Bot đã đăng nhập thành công với tên: ${client.user.tag}`);
 
     const commands = [
         new SlashCommandBuilder()
@@ -53,18 +55,13 @@ client.once('ready', async () => {
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
     try {
-        console.log('Đang làm mới các lệnh Slash (/) của ứng dụng...');
-        await rest.put(
-            Routes.applicationCommands(client.user.id),
-            { body: commands },
-        );
+        await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
         console.log('Đã đăng ký thành công các lệnh Slash!');
     } catch (error) {
         console.error('Lỗi khi đăng ký lệnh:', error);
     }
 });
 
-// --- HỆ THỐNG LỆNH SLASH (Chỉ Chủ Server thực sự mới gọi được) ---
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -78,18 +75,12 @@ client.on('interactionCreate', async interaction => {
 
         const row = new ActionRowBuilder()
             .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('antinuke_yes')
-                    .setLabel('Yes')
-                    .setStyle(ButtonStyle.Success),
-                new ButtonBuilder()
-                    .setCustomId('antinuke_no')
-                    .setLabel('No')
-                    .setStyle(ButtonStyle.Danger)
+                new ButtonBuilder().setCustomId('antinuke_yes').setLabel('Yes').setStyle(ButtonStyle.Success),
+                new ButtonBuilder().setCustomId('antinuke_no').setLabel('No').setStyle(ButtonStyle.Danger)
             );
 
         await interaction.reply({
-            content: '🛡️ **ANTI-NUKE SYSTEM:** Do you want the bot to scan and memorize all channels, roles, and webhooks of this server?',
+            content: '🛡️ **ANTI-NUKE SYSTEM:** Bạn có muốn bot quét và ghi nhớ toàn bộ kênh, vai trò của server này không?',
             components: [row],
             ephemeral: true
         });
@@ -104,30 +95,21 @@ client.on('interactionCreate', async interaction => {
         }
 
         const guildId = interaction.guild.id;
-        if (serverBackups.has(guildId) || antiNukeStatus.get(guildId)) {
-            serverBackups.delete(guildId);
-            antiNukeStatus.set(guildId, false);
-            await interaction.reply({
-                content: '🛑 **Anti-Nuke system stopped and all cached server data has been cleared!**',
-                ephemeral: true
-            });
-        } else {
-            await interaction.reply({
-                content: '⚠️ Anti-Nuke system is not currently active on this server.',
-                ephemeral: true
-            });
-        }
+        serverBackups.delete(guildId);
+        antiNukeStatus.set(guildId, false);
+        await interaction.reply({
+            content: '🛑 **Đã dừng hệ thống Anti-Nuke và xóa sạch dữ liệu lưu trữ!**',
+            ephemeral: true
+        });
     }
 });
 
-// --- XỬ LÝ NÚM BẤM (BUTTON) ---
 client.on('interactionCreate', async interaction => {
     if (!interaction.isButton()) return;
 
     if (interaction.customId === 'antinuke_yes') {
         const guild = interaction.guild;
         const guildId = guild.id;
-
         await interaction.deferUpdate();
 
         try {
@@ -143,7 +125,7 @@ client.on('interactionCreate', async interaction => {
                 }));
 
             const fetchedChannels = await guild.channels.fetch();
-            const sortedChannels = [...fetchedChannels.values()].sort((a, b) => a.position - b.position);
+            const sortedChannels = [...fetchedChannels.values()].filter(c => c).sort((a, b) => a.position - b.position);
 
             const categories = sortedChannels.filter(c => c.type === ChannelType.GuildCategory);
             const others = sortedChannels.filter(c => c.type !== ChannelType.GuildCategory);
@@ -158,7 +140,7 @@ client.on('interactionCreate', async interaction => {
                 nsfw: channel.nsfw || false
             }));
 
-            const fetchedWebhooks = await guild.fetchWebhooks();
+            const fetchedWebhooks = await guild.fetchWebhooks().catch(() => new Map());
             const webhooksData = fetchedWebhooks.map(wh => ({
                 name: wh.name,
                 channelId: wh.channelId
@@ -168,25 +150,21 @@ client.on('interactionCreate', async interaction => {
             antiNukeStatus.set(guildId, true);
 
             await interaction.editReply({
-                content: `✅ **Successfully scanned and cached!**\n- Roles: ${rolesData.length}\n- Channels: ${channelsData.length}\n- Webhooks: ${webhooksData.length}\n🚀 Ready to protect the server!`,
+                content: `✅ **Đã quét và lưu backup thành công!**\n- Số Vai trò: ${rolesData.length}\n- Số Kênh: ${channelsData.length}\n🚀 Bot sẵn sàng bảo vệ server!`,
                 components: []
             });
         } catch (error) {
             console.error(error);
             await interaction.editReply({
-                content: '❌ Error scanning data. Make sure the bot has Administrator permission!',
+                content: '❌ Lỗi quét dữ liệu. Hãy chắc chắn bot có quyền Quản trị viên (Administrator)!',
                 components: []
             });
         }
     } else if (interaction.customId === 'antinuke_no') {
-        await interaction.update({
-            content: '❌ **Cancelled.** The bot will not cache any data.',
-            components: []
-        });
+        await interaction.update({ content: '❌ Đã hủy kích hoạt.', components: [] });
     }
 });
 
-// --- HÀM KHÓA KHẨN CẤP (Tạm dừng lời mời & Xóa link) ---
 async function triggerEmergencyLockdown(guild, reasonText) {
     try {
         await guild.disableInvites(true).catch(() => {});
@@ -197,39 +175,111 @@ async function triggerEmergencyLockdown(guild, reasonText) {
             }
         }
     } catch (err) {
-        console.error('Error during emergency lockdown:', err);
+        console.error('Error lockdown:', err);
     }
 }
 
-// 1. Kiểm soát Webhook
-client.on('webhookUpdate', async (channel) => {
-    const guild = channel.guild;
+// 1. Theo dõi sự kiện Xóa kênh: Xóa > 1 kênh hoặc sau 5 giây tự động khôi phục lại các kênh đã mất
+client.on('channelDelete', async (deletedChannel) => {
+    const guild = deletedChannel.guild;
     const guildId = guild.id;
     if (!antiNukeStatus.get(guildId)) return;
 
     try {
-        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.WebhookCreate });
-        const webhookLog = auditLogs.entries.first();
-        if (!webhookLog) return;
+        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelDelete }).catch(() => null);
+        if (!auditLogs) return;
+        const logEntry = auditLogs.entries.first();
+        if (!logEntry) return;
 
-        const { executor } = webhookLog;
-        if (executor && executor.id !== guild.ownerId && executor.id !== client.user.id) {
-            const webhooks = await channel.fetchWebhooks();
-            const targetWebhook = webhooks.find(wh => wh.owner && wh.owner.id === executor.id);
-            if (targetWebhook) await targetWebhook.delete('Anti-Nuke: Unauthorized Webhook creation');
+        const { executor } = logEntry;
+        if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
 
-            const member = await guild.members.fetch(executor.id).catch(() => null);
-            if (member && member.bannable) {
-                await member.ban({ reason: 'Anti-Nuke: Unauthorized Webhook creation' });
-            }
-            await triggerEmergencyLockdown(guild, 'Unauthorized Webhook detected');
+        // Lưu thông tin kênh vừa bị xóa vào hàng đợi của server
+        if (!channelDeleteQueue.has(guildId)) {
+            channelDeleteQueue.set(guildId, []);
         }
+        
+        const queue = channelDeleteQueue.get(guildId);
+        queue.push({
+            name: deletedChannel.name,
+            type: deletedChannel.type,
+            parentId: deletedChannel.parentId,
+            position: deletedChannel.position,
+            topic: deletedChannel.topic || '',
+            nsfw: deletedChannel.nsfw || false
+        });
+
+        // Thiết lập bộ đếm 5 giây để khôi phục lại toàn bộ kênh bị xóa
+        if (!channelDeleteQueue.has(`${guildId}_timer`)) {
+            const timer = setTimeout(async () => {
+                const channelsToRestore = channelDeleteQueue.get(guildId) || [];
+                channelDeleteQueue.delete(guildId);
+                channelDeleteQueue.delete(`${guildId}_timer`);
+
+                if (channelsToRestore.length > 0) {
+                    const backupData = serverBackups.get(guildId);
+                    if (!backupData) return;
+
+                    const categoryMap = new Map();
+                    const categories = backupData.channels.filter(c => c.type === ChannelType.GuildCategory);
+                    const others = backupData.channels.filter(c => c.type !== ChannelType.GuildCategory);
+
+                    // Tạo lại danh mục
+                    for (const catData of categories) {
+                        try {
+                            const existing = guild.channels.cache.find(c => c.name === catData.name && c.type === ChannelType.GuildCategory);
+                            if (!existing) {
+                                const newCat = await guild.channels.create({
+                                    name: catData.name,
+                                    type: catData.type,
+                                    position: catData.position,
+                                    reason: 'Anti-Nuke: Auto Restore Category'
+                                });
+                                categoryMap.set(catData.id, newCat.id);
+                            } else {
+                                categoryMap.set(catData.id, existing.id);
+                            }
+                        } catch (e) {
+                            console.error('Lỗi tạo lại danh mục:', e);
+                        }
+                    }
+
+                    // Tạo lại kênh con
+                    for (const chData of others) {
+                        try {
+                            const existing = guild.channels.cache.find(c => c.name === chData.name && c.type === chData.type);
+                            if (!existing) {
+                                let newParentId = null;
+                                if (chData.parentId && categoryMap.has(chData.parentId)) {
+                                    newParentId = categoryMap.get(chData.parentId);
+                                }
+
+                                await guild.channels.create({
+                                    name: chData.name,
+                                    type: chData.type,
+                                    parent: newParentId,
+                                    topic: chData.topic,
+                                    nsfw: chData.nsfw,
+                                    position: chData.position,
+                                    reason: 'Anti-Nuke: Auto Restore Channel'
+                                });
+                            }
+                        } catch (e) {
+                            console.error('Lỗi tạo lại kênh:', e);
+                        }
+                    }
+                }
+            }, 5000); // Đợi đúng 5 giây
+
+            channelDeleteQueue.set(`${guildId}_timer`, timer);
+        }
+
     } catch (err) {
-        console.error('Webhook check error:', err);
+        console.error('Lỗi hệ thống chống xóa kênh:', err);
     }
 });
 
-// 2. Chống Spam Tạo Kênh
+// 2. Chống Spam Tạo Kênh (> 3 kênh y hệt nhau -> Ban ngay)
 client.on('channelCreate', async (newChannel) => {
     const guild = newChannel.guild;
     const guildId = guild.id;
@@ -263,84 +313,47 @@ client.on('channelCreate', async (newChannel) => {
     }
 });
 
-// 3. Theo dõi sự kiện Xóa kênh: KIỂM TRA SẠCH SÀNH SANH TOÀN BỘ KÊNH
-client.on('channelDelete', async (deletedChannel) => {
-    const guild = deletedChannel.guild;
-    const guildId = guild.id;
+// 3. Chống Spam Chat / Link (10 dòng nội dung y hệt nhau hoặc chứa link -> Ban ngay)
+client.on('messageCreate', async message => {
+    if (!message.guild || message.author.bot || message.author.id === message.guild.ownerId) return;
+
+    const guildId = message.guild.id;
     if (!antiNukeStatus.get(guildId)) return;
 
-    try {
-        // Đợi một chút để API Discord đồng bộ hoàn toàn việc xóa kênh cuối cùng
-        setTimeout(async () => {
-            const fetchedChannels = await guild.channels.fetch();
-            
-            // Nếu server VẪN CÒN KÊNH thì bỏ qua (chưa xóa sạch hoàn toàn)
-            if (fetchedChannels.size > 0) return;
+    const userId = message.author.id;
+    const content = message.content.trim();
+    if (!content) return;
 
-            const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelDelete });
-            const logEntry = auditLogs.entries.first();
-            if (!logEntry) return;
+    // Kiểm tra xem nội dung có chứa link hay không (http/https/discord.gg/www...)
+    const urlRegex = /(https?:\/\/[^\s]+)|(discord\.gg\/[^\s]+)|(www\.[^\s]+)/gi;
+    const isLink = urlRegex.test(content);
 
-            const { executor } = logEntry;
-            if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
+    if (!userMessageSpamTracker.has(userId)) {
+        userMessageSpamTracker.set(userId, []);
+    }
 
-            // 1. BAN NGAY LẬP TỨC kẻ đã xóa sạch server
-            const member = await guild.members.fetch(executor.id).catch(() => null);
+    const userMsgs = userMessageSpamTracker.get(userId);
+    userMsgs.push({ content, isLink, timestamp: Date.now() });
+
+    // Lọc các tin nhắn trong vòng 15 giây gần nhất
+    const recentMsgs = userMsgs.filter(m => Date.now() - m.timestamp < 15000);
+    userMessageSpamTracker.set(userId, recentMsgs);
+
+    // Đếm số lượng tin nhắn có nội dung y hệt nhau HOẶC số lượng tin nhắn chứa link
+    const identicalCount = recentMsgs.filter(m => m.content === content).length;
+    const linkCount = recentMsgs.filter(m => m.isLink).length;
+
+    // Nếu spam y hệt nhau >= 10 dòng HOẶC spam gửi link >= 10 dòng
+    if (identicalCount >= 10 || linkCount >= 10) {
+        try {
+            const member = await message.guild.members.fetch(userId).catch(() => null);
             if (member && member.bannable) {
-                await member.ban({ reason: 'Anti-Nuke: Deleted all channels in the server' });
+                await member.ban({ reason: 'Anti-Nuke: Spamming identical chat or mass links' });
             }
-
-            // 2. KHÓA KHẨN CẤP hệ thống lời mời
-            await triggerEmergencyLockdown(guild, 'Total server channels deletion');
-
-            // 3. TỰ ĐỘNG KHÔI PHỤC LẠI TOÀN BỘ KÊNH NHƯ LÚC MỚI QUÉT
-            const backupData = serverBackups.get(guildId);
-            if (!backupData) return;
-
-            const categoryMap = new Map();
-            const categories = backupData.channels.filter(c => c.type === ChannelType.GuildCategory);
-            const others = backupData.channels.filter(c => c.type !== ChannelType.GuildCategory);
-
-            // Tạo lại danh mục trước
-            for (const catData of categories) {
-                try {
-                    const newCat = await guild.channels.create({
-                        name: catData.name,
-                        type: catData.type,
-                        position: catData.position,
-                        reason: 'Anti-Nuke: Restore category'
-                    });
-                    categoryMap.set(catData.id, newCat.id);
-                } catch (e) {
-                    console.error('Error restoring category:', e);
-                }
-            }
-
-            // Tạo lại kênh con nằm trong danh mục
-            for (const chData of others) {
-                try {
-                    let newParentId = null;
-                    if (chData.parentId && categoryMap.has(chData.parentId)) {
-                        newParentId = categoryMap.get(chData.parentId);
-                    }
-
-                    await guild.channels.create({
-                        name: chData.name,
-                        type: chData.type,
-                        parent: newParentId,
-                        topic: chData.topic,
-                        nsfw: chData.nsfw,
-                        position: chData.position,
-                        reason: 'Anti-Nuke: Restore channel'
-                    });
-                } catch (e) {
-                    console.error('Error restoring channel:', e);
-                }
-            }
-        }, 1000); // Trì hoãn 1 giây để đảm bảo kênh cuối cùng đã được xử lý xong trên Discord
-
-    } catch (err) {
-        console.error('Anti-nuke total deletion restore error:', err);
+            userMessageSpamTracker.delete(userId);
+        } catch (err) {
+            console.error('Error banning message spammer:', err);
+        }
     }
 });
 
