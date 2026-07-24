@@ -20,7 +20,7 @@ const client = new Client({
         GatewayIntentBits.GuildWebhooks,
         GatewayIntentBits.GuildInvites,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent // Yêu cầu phải bật Message Content Intent trên Developer Portal
+        GatewayIntentBits.MessageContent 
     ]
 });
 
@@ -80,7 +80,7 @@ client.on('interactionCreate', async interaction => {
             );
 
         await interaction.reply({
-            content: '🛡️ **ANTI-NUKE SYSTEM:** Bạn có muốn bot quét và ghi nhớ toàn bộ kênh, vai trò của server này không?',
+            content: '🛡️ **ANTI-NUKE SYSTEM:** Bạn có muốn bot quét và ghi nhớ toàn bộ kênh, vai trò và webhook của server này không?',
             components: [row],
             ephemeral: true
         });
@@ -150,7 +150,7 @@ client.on('interactionCreate', async interaction => {
             antiNukeStatus.set(guildId, true);
 
             await interaction.editReply({
-                content: `✅ **Đã quét và lưu backup thành công!**\n- Số Vai trò: ${rolesData.length}\n- Số Kênh: ${channelsData.length}\n🚀 Bot sẵn sàng bảo vệ server!`,
+                content: `✅ **Đã quét và lưu backup thành công!**\n- Số Vai trò: ${rolesData.length}\n- Số Kênh: ${channelsData.length}\n- Số Webhook: ${webhooksData.length}\n🚀 Bot sẵn sàng bảo vệ server!`,
                 components: []
             });
         } catch (error) {
@@ -165,6 +165,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+// Hàm Khóa Server (Lockdown): Vô hiệu hóa mời và xóa toàn bộ link mời hiện tại
 async function triggerEmergencyLockdown(guild, reasonText) {
     try {
         await guild.disableInvites(true).catch(() => {});
@@ -176,6 +177,26 @@ async function triggerEmergencyLockdown(guild, reasonText) {
         }
     } catch (err) {
         console.error('Error lockdown:', err);
+    }
+}
+
+// Hàm quét và xóa sạch toàn bộ Webhook không nằm trong danh sách an toàn hoặc khi có sự cố
+async function cleanupWebhooks(guild, reasonText) {
+    try {
+        const fetchedWebhooks = await guild.fetchWebhooks().catch(() => null);
+        if (!fetchedWebhooks) return;
+
+        const backup = serverBackups.get(guild.id);
+        const allowedWebhookNames = backup ? backup.webhooks.map(w => w.name) : [];
+
+        for (const [id, webhook] of fetchedWebhooks) {
+            // Nếu webhook không có trong danh sách backup ban đầu -> Tiến hành xóa ngay lập tức
+            if (!allowedWebhookNames.includes(webhook.name)) {
+                await webhook.delete(`Anti-Nuke Webhook Cleanup: ${reasonText}`).catch(() => {});
+            }
+        }
+    } catch (err) {
+        console.error('Error cleaning webhooks:', err);
     }
 }
 
@@ -193,6 +214,10 @@ client.on('channelDelete', async (deletedChannel) => {
 
         const { executor } = logEntry;
         if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
+
+        // Kích hoạt khóa khẩn cấp và dọn dẹp webhook ngay khi phát hiện xóa kênh bất thường
+        await triggerEmergencyLockdown(guild, 'Channel deletion detected');
+        await cleanupWebhooks(guild, 'Channel deletion detected');
 
         if (!channelDeleteQueue.has(guildId)) {
             channelDeleteQueue.set(guildId, []);
@@ -303,13 +328,42 @@ client.on('channelCreate', async (newChannel) => {
             }
 
             await triggerEmergencyLockdown(guild, 'Spam channel creation');
+            await cleanupWebhooks(guild, 'Spam channel creation');
         }
     } catch (err) {
         console.error('Channel create spam check error:', err);
     }
 });
 
-// 3. Chống Spam Chat / Link (10 dòng nội dung y hệt nhau hoặc chứa link -> Ban ngay)
+// 3. Tự động kiểm tra và xóa webhook ngay khi có webhook mới được tạo trái phép
+client.on('webhookUpdate', async (channel) => {
+    const guild = channel.guild;
+    const guildId = guild.id;
+    if (!antiNukeStatus.get(guildId)) return;
+
+    try {
+        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.WebhookCreate }).catch(() => null);
+        if (!auditLogs) return;
+        const logEntry = auditLogs.entries.first();
+        if (!logEntry) return;
+
+        const { executor } = logEntry;
+        if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
+
+        // Nếu kẻ gian cố tình tạo webhook -> Ban ngay lập tức và dọn sạch webhook lạ
+        const member = await guild.members.fetch(executor.id).catch(() => null);
+        if (member && member.bannable) {
+            await member.ban({ reason: 'Anti-Nuke: Unauthorized webhook creation' });
+        }
+
+        await cleanupWebhooks(guild, 'Unauthorized webhook creation');
+        await triggerEmergencyLockdown(guild, 'Unauthorized webhook creation');
+    } catch (err) {
+        console.error('Webhook update check error:', err);
+    }
+});
+
+// 4. Chống Spam Chat / Link (5 dòng nội dung y hệt nhau hoặc 10 link -> Ban ngay)
 client.on('messageCreate', async message => {
     if (!message.guild || message.author.bot || message.author.id === message.guild.ownerId) return;
 
