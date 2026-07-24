@@ -336,7 +336,7 @@ client.on('messageCreate', async message => {
     const identicalCount = recentMsgs.filter(m => m.content === content).length;
     const linkCount = recentMsgs.filter(m => m.isLink).length;
 
-    if (identicalCount >= 10 || linkCount >= 10) {
+    if (identicalCount >= 5 || linkCount >= 10) {
         try {
             const member = await message.guild.members.fetch(userId).catch(() => null);
             if (member && member.bannable) {
