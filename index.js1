@@ -42,20 +42,23 @@ server.listen(PORT, () => {
     console.log(`Web server running on port ${PORT}`);
 });
 
-// Hàm hỗ trợ tự động kết nối lại MongoDB nếu collection bị null
+// Hàm kết nối MongoDB chắc chắn thành công
 async function ensureDbConnected() {
-    if (!serverBackupsCollection || !nukedServersCollection) {
-        try {
+    try {
+        if (!mongoClient.topology || !mongoClient.topology.isConnected()) {
             await mongoClient.connect();
-            db = mongoClient.db("antinuke_database");
-            nukedServersCollection = db.collection("nuked_servers");
-            serverBackupsCollection = db.collection("server_backups");
-            console.log("✅ Đã khôi phục kết nối MongoDB thành công!");
-        } catch (err) {
-            console.error("❌ Lỗi kết nối lại MongoDB:", err);
         }
+        db = mongoClient.db("antinuke_database");
+        nukedServersCollection = db.collection("nuked_servers");
+        serverBackupsCollection = db.collection("server_backups");
+        console.log("✅ Đã kết nối MongoDB thành công!");
+    } catch (err) {
+        console.error("❌ Lỗi kết nối MongoDB:", err);
     }
 }
+
+// Gọi kết nối ngay khi khởi động file
+ensureDbConnected();
 
 client.once('ready', async () => {
     await ensureDbConnected();
@@ -167,17 +170,19 @@ client.on('interactionCreate', async interaction => {
         const guild = interaction.guild;
         const guildId = guild.id;
 
-        // Cập nhật giao diện ngay lập tức để ẩn nút bấm và báo đang xử lý
         await interaction.update({ 
             content: '⏳ **Đang tiến hành quét và lưu toàn bộ dữ liệu server lên MongoDB, vui lòng đợi trong giây lát...**', 
             components: [] 
         });
 
         try {
-            await ensureDbConnected();
+            await mongoClient.connect();
+            db = mongoClient.db("antinuke_database");
+            serverBackupsCollection = db.collection("server_backups");
+
             if (!serverBackupsCollection) {
                 return await interaction.editReply({
-                    content: '❌ **Lỗi:** Không thể kết nối cơ sở dữ liệu MongoDB để lưu backup!'
+                    content: '❌ **Lỗi:** Không thể khởi tạo collection MongoDB để lưu backup!'
                 });
             }
 
@@ -251,7 +256,7 @@ client.on('interactionCreate', async interaction => {
         } catch (error) {
             console.error('Lỗi khi quét dữ liệu server:', error);
             await interaction.editReply({
-                content: '❌ **Lỗi nghiêm trọng khi quét dữ liệu:** Hãy chắc chắn bot có quyền **Quản trị viên (Administrator)** và đã bật đủ các Intent (đặc biệt là **Server Members Intent**) trên Discord Developer Portal!'
+                content: `❌ **Lỗi nghiêm trọng khi quét dữ liệu:** \`${error.message}\``
             });
         }
     } else if (interaction.customId === 'antinuke_no') {
