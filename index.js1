@@ -12,7 +12,7 @@ const {
     ChannelType 
 } = require('discord.js');
 const http = require('http');
-const { MongoClient } = require('mongodb'); // Thêm thư viện MongoDB
+const { MongoClient } = require('mongodb');
 
 const client = new Client({
     intents: [
@@ -22,20 +22,16 @@ const client = new Client({
         GatewayIntentBits.GuildInvites,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers // BẮT BUỘC phải bật thêm Server Members Intent trên Discord Developer Portal để bot đọc được danh sách role của thành viên
+        GatewayIntentBits.GuildMembers
     ]
 });
 
-// Cấu hình kết nối MongoDB của bạn
 const MONGO_URI = "mongodb+srv://phamthucdung04012012_db_user:2d42FWSY8jPwFl9H@cluster0.wurl4c5.mongodb.net/?appName=Cluster0";
 const mongoClient = new MongoClient(MONGO_URI);
-let nukedServersCollection;
+let db, nukedServersCollection, serverBackupsCollection;
 
-const serverBackups = new Map();
-const antiNukeStatus = new Map();
 const channelDeleteQueue = new Map();
 const userMessageSpamTracker = new Map();
-const lockdownInvitesStatus = new Map();
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -49,8 +45,9 @@ server.listen(PORT, () => {
 client.once('ready', async () => {
     try {
         await mongoClient.connect();
-        const db = mongoClient.db("antinuke_database");
+        db = mongoClient.db("antinuke_database");
         nukedServersCollection = db.collection("nuked_servers");
+        serverBackupsCollection = db.collection("server_backups");
         console.log("✅ Đã kết nối thành công tới cơ sở dữ liệu MongoDB!");
     } catch (err) {
         console.error("❌ Lỗi kết nối MongoDB:", err);
@@ -65,7 +62,7 @@ client.once('ready', async () => {
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('stop')
-            .setDescription('Dừng hệ thống chống nuke và xóa dữ liệu bộ nhớ đệm')
+            .setDescription('Dừng hệ thống chống nuke và xóa dữ liệu bảo vệ')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('dscnuked')
@@ -116,13 +113,19 @@ client.on('interactionCreate', async interaction => {
         }
 
         const guildId = interaction.guild.id;
-        serverBackups.delete(guildId);
-        antiNukeStatus.set(guildId, false);
-        lockdownInvitesStatus.set(guildId, false);
-        await interaction.reply({
-            content: '🛑 **Đã dừng hệ thống Anti-Nuke và xóa sạch dữ liệu lưu trữ!**',
-            ephemeral: true
-        });
+        try {
+            await serverBackupsCollection.updateOne(
+                { guild_id: guildId },
+                { $set: { antiNukeActive: false, lockdownInvites: false } }
+            );
+            await interaction.reply({
+                content: '🛑 **Đã dừng hệ thống Anti-Nuke và cập nhật trạng thái trên database!**',
+                ephemeral: true
+            });
+        } catch (err) {
+            console.error(err);
+            await interaction.reply({ content: '❌ Lỗi khi dừng hệ thống.', ephemeral: true });
+        }
     }
 
     if (interaction.commandName === 'dscnuked') {
@@ -202,17 +205,24 @@ client.on('interactionCreate', async interaction => {
                 }
             });
 
-            serverBackups.set(guildId, { 
-                roles: rolesData, 
-                channels: channelsData, 
-                webhooks: webhooksData,
-                memberRoles: membersRolesData
-            });
-            antiNukeStatus.set(guildId, true);
-            lockdownInvitesStatus.set(guildId, false);
+            // Lưu trực tiếp vào MongoDB thay vì dùng Map
+            await serverBackupsCollection.updateOne(
+                { guild_id: guildId },
+                { 
+                    $set: { 
+                        roles: rolesData, 
+                        channels: channelsData, 
+                        webhooks: webhooksData,
+                        memberRoles: membersRolesData,
+                        antiNukeActive: true,
+                        lockdownInvites: false
+                    } 
+                },
+                { upsert: true }
+            );
 
             await interaction.editReply({
-                content: `✅ **Đã quét và lưu backup toàn diện thành công!**\n- Số Vai trò: ${rolesData.length}\n- Số Kênh: ${channelsData.length}\n- Số Webhook: ${webhooksData.length}\n- Số Thành viên ghi nhớ role: ${Object.keys(membersRolesData).length}\n🚀 Bot sẵn sàng bảo vệ server!`,
+                content: `✅ **Đã quét và lưu backup toàn diện lên MongoDB thành công!**\n- Số Vai trò: ${rolesData.length}\n- Số Kênh: ${channelsData.length}\n- Số Webhook: ${webhooksData.length}\n- Số Thành viên ghi nhớ role: ${Object.keys(membersRolesData).length}\n🚀 Bot sẵn sàng bảo vệ server vĩnh viễn!`,
                 components: []
             });
         } catch (error) {
@@ -227,10 +237,21 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+async function isAntiNukeActive(guildId) {
+    if (!serverBackupsCollection) return false;
+    const data = await serverBackupsCollection.findOne({ guild_id: guildId });
+    return data ? data.antiNukeActive : false;
+}
+
+async function getGuildBackup(guildId) {
+    if (!serverBackupsCollection) return null;
+    return await serverBackupsCollection.findOne({ guild_id: guildId });
+}
+
 async function restoreRolesAndMembers(guild) {
     try {
-        const backupData = serverBackups.get(guild.id);
-        if (!backupData) return;
+        const backupData = await getGuildBackup(guild.id);
+        if (!backupData || !backupData.roles) return;
 
         for (const roleData of backupData.roles) {
             let existingRole = guild.roles.cache.find(r => r.name === roleData.name);
@@ -272,9 +293,12 @@ async function restoreRolesAndMembers(guild) {
 async function triggerEmergencyLockdown(guild, reasonText) {
     try {
         const guildId = guild.id;
-        lockdownInvitesStatus.set(guildId, true);
+        
+        await serverBackupsCollection.updateOne(
+            { guild_id: guildId },
+            { $set: { lockdownInvites: true } }
+        );
 
-        // Lưu thông tin server bị nuke vào MongoDB
         if (nukedServersCollection) {
             const existing = await nukedServersCollection.findOne({ guild_id: guildId });
             if (!existing) {
@@ -307,8 +331,8 @@ async function cleanupWebhooks(guild, reasonText) {
         const fetchedWebhooks = await guild.fetchWebhooks().catch(() => null);
         if (!fetchedWebhooks) return;
 
-        const backup = serverBackups.get(guild.id);
-        const allowedWebhookNames = backup ? backup.webhooks.map(w => w.name) : [];
+        const backup = await getGuildBackup(guild.id);
+        const allowedWebhookNames = backup && backup.webhooks ? backup.webhooks.map(w => w.name) : [];
 
         for (const [id, webhook] of fetchedWebhooks) {
             if (!allowedWebhookNames.includes(webhook.name)) {
@@ -323,7 +347,7 @@ async function cleanupWebhooks(guild, reasonText) {
 client.on('inviteCreate', async (invite) => {
     const guild = invite.guild;
     const guildId = guild.id;
-    if (!antiNukeStatus.get(guildId)) return;
+    if (!(await isAntiNukeActive(guildId))) return;
 
     try {
         const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.InviteCreate }).catch(() => null);
@@ -334,7 +358,8 @@ client.on('inviteCreate', async (invite) => {
         const { executor } = logEntry;
         if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
 
-        if (lockdownInvitesStatus.get(guildId)) {
+        const backupData = await getGuildBackup(guildId);
+        if (backupData && backupData.lockdownInvites) {
             await invite.delete('Anti-Nuke: Lockdown active, invite creation blocked').catch(() => {});
             const member = await guild.members.fetch(executor.id).catch(() => null);
             if (member && member.bannable) {
@@ -349,7 +374,7 @@ client.on('inviteCreate', async (invite) => {
 client.on('channelDelete', async (deletedChannel) => {
     const guild = deletedChannel.guild;
     const guildId = guild.id;
-    if (!antiNukeStatus.get(guildId)) return;
+    if (!(await isAntiNukeActive(guildId))) return;
 
     try {
         const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelDelete }).catch(() => null);
@@ -384,8 +409,8 @@ client.on('channelDelete', async (deletedChannel) => {
                 channelDeleteQueue.delete(`${guildId}_timer`);
 
                 if (channelsToRestore.length > 0) {
-                    const backupData = serverBackups.get(guildId);
-                    if (!backupData) return;
+                    const backupData = await getGuildBackup(guildId);
+                    if (!backupData || !backupData.channels) return;
 
                     const categoryMap = new Map();
                     const categories = backupData.channels.filter(c => c.type === ChannelType.GuildCategory);
@@ -447,7 +472,7 @@ client.on('channelDelete', async (deletedChannel) => {
 client.on('channelCreate', async (newChannel) => {
     const guild = newChannel.guild;
     const guildId = guild.id;
-    if (!antiNukeStatus.get(guildId)) return;
+    if (!(await isAntiNukeActive(guildId))) return;
 
     try {
         const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelCreate });
@@ -481,7 +506,7 @@ client.on('channelCreate', async (newChannel) => {
 client.on('webhookUpdate', async (channel) => {
     const guild = channel.guild;
     const guildId = guild.id;
-    if (!antiNukeStatus.get(guildId)) return;
+    if (!(await isAntiNukeActive(guildId))) return;
 
     try {
         const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.WebhookCreate }).catch(() => null);
@@ -508,7 +533,7 @@ client.on('messageCreate', async message => {
     if (!message.guild || message.author.bot || message.author.id === message.guild.ownerId) return;
 
     const guildId = message.guild.id;
-    if (!antiNukeStatus.get(guildId)) return;
+    if (!(await isAntiNukeActive(guildId))) return;
 
     const userId = message.author.id;
     const content = message.content.trim();
