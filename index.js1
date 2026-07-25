@@ -26,8 +26,15 @@ const client = new Client({
     ]
 });
 
-const MONGO_URI = "mongodb+srv://phamthucdung04012012_db_user:2d42FWSY8jPwFl9H@cluster0.wurl4c5.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true";
-const mongoClient = new MongoClient(MONGO_URI);
+// Đã cấu hình thêm option chống lỗi SSL bên dưới
+const MONGO_URI = "mongodb+srv://phamthucdung04012012_db_user:2d42FWSY8jPwFl9H@cluster0.wurl4c5.mongodb.net/?retryWrites=true&w=majority";
+const mongoClient = new MongoClient(MONGO_URI, {
+    tls: true,
+    tlsAllowInvalidCertificates: true,
+    tlsAllowInvalidHostnames: true,
+    serverSelectionTimeoutMS: 10000
+});
+
 let db, nukedServersCollection, serverBackupsCollection;
 
 const channelDeleteQueue = new Map();
@@ -42,7 +49,6 @@ server.listen(PORT, () => {
     console.log(`Web server running on port ${PORT}`);
 });
 
-// Hàm kết nối MongoDB chắc chắn thành công
 async function ensureDbConnected() {
     try {
         if (!mongoClient.topology || !mongoClient.topology.isConnected()) {
@@ -57,7 +63,6 @@ async function ensureDbConnected() {
     }
 }
 
-// Gọi kết nối ngay khi khởi động file
 ensureDbConnected();
 
 client.once('ready', async () => {
