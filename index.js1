@@ -161,6 +161,7 @@ client.on('interactionCreate', async interaction => {
         await interaction.deferUpdate();
 
         try {
+            // 1. Quét Roles
             const rolesData = guild.roles.cache
                 .filter(role => !role.managed && role.id !== guild.id)
                 .sort((a, b) => b.position - a.position)
@@ -172,7 +173,8 @@ client.on('interactionCreate', async interaction => {
                     mentionable: role.mentionable
                 }));
 
-            const fetchedChannels = await guild.channels.fetch();
+            // 2. Quét Channels
+            const fetchedChannels = await guild.channels.fetch().catch(() => new Map());
             const sortedChannels = [...fetchedChannels.values()].filter(c => c).sort((a, b) => a.position - b.position);
 
             const categories = sortedChannels.filter(c => c.type === ChannelType.GuildCategory);
@@ -188,23 +190,30 @@ client.on('interactionCreate', async interaction => {
                 nsfw: channel.nsfw || false
             }));
 
+            // 3. Quét Webhooks
             const fetchedWebhooks = await guild.fetchWebhooks().catch(() => new Map());
             const webhooksData = fetchedWebhooks.map(wh => ({
                 name: wh.name,
                 channelId: wh.channelId
             }));
 
-            await guild.members.fetch();
-            const membersRolesData = {};
-            guild.members.cache.forEach(member => {
-                if (!member.user.bot) {
-                    const roleIds = member.roles.cache
-                        .filter(r => r.id !== guild.id)
-                        .map(r => r.name);
-                    membersRolesData[member.id] = roleIds;
-                }
-            });
+            // 4. Quét Members (Có try-catch riêng chống crash)
+            let membersRolesData = {};
+            try {
+                await guild.members.fetch();
+                guild.members.cache.forEach(member => {
+                    if (!member.user.bot) {
+                        const roleIds = member.roles.cache
+                            .filter(r => r.id !== guild.id)
+                            .map(r => r.name);
+                        membersRolesData[member.id] = roleIds;
+                    }
+                });
+            } catch (memberErr) {
+                console.warn("⚠️ Không thể fetch toàn bộ member:", memberErr);
+            }
 
+            // Lưu trực tiếp vào MongoDB
             await serverBackupsCollection.updateOne(
                 { guild_id: guildId },
                 { 
@@ -225,9 +234,9 @@ client.on('interactionCreate', async interaction => {
                 components: []
             });
         } catch (error) {
-            console.error(error);
+            console.error("❌ Lỗi quét dữ liệu:", error);
             await interaction.editReply({
-                content: '❌ Lỗi quét dữ liệu. Hãy chắc chắn bot có quyền Quản trị viên và đã bật Server Members Intent trên Discord Developer Portal!',
+                content: `❌ Lỗi quét dữ liệu: \`${error.message}\`. Hãy chắc chắn bot có quyền Quản trị viên và đã bật Intent!`,
                 components: []
             });
         }
@@ -266,7 +275,7 @@ async function restoreRolesAndMembers(guild) {
             }
         }
 
-        await guild.members.fetch();
+        await guild.members.fetch().catch(() => {});
         const memberRolesMap = backupData.memberRoles;
         if (memberRolesMap) {
             for (const [memberId, roleNames] of Object.entries(memberRolesMap)) {
@@ -474,14 +483,15 @@ client.on('channelCreate', async (newChannel) => {
     if (!(await isAntiNukeActive(guildId))) return;
 
     try {
-        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelCreate });
+        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelCreate }).catch(() => null);
+        if (!auditLogs) return;
         const logEntry = auditLogs.entries.first();
         if (!logEntry) return;
 
         const { executor } = logEntry;
         if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
 
-        const fetchedChannels = await guild.channels.fetch();
+        const fetchedChannels = await guild.channels.fetch().catch(() => new Map());
         const duplicateChannels = fetchedChannels.filter(c => c && c.name === newChannel.name);
         
         if (duplicateChannels.size >= 3) {
