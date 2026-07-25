@@ -26,7 +26,7 @@ const client = new Client({
     ]
 });
 
-const MONGO_URI = "mongodb+srv://phamthucdung04012012_db_user:2d42FWSY8jPwFl9H@cluster0.wurl4c5.mongodb.net/?appName=Cluster0";
+const MONGO_URI = "mongodb+srv://phamthucdung04012012_db_user:2d42FWSY8jPwFl9H@cluster0.wurl4c5.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true";
 const mongoClient = new MongoClient(MONGO_URI);
 let db, nukedServersCollection, serverBackupsCollection;
 
