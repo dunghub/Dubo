@@ -114,6 +114,9 @@ client.on('interactionCreate', async interaction => {
 
         const guildId = interaction.guild.id;
         try {
+            if (!serverBackupsCollection) {
+                return await interaction.reply({ content: '❌ **Lỗi:** Chưa kết nối được cơ sở dữ liệu MongoDB!', ephemeral: true });
+            }
             await serverBackupsCollection.updateOne(
                 { guild_id: guildId },
                 { $set: { antiNukeActive: false, lockdownInvites: false } }
@@ -159,6 +162,14 @@ client.on('interactionCreate', async interaction => {
         const guild = interaction.guild;
         const guildId = guild.id;
         await interaction.deferUpdate();
+
+        // 🛑 Chặn ngay nếu MongoDB chưa kết nối xong để tránh lỗi undefined
+        if (!serverBackupsCollection) {
+            return await interaction.editReply({
+                content: '❌ **Lỗi:** Chưa kết nối được cơ sở dữ liệu MongoDB! Hãy kiểm tra lại kết nối.',
+                components: []
+            });
+        }
 
         try {
             // 1. Quét Roles
@@ -302,10 +313,12 @@ async function triggerEmergencyLockdown(guild, reasonText) {
     try {
         const guildId = guild.id;
         
-        await serverBackupsCollection.updateOne(
-            { guild_id: guildId },
-            { $set: { lockdownInvites: true } }
-        );
+        if (serverBackupsCollection) {
+            await serverBackupsCollection.updateOne(
+                { guild_id: guildId },
+                { $set: { lockdownInvites: true } }
+            );
+        }
 
         if (nukedServersCollection) {
             const existing = await nukedServersCollection.findOne({ guild_id: guildId });
