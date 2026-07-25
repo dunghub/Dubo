@@ -42,17 +42,23 @@ server.listen(PORT, () => {
     console.log(`Web server running on port ${PORT}`);
 });
 
-client.once('ready', async () => {
-    try {
-        await mongoClient.connect();
-        db = mongoClient.db("antinuke_database");
-        nukedServersCollection = db.collection("nuked_servers");
-        serverBackupsCollection = db.collection("server_backups");
-        console.log("✅ Đã kết nối thành công tới cơ sở dữ liệu MongoDB!");
-    } catch (err) {
-        console.error("❌ Lỗi kết nối MongoDB:", err);
+// Hàm hỗ trợ tự động kết nối lại MongoDB nếu collection bị null
+async function ensureDbConnected() {
+    if (!serverBackupsCollection || !nukedServersCollection) {
+        try {
+            await mongoClient.connect();
+            db = mongoClient.db("antinuke_database");
+            nukedServersCollection = db.collection("nuked_servers");
+            serverBackupsCollection = db.collection("server_backups");
+            console.log("✅ Đã khôi phục kết nối MongoDB thành công!");
+        } catch (err) {
+            console.error("❌ Lỗi kết nối lại MongoDB:", err);
+        }
     }
+}
 
+client.once('ready', async () => {
+    await ensureDbConnected();
     console.log(`Bot đã đăng nhập thành công với tên: ${client.user.tag}`);
 
     const commands = [
@@ -114,9 +120,7 @@ client.on('interactionCreate', async interaction => {
 
         const guildId = interaction.guild.id;
         try {
-            if (!serverBackupsCollection) {
-                return await interaction.reply({ content: '❌ **Lỗi:** Chưa kết nối được cơ sở dữ liệu MongoDB!', ephemeral: true });
-            }
+            await ensureDbConnected();
             await serverBackupsCollection.updateOne(
                 { guild_id: guildId },
                 { $set: { antiNukeActive: false, lockdownInvites: false } }
@@ -132,8 +136,9 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'dscnuked') {
+        await ensureDbConnected();
         if (!nukedServersCollection) {
-            return await interaction.reply({ content: '❌ Chưa kết nối được cơ sở dữ liệu!', ephemeral: true });
+            return await interaction.reply({ content: '❌ Chưa kết nối được cơ sở dữ liệu MongoDB!', ephemeral: true });
         }
 
         try {
@@ -163,16 +168,15 @@ client.on('interactionCreate', async interaction => {
         const guildId = guild.id;
         await interaction.deferUpdate();
 
-        // 🛑 Chặn ngay nếu MongoDB chưa kết nối xong để tránh lỗi undefined
-        if (!serverBackupsCollection) {
-            return await interaction.editReply({
-                content: '❌ **Lỗi:** Chưa kết nối được cơ sở dữ liệu MongoDB! Hãy kiểm tra lại kết nối.',
-                components: []
-            });
-        }
-
         try {
-            // 1. Quét Roles
+            await ensureDbConnected();
+            if (!serverBackupsCollection) {
+                return await interaction.editReply({
+                    content: '❌ Không thể kết nối cơ sở dữ liệu để lưu backup!',
+                    components: []
+                });
+            }
+
             const rolesData = guild.roles.cache
                 .filter(role => !role.managed && role.id !== guild.id)
                 .sort((a, b) => b.position - a.position)
@@ -184,8 +188,7 @@ client.on('interactionCreate', async interaction => {
                     mentionable: role.mentionable
                 }));
 
-            // 2. Quét Channels
-            const fetchedChannels = await guild.channels.fetch().catch(() => new Map());
+            const fetchedChannels = await guild.channels.fetch();
             const sortedChannels = [...fetchedChannels.values()].filter(c => c).sort((a, b) => a.position - b.position);
 
             const categories = sortedChannels.filter(c => c.type === ChannelType.GuildCategory);
@@ -201,30 +204,23 @@ client.on('interactionCreate', async interaction => {
                 nsfw: channel.nsfw || false
             }));
 
-            // 3. Quét Webhooks
             const fetchedWebhooks = await guild.fetchWebhooks().catch(() => new Map());
             const webhooksData = fetchedWebhooks.map(wh => ({
                 name: wh.name,
                 channelId: wh.channelId
             }));
 
-            // 4. Quét Members (Có try-catch riêng chống crash)
-            let membersRolesData = {};
-            try {
-                await guild.members.fetch();
-                guild.members.cache.forEach(member => {
-                    if (!member.user.bot) {
-                        const roleIds = member.roles.cache
-                            .filter(r => r.id !== guild.id)
-                            .map(r => r.name);
-                        membersRolesData[member.id] = roleIds;
-                    }
-                });
-            } catch (memberErr) {
-                console.warn("⚠️ Không thể fetch toàn bộ member:", memberErr);
-            }
+            await guild.members.fetch();
+            const membersRolesData = {};
+            guild.members.cache.forEach(member => {
+                if (!member.user.bot) {
+                    const roleIds = member.roles.cache
+                        .filter(r => r.id !== guild.id)
+                        .map(r => r.name);
+                    membersRolesData[member.id] = roleIds;
+                }
+            });
 
-            // Lưu trực tiếp vào MongoDB
             await serverBackupsCollection.updateOne(
                 { guild_id: guildId },
                 { 
@@ -245,9 +241,9 @@ client.on('interactionCreate', async interaction => {
                 components: []
             });
         } catch (error) {
-            console.error("❌ Lỗi quét dữ liệu:", error);
+            console.error(error);
             await interaction.editReply({
-                content: `❌ Lỗi quét dữ liệu: \`${error.message}\`. Hãy chắc chắn bot có quyền Quản trị viên và đã bật Intent!`,
+                content: '❌ Lỗi quét dữ liệu. Hãy chắc chắn bot có quyền Quản trị viên và đã bật Server Members Intent!',
                 components: []
             });
         }
@@ -257,12 +253,14 @@ client.on('interactionCreate', async interaction => {
 });
 
 async function isAntiNukeActive(guildId) {
+    await ensureDbConnected();
     if (!serverBackupsCollection) return false;
     const data = await serverBackupsCollection.findOne({ guild_id: guildId });
     return data ? data.antiNukeActive : false;
 }
 
 async function getGuildBackup(guildId) {
+    await ensureDbConnected();
     if (!serverBackupsCollection) return null;
     return await serverBackupsCollection.findOne({ guild_id: guildId });
 }
@@ -286,7 +284,7 @@ async function restoreRolesAndMembers(guild) {
             }
         }
 
-        await guild.members.fetch().catch(() => {});
+        await guild.members.fetch();
         const memberRolesMap = backupData.memberRoles;
         if (memberRolesMap) {
             for (const [memberId, roleNames] of Object.entries(memberRolesMap)) {
@@ -312,6 +310,7 @@ async function restoreRolesAndMembers(guild) {
 async function triggerEmergencyLockdown(guild, reasonText) {
     try {
         const guildId = guild.id;
+        await ensureDbConnected();
         
         if (serverBackupsCollection) {
             await serverBackupsCollection.updateOne(
@@ -496,15 +495,14 @@ client.on('channelCreate', async (newChannel) => {
     if (!(await isAntiNukeActive(guildId))) return;
 
     try {
-        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelCreate }).catch(() => null);
-        if (!auditLogs) return;
+        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelCreate });
         const logEntry = auditLogs.entries.first();
         if (!logEntry) return;
 
         const { executor } = logEntry;
         if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
 
-        const fetchedChannels = await guild.channels.fetch().catch(() => new Map());
+        const fetchedChannels = await guild.channels.fetch();
         const duplicateChannels = fetchedChannels.filter(c => c && c.name === newChannel.name);
         
         if (duplicateChannels.size >= 3) {
