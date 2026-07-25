@@ -166,16 +166,22 @@ client.on('interactionCreate', async interaction => {
     if (interaction.customId === 'antinuke_yes') {
         const guild = interaction.guild;
         const guildId = guild.id;
-        await interaction.deferUpdate();
+
+        // Cập nhật giao diện ngay lập tức để ẩn nút bấm và báo đang xử lý
+        await interaction.update({ 
+            content: '⏳ **Đang tiến hành quét và lưu toàn bộ dữ liệu server lên MongoDB, vui lòng đợi trong giây lát...**', 
+            components: [] 
+        });
 
         try {
             await ensureDbConnected();
             if (!serverBackupsCollection) {
                 return await interaction.editReply({
-                    content: '❌ Không thể kết nối cơ sở dữ liệu để lưu backup!',
-                    components: []
+                    content: '❌ **Lỗi:** Không thể kết nối cơ sở dữ liệu MongoDB để lưu backup!'
                 });
             }
+
+            console.log(`[SCAN] Bắt đầu quét dữ liệu cho server: ${guild.name} (${guildId})`);
 
             const rolesData = guild.roles.cache
                 .filter(role => !role.managed && role.id !== guild.id)
@@ -210,7 +216,7 @@ client.on('interactionCreate', async interaction => {
                 channelId: wh.channelId
             }));
 
-            await guild.members.fetch();
+            await guild.members.fetch().catch(err => console.log('Không thể fetch toàn bộ member:', err));
             const membersRolesData = {};
             guild.members.cache.forEach(member => {
                 if (!member.user.bot) {
@@ -230,21 +236,22 @@ client.on('interactionCreate', async interaction => {
                         webhooks: webhooksData,
                         memberRoles: membersRolesData,
                         antiNukeActive: true,
-                        lockdownInvites: false
+                        lockdownInvites: false,
+                        updatedAt: new Date()
                     } 
                 },
                 { upsert: true }
             );
 
+            console.log(`[SCAN] Đã quét và lưu thành công cho server: ${guild.name}`);
+
             await interaction.editReply({
-                content: `✅ **Đã quét và lưu backup toàn diện lên MongoDB thành công!**\n- Số Vai trò: ${rolesData.length}\n- Số Kênh: ${channelsData.length}\n- Số Webhook: ${webhooksData.length}\n- Số Thành viên ghi nhớ role: ${Object.keys(membersRolesData).length}\n🚀 Bot sẵn sàng bảo vệ server vĩnh viễn!`,
-                components: []
+                content: `✅ **Đã quét và lưu backup toàn diện lên MongoDB thành công!**\n- Số Vai trò: ${rolesData.length}\n- Số Kênh: ${channelsData.length}\n- Số Webhook: ${webhooksData.length}\n- Số Thành viên ghi nhớ role: ${Object.keys(membersRolesData).length}\n🚀 Bot đã sẵn sàng bảo vệ server vĩnh viễn!`
             });
         } catch (error) {
-            console.error(error);
+            console.error('Lỗi khi quét dữ liệu server:', error);
             await interaction.editReply({
-                content: '❌ Lỗi quét dữ liệu. Hãy chắc chắn bot có quyền Quản trị viên và đã bật Server Members Intent!',
-                components: []
+                content: '❌ **Lỗi nghiêm trọng khi quét dữ liệu:** Hãy chắc chắn bot có quyền **Quản trị viên (Administrator)** và đã bật đủ các Intent (đặc biệt là **Server Members Intent**) trên Discord Developer Portal!'
             });
         }
     } else if (interaction.customId === 'antinuke_no') {
