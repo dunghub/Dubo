@@ -205,7 +205,6 @@ client.on('interactionCreate', async interaction => {
                 }
             });
 
-            // Lưu trực tiếp vào MongoDB thay vì dùng Map
             await serverBackupsCollection.updateOne(
                 { guild_id: guildId },
                 { 
@@ -228,7 +227,7 @@ client.on('interactionCreate', async interaction => {
         } catch (error) {
             console.error(error);
             await interaction.editReply({
-                content: '❌ Lỗi quét dữ liệu. Hãy chắc chắn bot có quyền Quản trị viên và đã bật Server Members Intent!',
+                content: '❌ Lỗi quét dữ liệu. Hãy chắc chắn bot có quyền Quản trị viên và đã bật Server Members Intent trên Discord Developer Portal!',
                 components: []
             });
         }
