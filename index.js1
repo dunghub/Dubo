@@ -345,11 +345,14 @@ client.on('interactionCreate', async interaction => {
 
             console.log(`[SCAN] Đã tạo thành công kho chứa cho server ID: ${guildId}`);
 
-            let summaryText = `✅ **Đã tạo kho chứa riêng cho server [ID: ${guildId}] thành công!**\n`;
+            let summaryText = `✅ **Đã tạo kho chứa riêng cho server [ID: ${guildId}] thành công!**\n\n`;
+            summaryText += `📂 **Channels:** \`${channelsData.length}\` kênh quét được\n`;
+            summaryText += `👑 **Roles:**\n`;
             rolesData.forEach((r, idx) => {
                 const listIds = roleMembersMapping[r.name] || [];
                 summaryText += `\`${idx + 1}:${r.name}\` > (${listIds.length} người)\n`;
             });
+            summaryText += `🔗 **Webhooks:** \`${webhooksData.length}\` webhooks quét được`;
 
             await interaction.editReply({ content: summaryText });
         } catch (error) {
