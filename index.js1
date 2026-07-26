@@ -118,10 +118,12 @@ async function notifyOwnerForIncident(guild, culpritName, eventDescription) {
         const owner = await guild.fetchOwner().catch(() => null);
         if (!owner) return;
 
+        const timeString = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+
         let msg = `⚠️ **Server You were nuke by ${culpritName}**\n\n`;
         msg += `📋 **Sự kiện vừa xảy ra:** \`${eventDescription}\`\n`;
         msg += `🛠️ **Trạng thái xử lý:** Bot đã tự động khôi phục thành công từ kho chứa riêng!\n`;
-        msg += `⏰ **Thời gian:** \`${new Date().toLocaleString('vi-VN')}\``;
+        msg += `⏰ **Thời gian:** \`${timeString}\``;
 
         await owner.send(msg).catch(() => {});
     } catch (err) {
@@ -204,7 +206,7 @@ client.on('interactionCreate', async interaction => {
 
             let msg = `📋 **Lịch sử biến cố / vấn đề vừa xảy ra tại server ${interaction.guild.name}:**\n`;
             serverIncidents.forEach((s, index) => {
-                const timeStr = new Date(s.timestamp).toLocaleString('vi-VN');
+                const timeStr = new Date(s.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
                 const culprit = s.culprit || "Không rõ";
                 msg += `${index + 1}. **Kẻ gây ra:** \`${culprit}\` — **Sự kiện:** ${s.reason} — *Thời gian:* \`${timeStr}\`\n`;
             });
@@ -271,7 +273,9 @@ client.on('interactionCreate', async interaction => {
 
             console.log(`[SCAN] Đang đóng gói kho chứa cho server: ${guild.name} (${guildId})`);
 
-            // 1. Quét và sắp xếp vai trò từ THẤP lên CAO (position tăng dần)
+            // Ép buộc load toàn bộ member của server trước khi quét
+            await guild.members.fetch().catch(() => {});
+
             const rolesData = guild.roles.cache
                 .filter(role => !role.managed && role.id !== guild.id)
                 .sort((a, b) => a.position - b.position)
@@ -283,10 +287,7 @@ client.on('interactionCreate', async interaction => {
                     mentionable: role.mentionable
                 }));
 
-            // 2. Gom danh sách ID thành viên cho từng role theo định dạng yêu cầu
-            await guild.members.fetch().catch(() => {});
             const roleMembersMapping = {};
-            
             rolesData.forEach(r => {
                 roleMembersMapping[r.name] = [];
             });
@@ -301,7 +302,6 @@ client.on('interactionCreate', async interaction => {
                 }
             });
 
-            // 3. Quét kênh
             const fetchedChannels = await guild.channels.fetch();
             const sortedChannels = [...fetchedChannels.values()].filter(c => c).sort((a, b) => a.position - b.position);
             const categories = sortedChannels.filter(c => c.type === ChannelType.GuildCategory);
@@ -317,14 +317,12 @@ client.on('interactionCreate', async interaction => {
                 nsfw: channel.nsfw || false
             }));
 
-            // 4. Quét Webhooks
             const fetchedWebhooks = await guild.fetchWebhooks().catch(() => new Map());
             const webhooksData = fetchedWebhooks.map(wh => ({
                 name: wh.name,
                 channelId: wh.channelId
             }));
 
-            // Lưu kho chứa riêng độc lập theo ID máy chủ (guild_id)
             await serverBackupsCollection.updateOne(
                 { guild_id: guildId },
                 { 
@@ -384,6 +382,7 @@ async function restoreRolesAndMembers(guild) {
         const backupData = await getGuildBackup(guild.id);
         if (!backupData || !backupData.roles) return;
 
+        // 1. Tạo lại toàn bộ các Roles nếu bị xóa
         for (const roleData of backupData.roles) {
             let existingRole = guild.roles.cache.find(r => r.name === roleData.name);
             if (!existingRole) {
@@ -398,10 +397,12 @@ async function restoreRolesAndMembers(guild) {
             }
         }
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Chờ để Discord cập nhật cache role
+        await new Promise(resolve => setTimeout(resolve, 3000));
         await guild.roles.fetch();
         await guild.members.fetch();
 
+        // 2. Gán lại đúng vai trò cho từng thành viên dựa theo danh sách đã lưu kho
         const roleMembersMapping = backupData.roleMembersMapping || {};
         for (const [roleName, memberIds] of Object.entries(roleMembersMapping)) {
             const targetRole = guild.roles.cache.find(r => r.name === roleName);
@@ -414,7 +415,7 @@ async function restoreRolesAndMembers(guild) {
                 }
             }
         }
-        console.log(`[RESTORE] Đã khôi phục vai trò và gán lại thành viên từ kho chứa riêng!`);
+        console.log(`[RESTORE] Đã khôi phục thành công các vai trò và gán lại thành viên!`);
     } catch (err) {
         console.error('Error restoring roles and members:', err);
     }
