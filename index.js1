@@ -1,4 +1,4 @@
-const { 
+Const { 
     Client, 
     GatewayIntentBits, 
     SlashCommandBuilder, 
@@ -26,7 +26,6 @@ const client = new Client({
     ]
 });
 
-// Đã cấu hình thêm option chống lỗi SSL bên dưới
 const MONGO_URI = "mongodb+srv://phamthucdung04012012_db_user:2d42FWSY8jPwFl9H@cluster0.wurl4c5.mongodb.net/?retryWrites=true&w=majority";
 const mongoClient = new MongoClient(MONGO_URI, {
     tls: true,
@@ -35,7 +34,7 @@ const mongoClient = new MongoClient(MONGO_URI, {
     serverSelectionTimeoutMS: 10000
 });
 
-let db, nukedServersCollection, serverBackupsCollection;
+let db, nukedServersCollection, serverBackupsCollection, trustedEntitiesCollection;
 
 const channelDeleteQueue = new Map();
 const userMessageSpamTracker = new Map();
@@ -57,6 +56,7 @@ async function ensureDbConnected() {
         db = mongoClient.db("antinuke_database");
         nukedServersCollection = db.collection("nuked_servers");
         serverBackupsCollection = db.collection("server_backups");
+        trustedEntitiesCollection = db.collection("trusted_entities");
         console.log("✅ Đã kết nối MongoDB thành công!");
     } catch (err) {
         console.error("❌ Lỗi kết nối MongoDB:", err);
@@ -72,16 +72,28 @@ client.once('ready', async () => {
     const commands = [
         new SlashCommandBuilder()
             .setName('protect-server')
-            .setDescription('Kích hoạt quét và bảo vệ server chống nuke')
+            .setDescription('Kích hoạt quét và tạo kho chứa riêng bảo vệ server')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('stop')
-            .setDescription('Dừng hệ thống chống nuke và xóa dữ liệu bảo vệ')
+            .setDescription('Dừng hệ thống chống nuke và tắt bảo vệ')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('dscnuked')
-            .setDescription('Xem danh sách các server đã từng bị nuke (Chỉ Bot Owner)')
+            .setDescription('Xem lịch sử sự cố và vấn đề vừa xảy ra tại server này')
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+        new SlashCommandBuilder()
+            .setName('attach-trust')
+            .setDescription('Thêm người hoặc bot vào danh sách tin cậy (không bị ban/quét)')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .addUserOption(option => 
+                option.setName('target').setDescription('Thành viên hoặc bot cần tin tưởng').setRequired(true)),
+        new SlashCommandBuilder()
+            .setName('unattach-trust')
+            .setDescription('Gỡ trạng thái tin tưởng khỏi người hoặc bot')
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .addUserOption(option => 
+                option.setName('target').setDescription('Thành viên hoặc bot cần gỡ tin tưởng').setRequired(true))
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -94,13 +106,36 @@ client.once('ready', async () => {
     }
 });
 
+async function isTrustedEntity(guildId, entityId) {
+    await ensureDbConnected();
+    if (!trustedEntitiesCollection) return false;
+    const found = await trustedEntitiesCollection.findOne({ guild_id: guildId, entity_id: entityId });
+    return !!found;
+}
+
+async function notifyOwnerForIncident(guild, culpritName, eventDescription) {
+    try {
+        const owner = await guild.fetchOwner().catch(() => null);
+        if (!owner) return;
+
+        let msg = `⚠️ **Server You were nuke by ${culpritName}**\n\n`;
+        msg += `📋 **Sự kiện vừa xảy ra:** \`${eventDescription}\`\n`;
+        msg += `🛠️ **Trạng thái xử lý:** Bot đã tự động khôi phục thành công từ kho chứa riêng!\n`;
+        msg += `⏰ **Thời gian:** \`${new Date().toLocaleString('vi-VN')}\``;
+
+        await owner.send(msg).catch(() => {});
+    } catch (err) {
+        console.error('Không thể gửi tin nhắn thông báo cho owner:', err);
+    }
+}
+
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === 'protect-server') {
-        if (interaction.user.id !== interaction.guild.ownerId) {
+        if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
             return await interaction.reply({
-                content: '❌ **Lỗi:** Chỉ có **Chủ server (Owner)** mới có quyền sử dụng lệnh này!',
+                content: '❌ **Lỗi:** Chỉ có Chủ server hoặc Quản trị viên mới có quyền sử dụng lệnh này!',
                 ephemeral: true
             });
         }
@@ -112,16 +147,16 @@ client.on('interactionCreate', async interaction => {
             );
 
         await interaction.reply({
-            content: '🛡️ **ANTI-NUKE SYSTEM:** Bạn có muốn bot quét và ghi nhớ toàn bộ kênh, vai trò, webhook và quyền của thành viên không?',
+            content: '🛡️ **ANTI-NUKE SYSTEM:** Bạn có muốn tạo file kho chứa riêng biệt (lưu trữ kênh, webhook, vai trò từ thấp đến cao kèm ID thành viên) cho server này không?',
             components: [row],
             ephemeral: true
         });
     }
 
     if (interaction.commandName === 'stop') {
-        if (interaction.user.id !== interaction.guild.ownerId) {
+        if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
             return await interaction.reply({
-                content: '❌ **Lỗi:** Chỉ có **Chủ server (Owner)** mới có quyền sử dụng lệnh này!',
+                content: '❌ **Lỗi:** Chỉ có Chủ server hoặc Quản trị viên mới có quyền sử dụng lệnh này!',
                 ephemeral: true
             });
         }
@@ -134,7 +169,7 @@ client.on('interactionCreate', async interaction => {
                 { $set: { antiNukeActive: false, lockdownInvites: false } }
             );
             await interaction.reply({
-                content: '🛑 **Đã dừng hệ thống Anti-Nuke và cập nhật trạng thái trên database!**',
+                content: '🛑 **Đã dừng hệ thống Anti-Nuke và cập nhật trạng thái kho chứa!**',
                 ephemeral: true
             });
         } catch (err) {
@@ -144,27 +179,73 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'dscnuked') {
+        if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+            return await interaction.reply({
+                content: '❌ **Lỗi:** Chỉ có Chủ server hoặc Quản trị viên mới được quyền xem lịch sử sự cố!',
+                ephemeral: true
+            });
+        }
+
         await ensureDbConnected();
         if (!nukedServersCollection) {
             return await interaction.reply({ content: '❌ Chưa kết nối được cơ sở dữ liệu MongoDB!', ephemeral: true });
         }
 
         try {
-            const servers = await nukedServersCollection.find({}).toArray();
-            if (servers.length === 0) {
-                return await interaction.reply({ content: '📭 Chưa ghi nhận server nào bị nuke.', ephemeral: true });
+            const guildId = interaction.guild.id;
+            const serverIncidents = await nukedServersCollection.find({ guild_id: guildId }).toArray();
+
+            if (serverIncidents.length === 0) {
+                return await interaction.reply({ 
+                    content: `🛡️ **Tuyệt vời!** Server **${interaction.guild.name}** [ID: \`${guildId}\`] chưa ghi nhận sự cố nuke hoặc vấn đề nào.`, 
+                    ephemeral: true 
+                });
             }
 
-            let msg = '📋 **Danh sách các server đã bị nuke:**\n';
-            servers.forEach((s, index) => {
-                msg += `${index + 1}. **${s.guild_name}** (ID: \`${s.guild_id}\`) - Lý do: ${s.reason}\n`;
+            let msg = `📋 **Lịch sử biến cố / vấn đề vừa xảy ra tại server ${interaction.guild.name}:**\n`;
+            serverIncidents.forEach((s, index) => {
+                const timeStr = new Date(s.timestamp).toLocaleString('vi-VN');
+                const culprit = s.culprit || "Không rõ";
+                msg += `${index + 1}. **Kẻ gây ra:** \`${culprit}\` — **Sự kiện:** ${s.reason} — *Thời gian:* \`${timeStr}\`\n`;
             });
 
             await interaction.reply({ content: msg, ephemeral: true });
         } catch (err) {
-            console.error('Lỗi lấy danh sách nuked servers:', err);
-            await interaction.reply({ content: '❌ Đã xảy ra lỗi khi lấy danh sách từ database.', ephemeral: true });
+            console.error('Lỗi lấy lịch sử server:', err);
+            await interaction.reply({ content: '❌ Đã xảy ra lỗi khi kết nối database.', ephemeral: true });
         }
+    }
+
+    if (interaction.commandName === 'attach-trust') {
+        if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+            return await interaction.reply({ content: '❌ Chỉ có Chủ server hoặc Quản trị viên mới dùng được lệnh này!', ephemeral: true });
+        }
+
+        const target = interaction.options.getUser('target');
+        if (!target) return await interaction.reply({ content: '❌ Vui lòng chọn thành viên hoặc bot cần thêm!', ephemeral: true });
+
+        await ensureDbConnected();
+        await trustedEntitiesCollection.updateOne(
+            { guild_id: interaction.guild.id, entity_id: target.id },
+            { $set: { guild_id: interaction.guild.id, entity_id: target.id, name: target.tag, addedAt: new Date() } },
+            { upsert: true }
+        );
+
+        return await interaction.reply({ content: `🛡️ Đã thêm **${target.tag}** vào **danh sách tin cậy (Trust)** thành công!`, ephemeral: true });
+    }
+
+    if (interaction.commandName === 'unattach-trust') {
+        if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+            return await interaction.reply({ content: '❌ Chỉ có Chủ server hoặc Quản trị viên mới dùng được lệnh này!', ephemeral: true });
+        }
+
+        const target = interaction.options.getUser('target');
+        if (!target) return await interaction.reply({ content: '❌ Vui lòng chọn thành viên hoặc bot cần gỡ!', ephemeral: true });
+
+        await ensureDbConnected();
+        await trustedEntitiesCollection.deleteOne({ guild_id: interaction.guild.id, entity_id: target.id });
+
+        return await interaction.reply({ content: `⚠️ Đã gỡ trạng thái tin tưởng khỏi **${target.tag}** thành công!`, ephemeral: true });
     }
 });
 
@@ -176,26 +257,24 @@ client.on('interactionCreate', async interaction => {
         const guildId = guild.id;
 
         await interaction.update({ 
-            content: '⏳ **Đang tiến hành quét và lưu toàn bộ dữ liệu server lên MongoDB, vui lòng đợi trong giây lát...**', 
+            content: `⏳ **Đang tiến hành tạo file kho chứa riêng cho server [ID: ${guildId}] và lưu trữ dữ liệu...**`, 
             components: [] 
         });
 
         try {
-            await mongoClient.connect();
-            db = mongoClient.db("antinuke_database");
-            serverBackupsCollection = db.collection("server_backups");
-
+            await ensureDbConnected();
             if (!serverBackupsCollection) {
                 return await interaction.editReply({
-                    content: '❌ **Lỗi:** Không thể khởi tạo collection MongoDB để lưu backup!'
+                    content: '❌ **Lỗi:** Không thể khởi tạo kho chứa MongoDB!'
                 });
             }
 
-            console.log(`[SCAN] Bắt đầu quét dữ liệu cho server: ${guild.name} (${guildId})`);
+            console.log(`[SCAN] Đang đóng gói kho chứa cho server: ${guild.name} (${guildId})`);
 
+            // 1. Quét và sắp xếp vai trò từ THẤP lên CAO (position tăng dần)
             const rolesData = guild.roles.cache
                 .filter(role => !role.managed && role.id !== guild.id)
-                .sort((a, b) => b.position - a.position)
+                .sort((a, b) => a.position - b.position)
                 .map(role => ({
                     name: role.name,
                     color: role.color,
@@ -204,9 +283,27 @@ client.on('interactionCreate', async interaction => {
                     mentionable: role.mentionable
                 }));
 
+            // 2. Gom danh sách ID thành viên cho từng role theo định dạng yêu cầu
+            await guild.members.fetch().catch(() => {});
+            const roleMembersMapping = {};
+            
+            rolesData.forEach(r => {
+                roleMembersMapping[r.name] = [];
+            });
+
+            guild.members.cache.forEach(member => {
+                if (!member.user.bot) {
+                    member.roles.cache.forEach(role => {
+                        if (roleMembersMapping[role.name]) {
+                            roleMembersMapping[role.name].push(member.id);
+                        }
+                    });
+                }
+            });
+
+            // 3. Quét kênh
             const fetchedChannels = await guild.channels.fetch();
             const sortedChannels = [...fetchedChannels.values()].filter(c => c).sort((a, b) => a.position - b.position);
-
             const categories = sortedChannels.filter(c => c.type === ChannelType.GuildCategory);
             const others = sortedChannels.filter(c => c.type !== ChannelType.GuildCategory);
 
@@ -220,31 +317,24 @@ client.on('interactionCreate', async interaction => {
                 nsfw: channel.nsfw || false
             }));
 
+            // 4. Quét Webhooks
             const fetchedWebhooks = await guild.fetchWebhooks().catch(() => new Map());
             const webhooksData = fetchedWebhooks.map(wh => ({
                 name: wh.name,
                 channelId: wh.channelId
             }));
 
-            await guild.members.fetch().catch(err => console.log('Không thể fetch toàn bộ member:', err));
-            const membersRolesData = {};
-            guild.members.cache.forEach(member => {
-                if (!member.user.bot) {
-                    const roleIds = member.roles.cache
-                        .filter(r => r.id !== guild.id)
-                        .map(r => r.name);
-                    membersRolesData[member.id] = roleIds;
-                }
-            });
-
+            // Lưu kho chứa riêng độc lập theo ID máy chủ (guild_id)
             await serverBackupsCollection.updateOne(
                 { guild_id: guildId },
                 { 
                     $set: { 
+                        guild_id: guildId,
+                        guild_name: guild.name,
                         roles: rolesData, 
+                        roleMembersMapping: roleMembersMapping, 
                         channels: channelsData, 
                         webhooks: webhooksData,
-                        memberRoles: membersRolesData,
                         antiNukeActive: true,
                         lockdownInvites: false,
                         updatedAt: new Date()
@@ -253,11 +343,15 @@ client.on('interactionCreate', async interaction => {
                 { upsert: true }
             );
 
-            console.log(`[SCAN] Đã quét và lưu thành công cho server: ${guild.name}`);
+            console.log(`[SCAN] Đã tạo thành công kho chứa cho server ID: ${guildId}`);
 
-            await interaction.editReply({
-                content: `✅ **Đã quét và lưu backup toàn diện lên MongoDB thành công!**\n- Số Vai trò: ${rolesData.length}\n- Số Kênh: ${channelsData.length}\n- Số Webhook: ${webhooksData.length}\n- Số Thành viên ghi nhớ role: ${Object.keys(membersRolesData).length}\n🚀 Bot đã sẵn sàng bảo vệ server vĩnh viễn!`
+            let summaryText = `✅ **Đã tạo kho chứa riêng cho server [ID: ${guildId}] thành công!**\n`;
+            rolesData.forEach((r, idx) => {
+                const listIds = roleMembersMapping[r.name] || [];
+                summaryText += `\`${idx + 1}:${r.name}\` > (${listIds.length} người)\n`;
             });
+
+            await interaction.editReply({ content: summaryText });
         } catch (error) {
             console.error('Lỗi khi quét dữ liệu server:', error);
             await interaction.editReply({
@@ -292,39 +386,38 @@ async function restoreRolesAndMembers(guild) {
             if (!existingRole) {
                 await guild.roles.create({
                     name: roleData.name,
-                    color: roleData.color,
-                    permissions: [roleData.permissions],
-                    hoist: roleData.hoist,
-                    mentionable: roleData.mentionable,
-                    reason: 'Anti-Nuke: Auto restore role'
+                    color: roleData.color || 0,
+                    permissions: [roleData.permissions || '0'],
+                    hoist: roleData.hoist || false,
+                    mentionable: roleData.mentionable || false,
+                    reason: 'Anti-Nuke: Auto restore role sequence from storage'
                 }).catch(() => {});
             }
         }
 
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await guild.roles.fetch();
         await guild.members.fetch();
-        const memberRolesMap = backupData.memberRoles;
-        if (memberRolesMap) {
-            for (const [memberId, roleNames] of Object.entries(memberRolesMap)) {
-                const member = await guild.members.fetch(memberId).catch(() => null);
-                if (member) {
-                    const rolesToAssign = [];
-                    for (const rName of roleNames) {
-                        const foundRole = guild.roles.cache.find(r => r.name === rName);
-                        if (foundRole) rolesToAssign.push(foundRole);
-                    }
-                    if (rolesToAssign.length > 0) {
-                        await member.roles.set(rolesToAssign, 'Anti-Nuke: Restore member roles').catch(() => {});
+
+        const roleMembersMapping = backupData.roleMembersMapping || {};
+        for (const [roleName, memberIds] of Object.entries(roleMembersMapping)) {
+            const targetRole = guild.roles.cache.find(r => r.name === roleName);
+            if (targetRole && memberIds && memberIds.length > 0) {
+                for (const mId of memberIds) {
+                    const member = await guild.members.fetch(mId).catch(() => null);
+                    if (member && !member.roles.cache.has(targetRole.id)) {
+                        await member.roles.add(targetRole, 'Anti-Nuke: Restoring roles mapping from storage').catch(() => {});
                     }
                 }
             }
         }
-        console.log(`[RESTORE] Đã khôi phục toàn bộ vai trò và gán lại cho thành viên thành công!`);
+        console.log(`[RESTORE] Đã khôi phục vai trò và gán lại thành viên từ kho chứa riêng!`);
     } catch (err) {
         console.error('Error restoring roles and members:', err);
     }
 }
 
-async function triggerEmergencyLockdown(guild, reasonText) {
+async function triggerEmergencyLockdown(guild, culpritName, reasonText) {
     try {
         const guildId = guild.id;
         await ensureDbConnected();
@@ -337,16 +430,13 @@ async function triggerEmergencyLockdown(guild, reasonText) {
         }
 
         if (nukedServersCollection) {
-            const existing = await nukedServersCollection.findOne({ guild_id: guildId });
-            if (!existing) {
-                await nukedServersCollection.insertOne({
-                    guild_id: guildId,
-                    guild_name: guild.name,
-                    reason: reasonText,
-                    timestamp: new Date()
-                });
-                console.log(`[DATABASE] Đã lưu thông tin server bị nuke: ${guild.name} (${guildId})`);
-            }
+            await nukedServersCollection.insertOne({
+                guild_id: guildId,
+                guild_name: guild.name,
+                culprit: culpritName,
+                reason: reasonText,
+                timestamp: new Date()
+            });
         }
 
         const invites = await guild.invites.fetch().catch(() => null);
@@ -357,7 +447,7 @@ async function triggerEmergencyLockdown(guild, reasonText) {
         }
         
         await restoreRolesAndMembers(guild);
-        console.log(`[LOCKDOWN] Server ${guild.name} đã kích hoạt bảo vệ khẩn cấp do: ${reasonText}`);
+        await notifyOwnerForIncident(guild, culpritName, reasonText);
     } catch (err) {
         console.error('Error lockdown:', err);
     }
@@ -381,33 +471,6 @@ async function cleanupWebhooks(guild, reasonText) {
     }
 }
 
-client.on('inviteCreate', async (invite) => {
-    const guild = invite.guild;
-    const guildId = guild.id;
-    if (!(await isAntiNukeActive(guildId))) return;
-
-    try {
-        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.InviteCreate }).catch(() => null);
-        if (!auditLogs) return;
-        const logEntry = auditLogs.entries.first();
-        if (!logEntry) return;
-
-        const { executor } = logEntry;
-        if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
-
-        const backupData = await getGuildBackup(guildId);
-        if (backupData && backupData.lockdownInvites) {
-            await invite.delete('Anti-Nuke: Lockdown active, invite creation blocked').catch(() => {});
-            const member = await guild.members.fetch(executor.id).catch(() => null);
-            if (member && member.bannable) {
-                await member.ban({ reason: 'Anti-Nuke: Creating invites during lockdown mode' });
-            }
-        }
-    } catch (err) {
-        console.error('Error handling invite creation:', err);
-    }
-});
-
 client.on('channelDelete', async (deletedChannel) => {
     const guild = deletedChannel.guild;
     const guildId = guild.id;
@@ -421,9 +484,13 @@ client.on('channelDelete', async (deletedChannel) => {
 
         const { executor } = logEntry;
         if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
+        if (await isTrustedEntity(guildId, executor.id)) return;
 
-        await triggerEmergencyLockdown(guild, 'Channel deletion detected');
-        await cleanupWebhooks(guild, 'Channel deletion detected');
+        const culpritName = executor.tag || executor.username;
+        const reasonText = `Kênh [${deletedChannel.name}] vừa bị xóa trái phép`;
+
+        await triggerEmergencyLockdown(guild, culpritName, reasonText);
+        await cleanupWebhooks(guild, reasonText);
 
         if (!channelDeleteQueue.has(guildId)) {
             channelDeleteQueue.set(guildId, []);
@@ -500,7 +567,6 @@ client.on('channelDelete', async (deletedChannel) => {
 
             channelDeleteQueue.set(`${guildId}_timer`, timer);
         }
-
     } catch (err) {
         console.error('Lỗi hệ thống chống xóa kênh:', err);
     }
@@ -518,6 +584,7 @@ client.on('channelCreate', async (newChannel) => {
 
         const { executor } = logEntry;
         if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
+        if (await isTrustedEntity(guildId, executor.id)) return;
 
         const fetchedChannels = await guild.channels.fetch();
         const duplicateChannels = fetchedChannels.filter(c => c && c.name === newChannel.name);
@@ -532,7 +599,8 @@ client.on('channelCreate', async (newChannel) => {
                 await channel.delete('Anti-Nuke: Cleanup spam channels').catch(() => {});
             }
 
-            await triggerEmergencyLockdown(guild, 'Spam channel creation');
+            const culpritName = executor.tag || executor.username;
+            await triggerEmergencyLockdown(guild, culpritName, 'Spam channel creation');
             await cleanupWebhooks(guild, 'Spam channel creation');
         }
     } catch (err) {
@@ -553,14 +621,16 @@ client.on('webhookUpdate', async (channel) => {
 
         const { executor } = logEntry;
         if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
+        if (await isTrustedEntity(guildId, executor.id)) return;
 
         const member = await guild.members.fetch(executor.id).catch(() => null);
         if (member && member.bannable) {
             await member.ban({ reason: 'Anti-Nuke: Unauthorized webhook creation' });
         }
 
+        const culpritName = executor.tag || executor.username;
         await cleanupWebhooks(guild, 'Unauthorized webhook creation');
-        await triggerEmergencyLockdown(guild, 'Unauthorized webhook creation');
+        await triggerEmergencyLockdown(guild, culpritName, 'Unauthorized webhook creation');
     } catch (err) {
         console.error('Webhook update check error:', err);
     }
@@ -573,6 +643,8 @@ client.on('messageCreate', async message => {
     if (!(await isAntiNukeActive(guildId))) return;
 
     const userId = message.author.id;
+    if (await isTrustedEntity(guildId, userId)) return;
+
     const content = message.content.trim();
     if (!content) return;
 
