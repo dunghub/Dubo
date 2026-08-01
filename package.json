@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "postinstall": "node node_modules/puppeteer/install.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "discord.js": "^14.14.0",
     "dotenv": "^16.4.5",
-    "puppeteer": "^22.0.0",
+    "axios": "^1.6.8",
+    "cheerio": "^1.0.0-rc.12",
     "mongodb": "^6.3.0"
   }
 }
