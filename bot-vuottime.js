@@ -21,14 +21,16 @@ client.on('interactionCreate', async interaction => {
 
         let browser;
         try {
-            // Khởi động Puppeteer
+            // Khởi động Puppeteer với cấu hình tối ưu cho Render
             browser = await puppeteer.launch({
                 headless: true,
+                executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-infobars',
                     '--window-size=1920,1080',
+                    '--disable-dev-shm-usage', // Chống tràn bộ nhớ trên Render
                     '--disable-blink-features=AutomationControlled'
                 ]
             });
