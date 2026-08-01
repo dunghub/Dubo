@@ -1,11 +1,13 @@
 {
-  "name": "dubo-kill-nuke",
+  "name": "my-discord-bots",
   "version": "1.0.0",
-  "description": "Bot anti nuke - Dubo anti",
   "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
-    "axios": "^1.6.0",
-    "discord.js": "^14.14.1",
-    "mongodb": "^6.0.0"
+    "discord.js": "^14.14.0",
+    "dotenv": "^16.4.5",
+    "playwright": "^1.42.0"
   }
 }
