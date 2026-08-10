@@ -156,7 +156,7 @@ async function notifyOwnerForMessageSpam(guild, culpritName) {
 
         let msg = `🚨 **Message Spam Attack Detected!**\n\n`;
         msg += `👤 **Culprit:** \`${culpritName}\`\n`;
-        msg += `🛠️ **Action Taken:** User has been banned for spamming messages!`;
+        msg += `🛠️ **Action Taken:** User has been banned, and their spam messages have been deleted!`;
 
         await owner.send(msg).catch(() => {});
     } catch (err) {
@@ -401,16 +401,21 @@ client.on('messageCreate', async (message) => {
     if (await isTrustedEntity(guildId, userId)) return;
 
     if (!messageSpamTracker.has(userId)) {
-        messageSpamTracker.set(userId, 0);
+        messageSpamTracker.set(userId, []);
     }
 
-    let count = messageSpamTracker.get(userId) + 1;
-    messageSpamTracker.set(userId, count);
+    const userMessages = messageSpamTracker.get(userId);
+    userMessages.push(message);
 
-    if (count > 5) {
+    if (userMessages.length > 5) {
         const member = await message.guild.members.fetch(userId).catch(() => null);
         if (member && member.bannable) {
             await member.ban({ reason: 'Anti-Nuke: Spamming chat messages continuously' });
+            
+            for (const msg of userMessages) {
+                await msg.delete().catch(() => {});
+            }
+
             const culpritName = message.author.tag || message.author.username;
             await notifyOwnerForMessageSpam(message.guild, culpritName);
         }
