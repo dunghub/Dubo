@@ -8,8 +8,7 @@ const {
     ButtonStyle, 
     AuditLogEvent,
     REST,
-    Routes,
-    ChannelType 
+    Routes 
 } = require('discord.js');
 const http = require('http');
 const { MongoClient } = require('mongodb');
@@ -37,6 +36,7 @@ const mongoClient = new MongoClient(MONGO_URI, {
 let db, nukedServersCollection, serverBackupsCollection, trustedEntitiesCollection;
 
 const channelCreationTracker = new Map();
+const messageSpamTracker = new Map();
 const lastNotificationTracker = new Map();
 
 const server = http.createServer((req, res) => {
@@ -125,7 +125,7 @@ async function notifyOwnerForChannelDeletion(guild, culpritName, channelName) {
         let msg = `⚠️ **Channel Deletion Alert**\n\n`;
         msg += `👤 **User:** \`${culpritName}\`\n`;
         msg += `📁 **Deleted Channel:** \`${channelName}\`\n`;
-        msg += `🛠️ **Action Taken:** Các kênh đã bị xóa đang được tự động khôi phục!`;
+        msg += `🛠️ **Action Taken:** Deleted channels are being automatically restored!`;
 
         await owner.send(msg).catch(() => {});
     } catch (err) {
@@ -142,6 +142,21 @@ async function notifyOwnerForChannelSpam(guild, culpritName, channelName) {
         msg += `👤 **Culprit:** \`${culpritName}\`\n`;
         msg += `📁 **Spam Channel Name:** \`${channelName}\`\n`;
         msg += `🛠️ **Action Taken:** User has been banned and identical spam channels deleted!`;
+
+        await owner.send(msg).catch(() => {});
+    } catch (err) {
+        console.error('Failed to send notification to owner:', err);
+    }
+}
+
+async function notifyOwnerForMessageSpam(guild, culpritName) {
+    try {
+        const owner = await guild.fetchOwner().catch(() => null);
+        if (!owner) return;
+
+        let msg = `🚨 **Message Spam Attack Detected!**\n\n`;
+        msg += `👤 **Culprit:** \`${culpritName}\`\n`;
+        msg += `🛠️ **Action Taken:** User has been banned for spamming messages!`;
 
         await owner.send(msg).catch(() => {});
     } catch (err) {
@@ -345,24 +360,20 @@ client.on('channelCreate', async (newChannel) => {
 
         const userId = executor.id;
         const channelName = newChannel.name;
-        const now = Date.now();
 
         if (!channelCreationTracker.has(userId)) {
             channelCreationTracker.set(userId, []);
         }
 
         const userCreations = channelCreationTracker.get(userId);
-        userCreations.push({ name: channelName, channelId: newChannel.id, timestamp: now });
+        userCreations.push({ name: channelName, channelId: newChannel.id });
 
-        const recentCreations = userCreations.filter(c => now - c.timestamp < 30000);
-        channelCreationTracker.set(userId, recentCreations);
-
-        const identicalCreations = recentCreations.filter(c => c.name === channelName);
+        const identicalCreations = userCreations.filter(c => c.name === channelName);
 
         if (identicalCreations.length > 5) {
             const member = await guild.members.fetch(userId).catch(() => null);
             if (member && member.bannable) {
-                await member.ban({ reason: 'Anti-Nuke: Spam creating >5 identical channels within 30s' });
+                await member.ban({ reason: 'Anti-Nuke: Spam creating >5 identical channels' });
             }
 
             for (const item of identicalCreations) {
@@ -377,6 +388,33 @@ client.on('channelCreate', async (newChannel) => {
         }
     } catch (err) {
         console.error('Channel create error:', err);
+    }
+});
+
+client.on('messageCreate', async (message) => {
+    if (!message.guild || message.author.bot) return;
+    const guildId = message.guild.id;
+    if (!(await isAntiNukeActive(guildId))) return;
+
+    const userId = message.author.id;
+    if (userId === message.guild.ownerId || userId === client.user.id) return;
+    if (await isTrustedEntity(guildId, userId)) return;
+
+    if (!messageSpamTracker.has(userId)) {
+        messageSpamTracker.set(userId, 0);
+    }
+
+    let count = messageSpamTracker.get(userId) + 1;
+    messageSpamTracker.set(userId, count);
+
+    if (count > 5) {
+        const member = await message.guild.members.fetch(userId).catch(() => null);
+        if (member && member.bannable) {
+            await member.ban({ reason: 'Anti-Nuke: Spamming chat messages continuously' });
+            const culpritName = message.author.tag || message.author.username;
+            await notifyOwnerForMessageSpam(message.guild, culpritName);
+        }
+        messageSpamTracker.delete(userId);
     }
 });
 
