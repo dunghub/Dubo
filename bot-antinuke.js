@@ -37,6 +37,7 @@ const mongoClient = new MongoClient(MONGO_URI, {
 let db, nukedServersCollection, serverBackupsCollection, trustedEntitiesCollection;
 
 const channelCreationTracker = new Map();
+const lastNotificationTracker = new Map();
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -108,16 +109,23 @@ async function isTrustedEntity(guildId, entityId) {
     return !!found;
 }
 
-async function notifyOwnerForChannelDeletion(guild, culpritName, channelName, timeUK) {
+async function notifyOwnerForChannelDeletion(guild, culpritName, channelName) {
     try {
         const owner = await guild.fetchOwner().catch(() => null);
         if (!owner) return;
 
+        const now = Date.now();
+        const lastNotifTime = lastNotificationTracker.get(guild.id) || 0;
+
+        if (now - lastNotifTime < 60000) {
+            return; 
+        }
+        lastNotificationTracker.set(guild.id, now);
+
         let msg = `⚠️ **Channel Deletion Alert**\n\n`;
         msg += `👤 **User:** \`${culpritName}\`\n`;
         msg += `📁 **Deleted Channel:** \`${channelName}\`\n`;
-        msg += `🇬🇧 **Time (UK):** \`${timeUK}\`\n`;
-        msg += `🛠️ **Action Taken:** Channel has been automatically restored!`;
+        msg += `🛠️ **Action Taken:** Các kênh đã bị xóa đang được tự động khôi phục!`;
 
         await owner.send(msg).catch(() => {});
     } catch (err) {
@@ -125,15 +133,15 @@ async function notifyOwnerForChannelDeletion(guild, culpritName, channelName, ti
     }
 }
 
-async function notifyOwnerForChannelSpam(guild, culpritName, timeUK) {
+async function notifyOwnerForChannelSpam(guild, culpritName, channelName) {
     try {
         const owner = await guild.fetchOwner().catch(() => null);
         if (!owner) return;
 
-        let msg = `🚨 **Channel Spam Attack Detected!**\n\n`;
+        let msg = `🚨 **Identical Channel Spam Attack Detected!**\n\n`;
         msg += `👤 **Culprit:** \`${culpritName}\`\n`;
-        msg += `🇬🇧 **Time (UK):** \`${timeUK}\`\n`;
-        msg += `🛠️ **Action Taken:** User has been banned and spam channels deleted!`;
+        msg += `📁 **Spam Channel Name:** \`${channelName}\`\n`;
+        msg += `🛠️ **Action Taken:** User has been banned and identical spam channels deleted!`;
 
         await owner.send(msg).catch(() => {});
     } catch (err) {
@@ -301,9 +309,8 @@ client.on('channelDelete', async (channel) => {
 
         const culpritName = executor.tag || executor.username;
         const channelName = channel.name;
-        const timeUK = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' });
 
-        await notifyOwnerForChannelDeletion(guild, culpritName, channelName, timeUK);
+        await notifyOwnerForChannelDeletion(guild, culpritName, channelName);
 
         const backupData = await serverBackupsCollection.findOne({ guild_id: guildId });
         if (backupData && backupData.channels) {
@@ -337,6 +344,7 @@ client.on('channelCreate', async (newChannel) => {
         if (await isTrustedEntity(guildId, executor.id)) return;
 
         const userId = executor.id;
+        const channelName = newChannel.name;
         const now = Date.now();
 
         if (!channelCreationTracker.has(userId)) {
@@ -344,27 +352,28 @@ client.on('channelCreate', async (newChannel) => {
         }
 
         const userCreations = channelCreationTracker.get(userId);
-        userCreations.push({ channelId: newChannel.id, timestamp: now });
+        userCreations.push({ name: channelName, channelId: newChannel.id, timestamp: now });
 
         const recentCreations = userCreations.filter(c => now - c.timestamp < 30000);
         channelCreationTracker.set(userId, recentCreations);
 
-        if (recentCreations.length > 5) {
+        const identicalCreations = recentCreations.filter(c => c.name === channelName);
+
+        if (identicalCreations.length > 5) {
             const member = await guild.members.fetch(userId).catch(() => null);
             if (member && member.bannable) {
-                await member.ban({ reason: 'Anti-Nuke: Spam creating channels (>5 channels in 30s)' });
+                await member.ban({ reason: 'Anti-Nuke: Spam creating >5 identical channels within 30s' });
             }
 
-            for (const item of recentCreations) {
+            for (const item of identicalCreations) {
                 const ch = guild.channels.cache.get(item.channelId);
-                if (ch) await ch.delete('Anti-Nuke: Cleanup spam channels').catch(() => {});
+                if (ch) await ch.delete('Anti-Nuke: Cleanup identical spam channels').catch(() => {});
             }
 
             channelCreationTracker.delete(userId);
 
             const culpritName = executor.tag || executor.username;
-            const timeUK = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' });
-            await notifyOwnerForChannelSpam(guild, culpritName, timeUK);
+            await notifyOwnerForChannelSpam(guild, culpritName, channelName);
         }
     } catch (err) {
         console.error('Channel create error:', err);
