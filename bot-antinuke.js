@@ -36,8 +36,6 @@ const mongoClient = new MongoClient(MONGO_URI, {
 
 let db, nukedServersCollection, serverBackupsCollection, trustedEntitiesCollection;
 
-const userMessageSpamTracker = new Map();
-const userBanTracker = new Map();
 const channelCreationTracker = new Map();
 
 const server = http.createServer((req, res) => {
@@ -119,7 +117,23 @@ async function notifyOwnerForChannelDeletion(guild, culpritName, channelName, ti
         msg += `👤 **User:** \`${culpritName}\`\n`;
         msg += `📁 **Deleted Channel:** \`${channelName}\`\n`;
         msg += `🇬🇧 **Time (UK):** \`${timeUK}\`\n`;
-        msg += `🛠️ **Action Taken:** Channel has been automatically restored! (User was not banned).`;
+        msg += `🛠️ **Action Taken:** Channel has been automatically restored!`;
+
+        await owner.send(msg).catch(() => {});
+    } catch (err) {
+        console.error('Failed to send notification to owner:', err);
+    }
+}
+
+async function notifyOwnerForChannelSpam(guild, culpritName, timeUK) {
+    try {
+        const owner = await guild.fetchOwner().catch(() => null);
+        if (!owner) return;
+
+        let msg = `🚨 **Channel Spam Attack Detected!**\n\n`;
+        msg += `👤 **Culprit:** \`${culpritName}\`\n`;
+        msg += `🇬🇧 **Time (UK):** \`${timeUK}\`\n`;
+        msg += `🛠️ **Action Taken:** User has been banned and spam channels deleted!`;
 
         await owner.send(msg).catch(() => {});
     } catch (err) {
@@ -289,10 +303,8 @@ client.on('channelDelete', async (channel) => {
         const channelName = channel.name;
         const timeUK = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' });
 
-        // Gửi thông báo riêng cho chủ server kèm tên, thời gian và kênh bị xóa (không ban người dùng)
         await notifyOwnerForChannelDeletion(guild, culpritName, channelName, timeUK);
 
-        // Khôi phục lại kênh ngay lập tức từ dữ liệu backup
         const backupData = await serverBackupsCollection.findOne({ guild_id: guildId });
         if (backupData && backupData.channels) {
             const targetChannelData = backupData.channels.find(c => c.id === channel.id || c.name === channel.name);
@@ -305,6 +317,57 @@ client.on('channelDelete', async (channel) => {
         }
     } catch (err) {
         console.error('Channel delete error:', err);
+    }
+});
+
+client.on('channelCreate', async (newChannel) => {
+    const guild = newChannel.guild;
+    if (!guild) return;
+    const guildId = guild.id;
+    if (!(await isAntiNukeActive(guildId))) return;
+
+    try {
+        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelCreate }).catch(() => null);
+        if (!auditLogs) return;
+        const logEntry = auditLogs.entries.first();
+        if (!logEntry) return;
+
+        const { executor } = logEntry;
+        if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
+        if (await isTrustedEntity(guildId, executor.id)) return;
+
+        const userId = executor.id;
+        const now = Date.now();
+
+        if (!channelCreationTracker.has(userId)) {
+            channelCreationTracker.set(userId, []);
+        }
+
+        const userCreations = channelCreationTracker.get(userId);
+        userCreations.push({ channelId: newChannel.id, timestamp: now });
+
+        const recentCreations = userCreations.filter(c => now - c.timestamp < 30000);
+        channelCreationTracker.set(userId, recentCreations);
+
+        if (recentCreations.length > 5) {
+            const member = await guild.members.fetch(userId).catch(() => null);
+            if (member && member.bannable) {
+                await member.ban({ reason: 'Anti-Nuke: Spam creating channels (>5 channels in 30s)' });
+            }
+
+            for (const item of recentCreations) {
+                const ch = guild.channels.cache.get(item.channelId);
+                if (ch) await ch.delete('Anti-Nuke: Cleanup spam channels').catch(() => {});
+            }
+
+            channelCreationTracker.delete(userId);
+
+            const culpritName = executor.tag || executor.username;
+            const timeUK = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' });
+            await notifyOwnerForChannelSpam(guild, culpritName, timeUK);
+        }
+    } catch (err) {
+        console.error('Channel create error:', err);
     }
 });
 
