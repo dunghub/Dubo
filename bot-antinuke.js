@@ -93,7 +93,7 @@ client.once('ready', async () => {
                 option.setName('target').setDescription('Member or bot to untrust').setRequired(true))
     ].map(command => command.toJSON());
 
-    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+    const rest = new REST({ version: '10' }).setToken(process.env.TOKEN_ANTINUKE);
 
     try {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
