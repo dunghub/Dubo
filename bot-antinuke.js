@@ -131,11 +131,11 @@ async function notifyOwnerForIncident(guild, culpritName, eventDescription) {
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
-    if (interaction.commandName === 'protect-server') {
-        if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return await interaction.reply({ content: '❌ Only the Server Owner or Administrators can use this command!', ephemeral: true });
-        }
+    if (interaction.user.id !== interaction.guild.ownerId) {
+        return await interaction.reply({ content: '❌ Only the Server Owner can use this command!', ephemeral: true });
+    }
 
+    if (interaction.commandName === 'protect-server') {
         const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder().setCustomId('antinuke_yes').setLabel('Yes').setStyle(ButtonStyle.Success),
@@ -150,10 +150,6 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'stop') {
-        if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return await interaction.reply({ content: '❌ Only the Server Owner or Administrators can use this command!', ephemeral: true });
-        }
-
         const guildId = interaction.guild.id;
         try {
             await ensureDbConnected();
@@ -169,25 +165,23 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'attach-trust') {
-        if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return await interaction.reply({ content: '❌ Only Administrators can use this command!', ephemeral: true });
-        }
         const target = interaction.options.getUser('target');
         if (!target) return await interaction.reply({ content: '❌ Please select a target member!', ephemeral: true });
 
-        await ensureDbConnected();
-        await trustedEntitiesCollection.updateOne(
-            { guild_id: interaction.guild.id, entity_id: target.id },
-            { $set: { guild_id: interaction.guild.id, entity_id: target.id, name: target.tag, addedAt: new Date() } },
-            { upsert: true }
-        );
-        return await interaction.reply({ content: `🛡️ Successfully added **${target.tag}** to the trusted list!`, ephemeral: true });
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder().setCustomId(`trust_yes_${target.id}`).setLabel('Yes').setStyle(ButtonStyle.Success),
+                new ButtonBuilder().setCustomId(`trust_no_${target.id}`).setLabel('No').setStyle(ButtonStyle.Danger)
+            );
+
+        await interaction.reply({
+            content: `🛡️ **TRUST SYSTEM:** Are you sure you want to allow **${target.tag || target.username}** to use the bot and be exempt from bans under any condition?`,
+            components: [row],
+            ephemeral: true
+        });
     }
 
     if (interaction.commandName === 'unattach-trust') {
-        if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return await interaction.reply({ content: '❌ Only Administrators can use this command!', ephemeral: true });
-        }
         const target = interaction.options.getUser('target');
         if (!target) return await interaction.reply({ content: '❌ Please select a target member!', ephemeral: true });
 
@@ -242,7 +236,30 @@ client.on('interactionCreate', async interaction => {
             await interaction.editReply({ content: `❌ Error scanning server data.` });
         }
     } else if (interaction.customId === 'antinuke_no') {
-        await interaction.update({ content: '❌ Activation cancelled.', components: [] });
+        await interaction.update({ content: '❌ Action cancelled.', components: [] });
+    } else if (interaction.customId.startsWith('trust_yes_')) {
+        const targetId = interaction.customId.split('_')[2];
+        try {
+            const targetUser = await client.users.fetch(targetId).catch(() => null);
+            const targetTag = targetUser ? (targetUser.tag || targetUser.username) : 'Unknown User';
+
+            await ensureDbConnected();
+            await trustedEntitiesCollection.updateOne(
+                { guild_id: interaction.guild.id, entity_id: targetId },
+                { $set: { guild_id: interaction.guild.id, entity_id: targetId, name: targetTag, addedAt: new Date() } },
+                { upsert: true }
+            );
+
+            await interaction.update({ 
+                content: `✅ **Successfully added ${targetTag} to the trusted list! They are now exempt from all anti-nuke bans and scans.**`, 
+                components: [] 
+            });
+        } catch (err) {
+            console.error(err);
+            await interaction.update({ content: `❌ Error adding target to trusted list.`, components: [] });
+        }
+    } else if (interaction.customId.startsWith('trust_no_')) {
+        await interaction.update({ content: `❌ **Action cancelled.**`, components: [] });
     }
 });
 
