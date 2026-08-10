@@ -73,7 +73,7 @@ client.once('ready', async () => {
     const commands = [
         new SlashCommandBuilder()
             .setName('protect-server')
-            .setDescription('Activate scanning and create a dedicated backup storage to protect the server')
+            .setDescription('Activate scanning, create backup storage, and enable full auto-protection')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('stop')
@@ -119,7 +119,7 @@ async function notifyOwnerForIncident(guild, culpritName, eventDescription) {
 
         let msg = `⚠️ **Your server was attacked by ${culpritName}**\n\n`;
         msg += `📋 **Incident Event:** \`${eventDescription}\`\n`;
-        msg += `🛠️ **Action Taken:** Bot initiated emergency lockdown and handled the violation!\n`;
+        msg += `🛠️ **Action Taken:** Bot initiated emergency lockdown, banned culprit, and auto-restored deleted items!\n`;
         msg += `🇬🇧 **Time (UK):** \`${timeUK}\``;
 
         await owner.send(msg).catch(() => {});
@@ -143,7 +143,7 @@ client.on('interactionCreate', async interaction => {
             );
 
         await interaction.reply({
-            content: '🛡️ **ANTI-NUKE SYSTEM:** Do you want to create a dedicated backup storage for this server?',
+            content: '🛡️ **ANTI-NUKE SYSTEM:** Do you want to create a dedicated backup storage and enable full auto-protection for this server?',
             components: [row],
             ephemeral: true
         });
@@ -198,7 +198,7 @@ client.on('interactionCreate', async interaction => {
         const guild = interaction.guild;
         const guildId = guild.id;
 
-        await interaction.update({ content: `⏳ **Creating backup storage for server [ID: ${guildId}]...**`, components: [] });
+        await interaction.update({ content: `⏳ **Creating backup storage and activating protection...**`, components: [] });
 
         try {
             await ensureDbConnected();
@@ -230,7 +230,7 @@ client.on('interactionCreate', async interaction => {
                 { upsert: true }
             );
 
-            await interaction.editReply({ content: `✅ **Successfully created backup storage and enabled Anti-Nuke!**` });
+            await interaction.editReply({ content: `✅ **Successfully created backup storage and enabled full Anti-Nuke protection!**` });
         } catch (error) {
             console.error(error);
             await interaction.editReply({ content: `❌ Error scanning server data.` });
@@ -316,6 +316,46 @@ async function cleanupWebhooks(guild, reasonText) {
         console.error('Error cleaning webhooks:', err);
     }
 }
+
+client.on('channelDelete', async (channel) => {
+    const guild = channel.guild;
+    if (!guild) return;
+    const guildId = guild.id;
+    if (!(await isAntiNukeActive(guildId))) return;
+
+    try {
+        const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelDelete }).catch(() => null);
+        if (!auditLogs) return;
+        const logEntry = auditLogs.entries.first();
+        if (!logEntry) return;
+
+        const { executor } = logEntry;
+        if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
+        if (await isTrustedEntity(guildId, executor.id)) return;
+
+        const member = await guild.members.fetch(executor.id).catch(() => null);
+        if (member && member.bannable) {
+            await member.ban({ reason: 'Anti-Nuke: Unauthorized channel deletion' });
+        }
+
+        const culpritName = executor.tag || executor.username;
+        await triggerEmergencyLockdown(guild, culpritName, 'Unauthorized channel deletion');
+        await cleanupWebhooks(guild, 'Unauthorized channel deletion');
+
+        const backupData = await serverBackupsCollection.findOne({ guild_id: guildId });
+        if (backupData && backupData.channels) {
+            const targetChannelData = backupData.channels.find(c => c.id === channel.id || c.name === channel.name);
+            if (targetChannelData) {
+                await guild.channels.create({
+                    name: targetChannelData.name,
+                    type: targetChannelData.type
+                }).catch(() => {});
+            }
+        }
+    } catch (err) {
+        console.error('Channel delete error:', err);
+    }
+});
 
 client.on('channelCreate', async (newChannel) => {
     const guild = newChannel.guild;
