@@ -45,16 +45,15 @@ let db, nukedServersCollection, serverBackupsCollection, trustedEntitiesCollecti
 let TICKET_LOG_CHANNEL_ID = '1526179515355893811'; 
 
 // ==========================================
-// 1. THAY ID DISCORD CỦA BẠN VÀO ĐÂY
-const MY_ADMIN_DISCORD_ID = 'YOUR_DISCORD_USER_ID_HERE'; 
+// 1. ID DISCORD CỦA BẠN
+const MY_ADMIN_DISCORD_ID = '1501730680613114048'; 
 
-// 2. THAY ID SERVER CỦA BẠN VÀO ĐÂY (Nơi chứa toàn bộ lệnh bảo vệ, quản lý và help)
-const MY_SERVER_ID = 'YOUR_SERVER_ID_HERE';
+// 2. ID SERVER CỦA BẠN (Nơi chứa toàn bộ lệnh quản lý và help)
+const MY_SERVER_ID = '1509197460512309298';
 // ==========================================
 
 const channelCreationTracker = new Map();
 const messageSpamTracker = new Map();
-const lastNotificationTracker = new Map();
 
 // Web server giữ bot online
 const server = http.createServer((req, res) => {
@@ -194,11 +193,10 @@ client.on('interactionCreate', async interaction => {
 
     const managementCommands = ['help', 'ticket-dubo', 'mute', 'unmute', 'ban', 'unban', 'role'];
 
-    // 🔒 BẢO MẬT TUYỆT ĐỐI: Lệnh help và nhóm lệnh quản lý ngoài server của bạn ra hoặc trái ID đều bị chặn
     if (managementCommands.includes(interaction.commandName)) {
         if (interaction.user.id !== MY_ADMIN_DISCORD_ID || interaction.guildId !== MY_SERVER_ID) {
             return await interaction.reply({ 
-                content: '❌ Lệnh này không khả dụng ở server này!', 
+                content: '❌ Lệnh này không khả dụng ở server này hoặc bạn không có quyền!', 
                 ephemeral: true 
             });
         }
@@ -279,7 +277,6 @@ client.on('interactionCreate', async interaction => {
         return await interaction.reply({ content: `⚠️ Successfully removed trust status from **${target.tag || target.username}**!`, ephemeral: true });
     }
 
-    // --- LỆNH TICKET-DUBO ---
     if (interaction.commandName === 'ticket-dubo') {
         await interaction.deferReply({ ephemeral: true });
         const sourceChannel = interaction.options.getChannel('kenh-dang-embed');
@@ -306,7 +303,6 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // --- LỆNH MUTE ---
     if (interaction.commandName === 'mute') {
         const targetUser = interaction.options.getUser('user');
         const selectMute = new StringSelectMenuBuilder()
@@ -321,7 +317,6 @@ client.on('interactionCreate', async interaction => {
         return interaction.reply({ content: `⏱️ **Select Mute Duration:**`, components: [new ActionRowBuilder().addComponents(selectMute)], ephemeral: true });
     }
 
-    // --- LỆNH UNMUTE ---
     if (interaction.commandName === 'unmute') {
         await interaction.deferReply({ ephemeral: true });
         const targetUser = interaction.options.getUser('user');
@@ -334,7 +329,6 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // --- LỆNH BAN ---
     if (interaction.commandName === 'ban') {
         const targetUser = interaction.options.getUser('user');
         const selectBan = new StringSelectMenuBuilder()
@@ -349,7 +343,6 @@ client.on('interactionCreate', async interaction => {
         return interaction.reply({ content: `🔨 **Select Ban Duration:**`, components: [new ActionRowBuilder().addComponents(selectBan)], ephemeral: true });
     }
 
-    // --- LỆNH UNBAN ---
     if (interaction.commandName === 'unban') {
         await interaction.deferReply({ ephemeral: true });
         const targetId = interaction.options.getString('id').trim();
@@ -361,7 +354,6 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // --- LỆNH ROLE ---
     if (interaction.commandName === 'role') {
         await interaction.deferReply({ ephemeral: true });
         const targetUser = interaction.options.getUser('user');
@@ -391,7 +383,6 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // --- LỆNH HELP ---
     if (interaction.commandName === 'help') {
         const helpEmbed = new EmbedBuilder()
             .setColor('#2b2d31')
@@ -421,7 +412,6 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Xử lý sự kiện Button và Modal
 client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         if (interaction.customId === 'antinuke_yes') {
@@ -596,8 +586,6 @@ client.on('channelDelete', async (channel) => {
 
         const culpritName = executor.tag || executor.username;
         const channelName = channel.name;
-
-        await notifyOwnerForChannelDeletion(guild, culpritName, channelName);
 
         const backupData = await serverBackupsCollection.findOne({ guild_id: guildId });
         if (backupData && backupData.channels) {
