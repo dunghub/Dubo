@@ -44,6 +44,9 @@ let db, nukedServersCollection, serverBackupsCollection, trustedEntitiesCollecti
 
 let TICKET_LOG_CHANNEL_ID = '1526179515355893811'; 
 
+// Khai báo ID người dùng được phép thực thi các lệnh quản lý server ẩn (Thay đổi ID của bạn vào đây)
+const ADMIN_MANAGEMENT_ID = 'YOUR_DISCORD_USER_ID_HERE'; 
+
 const channelCreationTracker = new Map();
 const messageSpamTracker = new Map();
 const lastNotificationTracker = new Map();
@@ -82,7 +85,7 @@ client.once('ready', async () => {
     console.log(`Bot logged in successfully as: ${client.user.tag}`);
 
     const commands = [
-        // Lệnh liên quan trực tiếp đến Anti-Nuke / Bảo vệ Server
+        // Lệnh Anti-Nuke công khai (Mọi người đều thấy)
         new SlashCommandBuilder()
             .setName('protect-server')
             .setDescription('[Anti-Nuke] Activate scanning, create backup storage, and enable auto-restoration')
@@ -104,11 +107,12 @@ client.once('ready', async () => {
             .addUserOption(option => 
                 option.setName('target').setDescription('Member or bot to untrust').setRequired(true)),
 
-        // Lệnh Quản Lý Server (Ticket, Mute, Ban, Role, v.v.)
+        // Lệnh Quản Lý Server (Cài đặt ẩn đi, cấu hình integration cho phép mỗi ID của bạn thấy/dùng)
         new SlashCommandBuilder()
             .setName('ticket-dubo')
             .setDescription('[Server Management] Setup ticket embed channel and log channel')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setDMPermission(false)
             .addChannelOption(option => 
                 option.setName('kenh-dang-embed')
                     .setDescription('Channel to show ticket button')
@@ -171,8 +175,34 @@ client.once('ready', async () => {
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN_ANTINUKE);
 
     try {
-        await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        console.log('Successfully registered Slash commands!');
+        const registeredCommands = await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
+        
+        // Ẩn các lệnh quản lý server đối với mọi người dùng/role thông thường, chỉ cho phép ID cụ thể truy cập trong phần Integration của Server
+        for (const cmd of registeredCommands) {
+            const managementCommands = ['ticket-dubo', 'mute', 'unmute', 'ban', 'unban', 'role'];
+            if (managementCommands.includes(cmd.name)) {
+                try {
+                    for (const guild of client.guilds.cache.values()) {
+                        await rest.put(
+                            Routes.guildCommandPermissions(client.user.id, guild.id, cmd.id),
+                            {
+                                body: [
+                                    {
+                                        id: ADMIN_MANAGEMENT_ID,
+                                        type: 1, // 1 tương ứng với USER
+                                        permission: true
+                                    }
+                                ]
+                            }
+                        ).catch(() => {});
+                    }
+                } catch (e) {
+                    // Bỏ qua nếu server chưa bật phân quyền chi tiết
+                }
+            }
+        }
+
+        console.log('Successfully registered Slash commands & applied permission restrictions!');
     } catch (error) {
         console.error('Error registering commands:', error);
     }
@@ -241,11 +271,19 @@ async function notifyOwnerForMessageSpam(guild, culpritName) {
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
-    if (interaction.user.id !== interaction.guild.ownerId) {
-        return await interaction.reply({ content: '❌ Only the Server Owner can use this command!', ephemeral: true });
+    // Kiểm tra phân quyền cho các lệnh quản lý server ẩn (Chỉ cho phép ID cấu hình thực thi)
+    const managementCommands = ['ticket-dubo', 'mute', 'unmute', 'ban', 'unban', 'role'];
+    if (managementCommands.includes(interaction.commandName)) {
+        if (interaction.user.id !== ADMIN_MANAGEMENT_ID && interaction.user.id !== interaction.guild.ownerId) {
+            return await interaction.reply({ content: '❌ You do not have permission to use this server management command!', ephemeral: true });
+        }
     }
 
     if (interaction.commandName === 'protect-server') {
+        if (interaction.user.id !== interaction.guild.ownerId) {
+            return await interaction.reply({ content: '❌ Only the Server Owner can use this command!', ephemeral: true });
+        }
+
         const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder().setCustomId('antinuke_yes').setLabel('Yes').setStyle(ButtonStyle.Success),
@@ -260,6 +298,10 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'stop') {
+        if (interaction.user.id !== interaction.guild.ownerId) {
+            return await interaction.reply({ content: '❌ Only the Server Owner can use this command!', ephemeral: true });
+        }
+
         const guildId = interaction.guild.id;
         try {
             await ensureDbConnected();
@@ -275,6 +317,10 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'attach-trust') {
+        if (interaction.user.id !== interaction.guild.ownerId) {
+            return await interaction.reply({ content: '❌ Only the Server Owner can use this command!', ephemeral: true });
+        }
+
         const target = interaction.options.getUser('target');
         if (!target) return await interaction.reply({ content: '❌ Please select a target member!', ephemeral: true });
 
@@ -292,6 +338,10 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'unattach-trust') {
+        if (interaction.user.id !== interaction.guild.ownerId) {
+            return await interaction.reply({ content: '❌ Only the Server Owner can use this command!', ephemeral: true });
+        }
+
         const target = interaction.options.getUser('target');
         if (!target) return await interaction.reply({ content: '❌ Please select a target member!', ephemeral: true });
 
@@ -412,7 +462,7 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // --- LỆNH HELP (ĐÃ CẬP NHẬT TIÊU ĐỀ VÀ HƯỚNG DẪN TIẾNG ANH) ---
+    // --- LỆNH HELP ---
     if (interaction.commandName === 'help') {
         const helpEmbed = new EmbedBuilder()
             .setColor('#2b2d31')
