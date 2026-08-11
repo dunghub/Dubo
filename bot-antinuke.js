@@ -48,7 +48,7 @@ let TICKET_LOG_CHANNEL_ID = '1526179515355893811';
 // 1. THAY ID DISCORD CỦA BẠN VÀO ĐÂY
 const MY_ADMIN_DISCORD_ID = 'YOUR_DISCORD_USER_ID_HERE'; 
 
-// 2. THAY ID SERVER CỦA BẠN VÀO ĐÂY (Lệnh quản lý chỉ hiện ở server này và cho đúng chủ)
+// 2. THAY ID SERVER CỦA BẠN VÀO ĐÂY (Nơi chứa toàn bộ lệnh bảo vệ, quản lý và help)
 const MY_SERVER_ID = 'YOUR_SERVER_ID_HERE';
 // ==========================================
 
@@ -87,7 +87,7 @@ client.once('ready', async () => {
     await ensureDbConnected();
     console.log(`Bot logged in successfully as: ${client.user.tag}`);
 
-    // Các lệnh bảo vệ chung cho mọi server
+    // Các lệnh bảo vệ chung cho mọi server (Ở server ngoài KHÔNG CÓ lệnh help)
     const globalCommands = [
         new SlashCommandBuilder()
             .setName('protect-server')
@@ -108,14 +108,15 @@ client.once('ready', async () => {
             .setDescription('Remove trust status from a user or bot')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addUserOption(option => 
-                option.setName('target').setDescription('Member or bot to untrust').setRequired(true)),
+                option.setName('target').setDescription('Member or bot to untrust').setRequired(true))
+    ].map(command => command.toJSON());
+
+    // Các lệnh quản lý RIÊNG BIỆT + LỆNH HELP (Chỉ đăng ký độc quyền ở server của bạn)
+    const managementCommandsList = [
         new SlashCommandBuilder()
             .setName('help')
             .setDescription('Display bot usage guide and command categories')
-    ].map(command => command.toJSON());
-
-    // Các lệnh quản lý RIÊNG BIỆT (Khóa quyền Administrator ẩn với mọi thành viên thường)
-    const managementCommandsList = [
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('ticket-dubo')
             .setDescription('Setup ticket embed channel and log channel')
@@ -175,7 +176,7 @@ client.once('ready', async () => {
         await rest.put(Routes.applicationCommands(client.user.id), { body: globalCommands });
         await rest.put(Routes.applicationGuildCommands(client.user.id, MY_SERVER_ID), { body: managementCommandsList });
 
-        console.log('Successfully registered commands with strict visibility!');
+        console.log('Successfully registered commands with hidden help at other servers!');
     } catch (error) {
         console.error('Error registering commands:', error);
     }
@@ -191,13 +192,13 @@ async function isTrustedEntity(guildId, entityId) {
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
-    const managementCommands = ['ticket-dubo', 'mute', 'unmute', 'ban', 'unban', 'role'];
+    const managementCommands = ['help', 'ticket-dubo', 'mute', 'unmute', 'ban', 'unban', 'role'];
 
-    // 🔒 BẢO MẬT TUYỆT ĐỐI: Ngoài ID của bạn ra, tất cả đứa khác bấm vào đều bị chặn
+    // 🔒 BẢO MẬT TUYỆT ĐỐI: Lệnh help và nhóm lệnh quản lý ngoài server của bạn ra hoặc trái ID đều bị chặn
     if (managementCommands.includes(interaction.commandName)) {
-        if (interaction.user.id !== MY_ADMIN_DISCORD_ID) {
+        if (interaction.user.id !== MY_ADMIN_DISCORD_ID || interaction.guildId !== MY_SERVER_ID) {
             return await interaction.reply({ 
-                content: '❌ Lệnh quản lý này chỉ dành riêng cho chủ nhân của bot!', 
+                content: '❌ Lệnh này không khả dụng ở server này!', 
                 ephemeral: true 
             });
         }
