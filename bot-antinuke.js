@@ -86,7 +86,7 @@ client.once('ready', async () => {
     await ensureDbConnected();
     console.log(`Bot logged in successfully as: ${client.user.tag}`);
 
-    // Các lệnh bảo vệ chung cho mọi server (Ở server ngoài KHÔNG CÓ lệnh help)
+    // Các lệnh bảo vệ chung cho mọi server
     const globalCommands = [
         new SlashCommandBuilder()
             .setName('protect-server')
@@ -277,30 +277,38 @@ client.on('interactionCreate', async interaction => {
         return await interaction.reply({ content: `⚠️ Successfully removed trust status from **${target.tag || target.username}**!`, ephemeral: true });
     }
 
+    // ==========================================
+    // XỬ LÝ LỆNH /TICKET-DUBO (BẬT MODAL ĐỂ NHẬP TITLE & CONTENT)
+    // ==========================================
     if (interaction.commandName === 'ticket-dubo') {
-        await interaction.deferReply({ ephemeral: true });
         const sourceChannel = interaction.options.getChannel('kenh-dang-embed');
         const targetChannel = interaction.options.getChannel('kenh-nhan-log');
         TICKET_LOG_CHANNEL_ID = targetChannel.id;
 
-        const ticketButton = new ButtonBuilder()
-            .setCustomId('open_ticket_modal')
-            .setLabel('🎫 Gửi Ticket')
-            .setStyle(ButtonStyle.Danger); 
-        
-        const row = new ActionRowBuilder().addComponents(ticketButton);
-        
-        const minimalEmbed = new EmbedBuilder()
-            .setColor('#2b2d31')
-            .setTitle('📥 HỆ THỐNG GỬI TICKET TRỰC TUYẾN')
-            .setDescription('Bấm vào nút bên dưới để mở bảng nhập tiêu đề và nội dung.');
+        const modal = new ModalBuilder()
+            .setCustomId(`ticket_setup_modal_${sourceChannel.id}`)
+            .setTitle('Create New Ticket');
 
-        try {
-            await sourceChannel.send({ embeds: [minimalEmbed], components: [row] });
-            return interaction.editReply({ content: `✅ Setup successful!\n- Ticket Button Channel: ${sourceChannel}\n- Ticket Log Channel: ${targetChannel}` });
-        } catch (err) {
-            return interaction.editReply({ content: '❌ Failed! Please check bot permissions in that channel.' });
-        }
+        const titleInput = new TextInputBuilder()
+            .setCustomId('setup_ticket_title')
+            .setLabel('TITLE (Bold Header Text)')
+            .setPlaceholder('Example: SUPPORT BOT')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true);
+
+        const contentInput = new TextInputBuilder()
+            .setCustomId('setup_ticket_content')
+            .setLabel('Detailed Content (Normal Text)')
+            .setPlaceholder('Enter your message here...')
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true);
+
+        modal.setComponents(
+            new ActionRowBuilder().addComponents(titleInput),
+            new ActionRowBuilder().addComponents(contentInput)
+        );
+
+        return interaction.showModal(modal);
     }
 
     if (interaction.commandName === 'mute') {
@@ -484,51 +492,109 @@ client.on('interactionCreate', async interaction => {
         else if (interaction.customId === 'open_ticket_modal') {
             const modal = new ModalBuilder()
                 .setCustomId('ticket_submission_modal')
-                .setTitle('Create New Ticket');
+                .setTitle('Support - Tố Cáo & Hỗ Trợ');
 
-            const fieldTitle = new TextInputBuilder()
-                .setCustomId('ticket_title')
-                .setLabel('TITLE (Bold Header Text)')
-                .setPlaceholder('Example: SUPPORT BOT')
+            const field1 = new TextInputBuilder()
+                .setCustomId('ticket_user_tag')
+                .setLabel('Tag/Tên người dùng tố cáo | User Tag')
+                .setPlaceholder('Ví dụ: @abcxyz...')
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
-            const fieldBody = new TextInputBuilder()
-                .setCustomId('ticket_body')
-                .setLabel('Detailed Content (Normal Text)')
-                .setPlaceholder('Enter your message here...')
+            const field2 = new TextInputBuilder()
+                .setCustomId('ticket_reason')
+                .setLabel('Lý do gặp phải | Reason')
+                .setPlaceholder('Ghi rõ hành vi vi phạm tại đây...')
                 .setStyle(TextInputStyle.Paragraph)
                 .setRequired(true);
 
+            const field3 = new TextInputBuilder()
+                .setCustomId('ticket_evidence_link')
+                .setLabel('Link ảnh hoặc Video bằng chứng | Evidence')
+                .setPlaceholder('Dán link bằng chứng vào đây...')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+
             modal.addComponents(
-                new ActionRowBuilder().addComponents(fieldTitle), 
-                new ActionRowBuilder().addComponents(fieldBody)
+                new ActionRowBuilder().addComponents(field1), 
+                new ActionRowBuilder().addComponents(field2),
+                new ActionRowBuilder().addComponents(field3)
             );
 
             return interaction.showModal(modal);
         }
     } 
+    // ==========================================
+    // XỬ LÝ SUBMIT MODAL CÀI ĐẶT EMBED TICKET BAN ĐẦU
+    // ==========================================
+    else if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_setup_modal_')) {
+        await interaction.deferReply({ ephemeral: true });
+        const sourceChannelId = interaction.customId.replace('ticket_setup_modal_', '');
+        const customTitle = interaction.fields.getTextInputValue('setup_ticket_title');
+        const customContent = interaction.fields.getTextInputValue('setup_ticket_content');
+
+        const ticketButton = new ButtonBuilder()
+            .setCustomId('open_ticket_modal')
+            .setLabel('🎫 Gửi Ticket')
+            .setStyle(ButtonStyle.Danger); 
+        
+        const row = new ActionRowBuilder().addComponents(ticketButton);
+        
+        const ticketEmbed = new EmbedBuilder()
+            .setColor('#0055ff')
+            .setTitle(`📌 ${customTitle}`)
+            .setDescription(customContent)
+            .setFooter({ text: 'Dubo Bypass Script Hub • Click Button Below' })
+            .setTimestamp();
+
+        try {
+            const sourceChannel = await client.channels.fetch(sourceChannelId);
+            if (sourceChannel) {
+                await sourceChannel.send({ embeds: [ticketEmbed], components: [row] });
+                return interaction.editReply({ content: `✅ Setup successful!\n- Ticket Button Channel: ${sourceChannel}\n- Ticket Log Channel: <#${TICKET_LOG_CHANNEL_ID}>` });
+            }
+            return interaction.editReply({ content: '❌ Failed! Please check bot permissions in that channel.' });
+        } catch (err) {
+            return interaction.editReply({ content: `❌ Error: ${err.message}` });
+        }
+    }
+    // ==========================================
+    // XỬ LÝ SUBMIT TICKET FORM CỦA USER KÈM CÁC NÚT QUẢN TRỊ ADMIN
+    // ==========================================
     else if (interaction.isModalSubmit() && interaction.customId === 'ticket_submission_modal') {
         await interaction.deferReply({ ephemeral: true });
-        const titleText = interaction.fields.getTextInputValue('ticket_title');
-        const bodyText = interaction.fields.getTextInputValue('ticket_body');
+        const userTag = interaction.fields.getTextInputValue('ticket_user_tag');
+        const reason = interaction.fields.getTextInputValue('ticket_reason');
+        const evidenceLink = interaction.fields.getTextInputValue('ticket_evidence_link');
 
         const logEmbed = new EmbedBuilder()
-            .setColor('#0099ff')
-            .setTitle(`📌 ${titleText}`)
-            .setDescription(bodyText)
+            .setColor('#0055ff')
+            .setTitle('🚨 ĐƠN TỐ CÁO / YÊU CẦU HỖ TRỢ MỚI')
+            .setThumbnail(interaction.user.displayAvatarURL())
             .addFields(
-                { name: '👤 Ticket Author:', value: `${interaction.user} (ID: ${interaction.user.id})` }
+                { name: '👤 Người gửi đơn:', value: `${interaction.user} (ID: ${interaction.user.id})`, inline: true },
+                { name: '🎯 Đối tượng bị tố cáo:', value: `\`${userTag}\``, inline: true },
+                { name: '📝 Lý do chi tiết:', value: `${reason}` },
+                { name: '🎥 Link bằng chứng (Ảnh/Video):', value: `${evidenceLink}` }
             )
             .setTimestamp();
+
+        const replyButton = new ButtonBuilder().setCustomId(`reply_ticket_${interaction.user.id}`).setLabel('Gửi tin nhắn').setStyle(ButtonStyle.Success);
+        const muteButton = new ButtonBuilder().setCustomId('mute_target_direct').setLabel('Mute').setStyle(ButtonStyle.Primary);
+        const unmuteButton = new ButtonBuilder().setCustomId('unmute_target_direct').setLabel('Unmute').setStyle(ButtonStyle.Secondary);
+        const banButton = new ButtonBuilder().setCustomId('ban_target_direct').setLabel('Ban').setStyle(ButtonStyle.Danger);
+        const unbanButton = new ButtonBuilder().setCustomId('unban_target_direct').setLabel('Unban').setStyle(ButtonStyle.Danger);
+
+        const actionRow1 = new ActionRowBuilder().addComponents(replyButton, muteButton, unmuteButton);
+        const actionRow2 = new ActionRowBuilder().addComponents(banButton, unbanButton);
 
         try {
             const logChannel = await client.channels.fetch(TICKET_LOG_CHANNEL_ID).catch(() => null);
             if (logChannel) {
-                await logChannel.send({ embeds: [logEmbed] });
-                return interaction.editReply({ content: '✅ Successfully submitted your ticket to the log channel!' });
+                await logChannel.send({ embeds: [logEmbed], components: [actionRow1, actionRow2] });
+                return interaction.editReply({ content: '✅ Gửi yêu cầu hỗ trợ thành công! Ban quản trị sẽ sớm xử lý.' });
             }
-            return interaction.editReply({ content: '❌ Ticket log channel not found.' });
+            return interaction.editReply({ content: '❌ Thất bại: Không kết nối được tới đường ống đầu ra.' });
         } catch (error) {
             return interaction.editReply({ content: '❌ System error while transferring data.' });
         }
@@ -583,9 +649,6 @@ client.on('channelDelete', async (channel) => {
         const { executor } = logEntry;
         if (!executor || executor.id === guild.ownerId || executor.id === client.user.id) return;
         if (await isTrustedEntity(guildId, executor.id)) return;
-
-        const culpritName = executor.tag || executor.username;
-        const channelName = channel.name;
 
         const backupData = await serverBackupsCollection.findOne({ guild_id: guildId });
         if (backupData && backupData.channels) {
