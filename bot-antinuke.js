@@ -44,24 +44,27 @@ let db, nukedServersCollection, serverBackupsCollection, trustedEntitiesCollecti
 
 let TICKET_LOG_CHANNEL_ID = '1526179515355893811'; 
 
-// Khai báo ID người dùng được phép thực thi các lệnh quản lý server ẩn (Thay đổi ID của bạn vào đây)
-const ADMIN_MANAGEMENT_ID = 'YOUR_DISCORD_USER_ID_HERE'; 
+// ==========================================
+// 1. THAY ID DISCORD CỦA BẠN VÀO ĐÂY
+const MY_ADMIN_DISCORD_ID = 'YOUR_DISCORD_USER_ID_HERE'; 
+
+// 2. THAY ID SERVER CỦA BẠN VÀO ĐÂY (Lệnh quản lý chỉ hiện ở server này và cho đúng chủ)
+const MY_SERVER_ID = 'YOUR_SERVER_ID_HERE';
+// ==========================================
 
 const channelCreationTracker = new Map();
 const messageSpamTracker = new Map();
 const lastNotificationTracker = new Map();
 
-// ==========================================
-// TẠO SERVER WEB MINI ĐỂ GIỮ BOT ONLINE VĨNH VIỄN
+// Web server giữ bot online
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Massive Anti-Nuke & Server Management Bot is active!\n');
+    res.end('Bot is active!\n');
 });
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Web server running on port ${PORT}`);
 });
-// ==========================================
 
 async function ensureDbConnected() {
     try {
@@ -84,35 +87,39 @@ client.once('ready', async () => {
     await ensureDbConnected();
     console.log(`Bot logged in successfully as: ${client.user.tag}`);
 
-    const commands = [
-        // Lệnh Anti-Nuke công khai (Mọi người đều thấy)
+    // Các lệnh bảo vệ chung cho mọi server
+    const globalCommands = [
         new SlashCommandBuilder()
             .setName('protect-server')
-            .setDescription('[Anti-Nuke] Activate scanning, create backup storage, and enable auto-restoration')
+            .setDescription('Activate scanning, create backup storage, and enable auto-restoration')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('stop')
-            .setDescription('[Anti-Nuke] Stop the anti-nuke system and disable protection')
+            .setDescription('Stop the anti-nuke system and disable protection')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('attach-trust')
-            .setDescription('[Anti-Nuke] Add a user or bot to the trusted list (exempt from scans)')
+            .setDescription('Add a user or bot to the trusted list (exempt from scans)')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addUserOption(option => 
                 option.setName('target').setDescription('Member or bot to trust').setRequired(true)),
         new SlashCommandBuilder()
             .setName('unattach-trust')
-            .setDescription('[Anti-Nuke] Remove trust status from a user or bot')
+            .setDescription('Remove trust status from a user or bot')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addUserOption(option => 
                 option.setName('target').setDescription('Member or bot to untrust').setRequired(true)),
+        new SlashCommandBuilder()
+            .setName('help')
+            .setDescription('Display bot usage guide and command categories')
+    ].map(command => command.toJSON());
 
-        // Lệnh Quản Lý Server (Cài đặt ẩn đi, cấu hình integration cho phép mỗi ID của bạn thấy/dùng)
+    // Các lệnh quản lý RIÊNG BIỆT (Khóa quyền Administrator ẩn với mọi thành viên thường)
+    const managementCommandsList = [
         new SlashCommandBuilder()
             .setName('ticket-dubo')
-            .setDescription('[Server Management] Setup ticket embed channel and log channel')
+            .setDescription('Setup ticket embed channel and log channel')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-            .setDMPermission(false)
             .addChannelOption(option => 
                 option.setName('kenh-dang-embed')
                     .setDescription('Channel to show ticket button')
@@ -125,34 +132,29 @@ client.once('ready', async () => {
                     .addChannelTypes(ChannelType.GuildText)
                     .setRequired(true)
             ),
-
         new SlashCommandBuilder()
             .setName('mute')
-            .setDescription('[Server Management] Timeout/Mute a member')
+            .setDescription('Timeout/Mute a member')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addUserOption(option => option.setName('user').setDescription('Member to mute').setRequired(true)),
-
         new SlashCommandBuilder()
             .setName('unmute')
-            .setDescription('[Server Management] Remove timeout from a member')
+            .setDescription('Remove timeout from a member')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addUserOption(option => option.setName('user').setDescription('Member to unmute').setRequired(true)),
-
         new SlashCommandBuilder()
             .setName('ban')
-            .setDescription('[Server Management] Ban a member from the server')
+            .setDescription('Ban a member from the server')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addUserOption(option => option.setName('user').setDescription('Member to ban').setRequired(true)),
-
         new SlashCommandBuilder()
             .setName('unban')
-            .setDescription('[Server Management] Unban a user by ID')
+            .setDescription('Unban a user by ID')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addStringOption(option => option.setName('id').setDescription('User ID to unban').setRequired(true)),
-
         new SlashCommandBuilder()
             .setName('role')
-            .setDescription('[Server Management] Manage member roles (Add/Remove)')
+            .setDescription('Manage member roles (Add/Remove)')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addUserOption(option => option.setName('user').setDescription('Select member').setRequired(true))
             .addRoleOption(option => option.setName('role').setDescription('Select role').setRequired(true))
@@ -164,45 +166,16 @@ client.once('ready', async () => {
                         { name: 'Add Role', value: 'add' },
                         { name: 'Remove Role', value: 'remove' }
                     )
-            ),
-
-        new SlashCommandBuilder()
-            .setName('help')
-            .setDescription('Display bot usage guide and command categories')
-
+            )
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN_ANTINUKE);
 
     try {
-        const registeredCommands = await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        
-        // Ẩn các lệnh quản lý server đối với mọi người dùng/role thông thường, chỉ cho phép ID cụ thể truy cập trong phần Integration của Server
-        for (const cmd of registeredCommands) {
-            const managementCommands = ['ticket-dubo', 'mute', 'unmute', 'ban', 'unban', 'role'];
-            if (managementCommands.includes(cmd.name)) {
-                try {
-                    for (const guild of client.guilds.cache.values()) {
-                        await rest.put(
-                            Routes.guildCommandPermissions(client.user.id, guild.id, cmd.id),
-                            {
-                                body: [
-                                    {
-                                        id: ADMIN_MANAGEMENT_ID,
-                                        type: 1, // 1 tương ứng với USER
-                                        permission: true
-                                    }
-                                ]
-                            }
-                        ).catch(() => {});
-                    }
-                } catch (e) {
-                    // Bỏ qua nếu server chưa bật phân quyền chi tiết
-                }
-            }
-        }
+        await rest.put(Routes.applicationCommands(client.user.id), { body: globalCommands });
+        await rest.put(Routes.applicationGuildCommands(client.user.id, MY_SERVER_ID), { body: managementCommandsList });
 
-        console.log('Successfully registered Slash commands & applied permission restrictions!');
+        console.log('Successfully registered commands with strict visibility!');
     } catch (error) {
         console.error('Error registering commands:', error);
     }
@@ -215,72 +188,24 @@ async function isTrustedEntity(guildId, entityId) {
     return !!found;
 }
 
-async function notifyOwnerForChannelDeletion(guild, culpritName, channelName) {
-    try {
-        const owner = await guild.fetchOwner().catch(() => null);
-        if (!owner) return;
-
-        const now = Date.now();
-        const lastNotifTime = lastNotificationTracker.get(guild.id) || 0;
-
-        if (now - lastNotifTime < 60000) return;
-        lastNotificationTracker.set(guild.id, now);
-
-        let msg = `⚠️ **Channel Deletion Alert**\n\n`;
-        msg += `👤 **User:** \`${culpritName}\`\n`;
-        msg += `📁 **Deleted Channel:** \`${channelName}\`\n`;
-        msg += `🛠️ **Action Taken:** Deleted channels are being automatically restored!`;
-
-        await owner.send(msg).catch(() => {});
-    } catch (err) {
-        console.error('Failed to send notification to owner:', err);
-    }
-}
-
-async function notifyOwnerForChannelSpam(guild, culpritName, channelName) {
-    try {
-        const owner = await guild.fetchOwner().catch(() => null);
-        if (!owner) return;
-
-        let msg = `🚨 **Identical Channel Spam Attack Detected!**\n\n`;
-        msg += `👤 **Culprit:** \`${culpritName}\`\n`;
-        msg += `📁 **Spam Channel Name:** \`${channelName}\`\n`;
-        msg += `🛠️ **Action Taken:** User has been banned and identical spam channels deleted!`;
-
-        await owner.send(msg).catch(() => {});
-    } catch (err) {
-        console.error('Failed to send notification to owner:', err);
-    }
-}
-
-async function notifyOwnerForMessageSpam(guild, culpritName) {
-    try {
-        const owner = await guild.fetchOwner().catch(() => null);
-        if (!owner) return;
-
-        let msg = `🚨 **Message Spam Attack Detected!**\n\n`;
-        msg += `👤 **Culprit:** \`${culpritName}\`\n`;
-        msg += `🛠️ **Action Taken:** User has been banned, and their spam messages have been deleted!`;
-
-        await owner.send(msg).catch(() => {});
-    } catch (err) {
-        console.error('Failed to send notification to owner:', err);
-    }
-}
-
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
-    // Kiểm tra phân quyền cho các lệnh quản lý server ẩn (Chỉ cho phép ID cấu hình thực thi)
     const managementCommands = ['ticket-dubo', 'mute', 'unmute', 'ban', 'unban', 'role'];
+
+    // 🔒 BẢO MẬT TUYỆT ĐỐI: Ngoài ID của bạn ra, tất cả đứa khác bấm vào đều bị chặn
     if (managementCommands.includes(interaction.commandName)) {
-        if (interaction.user.id !== ADMIN_MANAGEMENT_ID && interaction.user.id !== interaction.guild.ownerId) {
-            return await interaction.reply({ content: '❌ You do not have permission to use this server management command!', ephemeral: true });
+        if (interaction.user.id !== MY_ADMIN_DISCORD_ID) {
+            return await interaction.reply({ 
+                content: '❌ Lệnh quản lý này chỉ dành riêng cho chủ nhân của bot!', 
+                ephemeral: true 
+            });
         }
     }
 
     if (interaction.commandName === 'protect-server') {
-        if (interaction.user.id !== interaction.guild.ownerId) {
+        const isTrusted = await isTrustedEntity(interaction.guild.id, interaction.user.id);
+        if (interaction.user.id !== interaction.guild.ownerId && interaction.user.id !== MY_ADMIN_DISCORD_ID && !isTrusted) {
             return await interaction.reply({ content: '❌ Only the Server Owner can use this command!', ephemeral: true });
         }
 
@@ -298,7 +223,8 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'stop') {
-        if (interaction.user.id !== interaction.guild.ownerId) {
+        const isTrusted = await isTrustedEntity(interaction.guild.id, interaction.user.id);
+        if (interaction.user.id !== interaction.guild.ownerId && interaction.user.id !== MY_ADMIN_DISCORD_ID && !isTrusted) {
             return await interaction.reply({ content: '❌ Only the Server Owner can use this command!', ephemeral: true });
         }
 
@@ -317,7 +243,8 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'attach-trust') {
-        if (interaction.user.id !== interaction.guild.ownerId) {
+        const isTrusted = await isTrustedEntity(interaction.guild.id, interaction.user.id);
+        if (interaction.user.id !== interaction.guild.ownerId && interaction.user.id !== MY_ADMIN_DISCORD_ID && !isTrusted) {
             return await interaction.reply({ content: '❌ Only the Server Owner can use this command!', ephemeral: true });
         }
 
@@ -338,7 +265,8 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'unattach-trust') {
-        if (interaction.user.id !== interaction.guild.ownerId) {
+        const isTrusted = await isTrustedEntity(interaction.guild.id, interaction.user.id);
+        if (interaction.user.id !== interaction.guild.ownerId && interaction.user.id !== MY_ADMIN_DISCORD_ID && !isTrusted) {
             return await interaction.reply({ content: '❌ Only the Server Owner can use this command!', ephemeral: true });
         }
 
@@ -492,7 +420,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Xử lý sự kiện Button và Modal Submit
+// Xử lý sự kiện Button và Modal
 client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         if (interaction.customId === 'antinuke_yes') {
@@ -562,7 +490,6 @@ client.on('interactionCreate', async interaction => {
         } else if (interaction.customId.startsWith('trust_no_')) {
             await interaction.update({ content: `❌ **Action cancelled.**`, components: [] });
         } 
-        // --- XỬ LÝ NÚT MỞ TICKET MODAL ---
         else if (interaction.customId === 'open_ticket_modal') {
             const modal = new ModalBuilder()
                 .setCustomId('ticket_submission_modal')
@@ -590,7 +517,6 @@ client.on('interactionCreate', async interaction => {
             return interaction.showModal(modal);
         }
     } 
-    // --- XỬ LÝ KHI SUBMIT TICKET MODAL ---
     else if (interaction.isModalSubmit() && interaction.customId === 'ticket_submission_modal') {
         await interaction.deferReply({ ephemeral: true });
         const titleText = interaction.fields.getTextInputValue('ticket_title');
@@ -616,7 +542,6 @@ client.on('interactionCreate', async interaction => {
             return interaction.editReply({ content: '❌ System error while transferring data.' });
         }
     } 
-    // --- XỬ LÝ MUTE / BAN SELECTION ---
     else if (interaction.isStringSelectMenu()) {
         if (interaction.customId.startsWith('select_mute_time_')) {
             await interaction.deferReply({ ephemeral: true });
@@ -634,7 +559,6 @@ client.on('interactionCreate', async interaction => {
         if (interaction.customId.startsWith('select_ban_time_')) {
             await interaction.deferReply({ ephemeral: true });
             const targetId = interaction.customId.replace('select_ban_time_', '');
-            const hours = parseInt(interaction.values[0]);
             try {
                 const user = await client.users.fetch(targetId);
                 await interaction.guild.members.ban(user);
@@ -729,9 +653,6 @@ client.on('channelCreate', async (newChannel) => {
             }
 
             channelCreationTracker.delete(userId);
-
-            const culpritName = executor.tag || executor.username;
-            await notifyOwnerForChannelSpam(guild, culpritName, channelName);
         }
     } catch (err) {
         console.error('Channel create error:', err);
@@ -762,9 +683,6 @@ client.on('messageCreate', async (message) => {
             for (const msg of userMessages) {
                 await msg.delete().catch(() => {});
             }
-
-            const culpritName = message.author.tag || message.author.username;
-            await notifyOwnerForMessageSpam(message.guild, culpritName);
         }
         messageSpamTracker.delete(userId);
     }
