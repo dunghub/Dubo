@@ -189,7 +189,7 @@ client.once('ready', async () => {
         await rest.put(Routes.applicationCommands(client.user.id), { body: globalCommands });
         await rest.put(Routes.applicationGuildCommands(client.user.id, MY_SERVER_ID), { body: managementCommandsList });
 
-        console.log('Successfully registered commands with hidden help at other servers!');
+        console.log('Successfully registered commands with inline code block help format!');
     } catch (error) {
         console.error('Error registering commands:', error);
     }
@@ -409,27 +409,13 @@ client.on('interactionCreate', async interaction => {
     if (interaction.commandName === 'help') {
         const helpEmbed = new EmbedBuilder()
             .setColor('#2b2d31')
-            .setTitle('🛡️ ANTI-NUKE & SERVER MANAGEMENT BOT GUIDE')
-            .setDescription('Here is the complete list of commands and instructions for managing and protecting your server:')
-            .addFields(
-                { 
-                    name: '🔒 Anti-Nuke Commands (Server Protection)', 
-                    value: '`/@protect-server` - Activate server scanning, create backup storage, and enable auto-restoration.\n' +
-                           '`/@stop` - Stop the anti-nuke protection system.\n' +
-                           '`/@attach-trust` - Add a user or bot to the trusted list (exempt from anti-nuke scans).\n' +
-                           '`/@unattach-trust` - Remove a user or bot from the trusted list.' 
-                },
-                { 
-                    name: '⚙️ Server Management Commands', 
-                    value: '`/@ticket-report` - Set up the report ticket channel.\n' +
-                           '`/@ticket-support` - Set up the bot support & bug fixing ticket channel.\n' +
-                           '`/@mute` - Timeout/mute a member for a selected duration.\n' +
-                           '`/@unmute` - Remove timeout from a member.\n' +
-                           '`/@ban` - Ban a member from the server.\n' +
-                           '`/@unban` - Unban a user via their account ID.\n' +
-                           '`/@role` - Add or remove roles from a server member.' 
-                }
-            )
+            .setTitle('🛡️ ANTI-NUKE SYSTEM GUIDE')
+            .setDescription('Here is the complete list of commands and instructions for protecting your server:\n\n' +
+                            '🔒 **Anti-Nuke Commands (Server Protection)**\n' +
+                            '`/protect-server` - Activate server scanning, create backup storage, and enable auto-restoration.\n' +
+                            '`/stop` - Stop the anti-nuke protection system.\n' +
+                            '`/attach-trust` - Add a user or bot to the trusted list (exempt from anti-nuke scans).\n' +
+                            '`/unattach-trust` - Remove a user or bot from the trusted list.')
             .setTimestamp();
 
         return interaction.reply({ embeds: [helpEmbed], ephemeral: true });
@@ -812,7 +798,6 @@ client.on('interactionCreate', async interaction => {
             
             await member.timeout(ms, `Muted via Panel by ${interaction.user.tag} - Reason: ${muteReason}`);
             
-            // Gửi tin nhắn DM thông báo cho user bị mute kèm thời gian và lý do
             await member.send({ content: `⚠️ **Bạn đã bị MUTE tại server ${interaction.guild.name}**\n- **Thời gian áp dụng:** \`${durationStr}\`\n- **Lý do:** ${muteReason}` }).catch(() => {});
 
             return interaction.editReply({ content: `✅ Đã Mute thành công **${member.user.tag || member.user.username}** với thời gian \`${durationStr}\`! Đã gửi thông báo DM.` });
@@ -832,7 +817,6 @@ client.on('interactionCreate', async interaction => {
                 return interaction.editReply({ content: `❌ Không tìm thấy user với ID/Tag: \`${rawTarget}\`!` });
             }
 
-            // Gửi tin nhắn DM thông báo cho user trước khi ban kèm lý do
             await user.send({ content: `🔨 **Bạn đã bị BAN (Cút) khỏi server ${interaction.guild.name}**\n- **Lý do:** ${banReason}` }).catch(() => {});
 
             await interaction.guild.members.ban(user, { reason: `Banned via Panel by ${interaction.user.tag} - Reason: ${banReason}` });
