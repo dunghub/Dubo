@@ -42,7 +42,6 @@ const mongoClient = new MongoClient(MONGO_URI, {
 
 let db, nukedServersCollection, serverBackupsCollection, trustedEntitiesCollection;
 
-// Biến toàn cục lưu kênh nhận log ticket
 let TICKET_LOG_CHANNEL_ID = '1526179515355893811'; 
 
 const channelCreationTracker = new Map();
@@ -53,7 +52,7 @@ const lastNotificationTracker = new Map();
 // TẠO SERVER WEB MINI ĐỂ GIỮ BOT ONLINE VĨNH VIỄN
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Massive Anti-Nuke & Ticket Bot is active!\n');
+    res.end('Massive Anti-Nuke & Server Management Bot is active!\n');
 });
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
@@ -83,86 +82,89 @@ client.once('ready', async () => {
     console.log(`Bot logged in successfully as: ${client.user.tag}`);
 
     const commands = [
+        // Lệnh liên quan trực tiếp đến Anti-Nuke / Bảo vệ Server
         new SlashCommandBuilder()
             .setName('protect-server')
-            .setDescription('Activate scanning, create backup storage, and enable auto-restoration')
+            .setDescription('[Anti-Nuke] Activate scanning, create backup storage, and enable auto-restoration')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('stop')
-            .setDescription('Stop the anti-nuke system and disable protection')
+            .setDescription('[Anti-Nuke] Stop the anti-nuke system and disable protection')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('attach-trust')
-            .setDescription('Add a user or bot to the trusted list (exempt from scans)')
+            .setDescription('[Anti-Nuke] Add a user or bot to the trusted list (exempt from scans)')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addUserOption(option => 
                 option.setName('target').setDescription('Member or bot to trust').setRequired(true)),
         new SlashCommandBuilder()
             .setName('unattach-trust')
-            .setDescription('Remove trust status from a user or bot')
+            .setDescription('[Anti-Nuke] Remove trust status from a user or bot')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addUserOption(option => 
                 option.setName('target').setDescription('Member or bot to untrust').setRequired(true)),
 
-        // Lệnh Ticket tích hợp chọn kênh hiển thị nút và kênh nhận log
+        // Lệnh Quản Lý Server (Ticket, Mute, Ban, Role, v.v.)
         new SlashCommandBuilder()
             .setName('ticket-dubo')
-            .setDescription('Thiết lập kênh hiển thị mục ấn tạo Ticket và kênh nhận log (Chỉ Chủ Bot)')
+            .setDescription('[Server Management] Setup ticket embed channel and log channel')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addChannelOption(option => 
                 option.setName('kenh-dang-embed')
-                    .setDescription('Chọn kênh hiển thị mục ấn tạo Ticket')
+                    .setDescription('Channel to show ticket button')
                     .addChannelTypes(ChannelType.GuildText)
                     .setRequired(true)
             )
             .addChannelOption(option => 
                 option.setName('kenh-nhan-log')
-                    .setDescription('Chọn kênh hiển thị người viết ticket gửi về')
+                    .setDescription('Channel to receive ticket logs')
                     .addChannelTypes(ChannelType.GuildText)
                     .setRequired(true)
             ),
 
         new SlashCommandBuilder()
             .setName('mute')
-            .setDescription('Hạn chế chat (Mute) một thành viên')
+            .setDescription('[Server Management] Timeout/Mute a member')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-            .addUserOption(option => option.setName('user').setDescription('Thành viên cần Mute').setRequired(true)),
+            .addUserOption(option => option.setName('user').setDescription('Member to mute').setRequired(true)),
 
         new SlashCommandBuilder()
             .setName('unmute')
-            .setDescription('Gỡ hạn chế chat (Unmute) một thành viên')
+            .setDescription('[Server Management] Remove timeout from a member')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-            .addUserOption(option => option.setName('user').setDescription('Thành viên cần Unmute').setRequired(true)),
+            .addUserOption(option => option.setName('user').setDescription('Member to unmute').setRequired(true)),
 
         new SlashCommandBuilder()
             .setName('ban')
-            .setDescription('Chặn truy cập (Ban) một thành viên')
+            .setDescription('[Server Management] Ban a member from the server')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-            .addUserOption(option => option.setName('user').setDescription('Thành viên cần Ban').setRequired(true)),
+            .addUserOption(option => option.setName('user').setDescription('Member to ban').setRequired(true)),
 
         new SlashCommandBuilder()
             .setName('unban')
-            .setDescription('Gỡ chặn (Unban) bằng ID')
+            .setDescription('[Server Management] Unban a user by ID')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-            .addStringOption(option => option.setName('id').setDescription('Nhập ID tài khoản cần Unban').setRequired(true)),
+            .addStringOption(option => option.setName('id').setDescription('User ID to unban').setRequired(true)),
 
         new SlashCommandBuilder()
             .setName('role')
-            .setDescription('Quản lý vai trò thành viên')
+            .setDescription('[Server Management] Manage member roles (Add/Remove)')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-            .addUserOption(option => option.setName('user').setDescription('Chọn thành viên').setRequired(true))
-            .addRoleOption(option => option.setName('role').setDescription('Chọn vai trò').setRequired(true))
+            .addUserOption(option => option.setName('user').setDescription('Select member').setRequired(true))
+            .addRoleOption(option => option.setName('role').setDescription('Select role').setRequired(true))
             .addStringOption(option =>
                 option.setName('action')
-                    .setDescription('Chọn hành động')
+                    .setDescription('Choose action')
                     .setRequired(true)
                     .addChoices(
-                        { name: 'Cấp vai trò (Add)', value: 'add' },
-                        { name: 'Xóa vai trò (Remove)', value: 'remove' }
+                        { name: 'Add Role', value: 'add' },
+                        { name: 'Remove Role', value: 'remove' }
                     )
             ),
 
-        new SlashCommandBuilder().setName('help').setDescription('Hiển thị hướng dẫn sử dụng bot')
+        new SlashCommandBuilder()
+            .setName('help')
+            .setDescription('Display bot usage guide and command categories')
 
     ].map(command => command.toJSON());
 
@@ -191,9 +193,7 @@ async function notifyOwnerForChannelDeletion(guild, culpritName, channelName) {
         const now = Date.now();
         const lastNotifTime = lastNotificationTracker.get(guild.id) || 0;
 
-        if (now - lastNotifTime < 60000) {
-            return; 
-        }
+        if (now - lastNotifTime < 60000) return;
         lastNotificationTracker.set(guild.id, now);
 
         let msg = `⚠️ **Channel Deletion Alert**\n\n`;
@@ -321,9 +321,9 @@ client.on('interactionCreate', async interaction => {
 
         try {
             await sourceChannel.send({ embeds: [minimalEmbed], components: [row] });
-            return interaction.editReply({ content: `✅ Thiết lập thành công!\n- Kênh hiển thị mục ấn tạo Ticket: ${sourceChannel}\n- Kênh hiển thị người viết ticket (nhận log): ${targetChannel}` });
+            return interaction.editReply({ content: `✅ Setup successful!\n- Ticket Button Channel: ${sourceChannel}\n- Ticket Log Channel: ${targetChannel}` });
         } catch (err) {
-            return interaction.editReply({ content: '❌ Thất bại! Kiểm tra lại quyền của Bot tại kênh đó.' });
+            return interaction.editReply({ content: '❌ Failed! Please check bot permissions in that channel.' });
         }
     }
 
@@ -332,14 +332,14 @@ client.on('interactionCreate', async interaction => {
         const targetUser = interaction.options.getUser('user');
         const selectMute = new StringSelectMenuBuilder()
             .setCustomId(`select_mute_time_${targetUser.id}`) 
-            .setPlaceholder(`Chọn thời gian Mute cho ${targetUser.username}...`)
+            .setPlaceholder(`Select mute duration for ${targetUser.username}...`)
             .addOptions(
-                new StringSelectMenuOptionBuilder().setLabel('1 Giờ').setValue('3600000'),
-                new StringSelectMenuOptionBuilder().setLabel('1 Ngày').setValue('86400000'),
-                new StringSelectMenuOptionBuilder().setLabel('7 Ngày').setValue('604800000'),
-                new StringSelectMenuOptionBuilder().setLabel('30 Ngày').setValue('2419200000')
+                new StringSelectMenuOptionBuilder().setLabel('1 Hour').setValue('3600000'),
+                new StringSelectMenuOptionBuilder().setLabel('1 Day').setValue('86400000'),
+                new StringSelectMenuOptionBuilder().setLabel('7 Days').setValue('604800000'),
+                new StringSelectMenuOptionBuilder().setLabel('30 Days').setValue('2419200000')
             );
-        return interaction.reply({ content: `⏱️ **Chọn thời gian Mute:**`, components: [new ActionRowBuilder().addComponents(selectMute)], ephemeral: true });
+        return interaction.reply({ content: `⏱️ **Select Mute Duration:**`, components: [new ActionRowBuilder().addComponents(selectMute)], ephemeral: true });
     }
 
     // --- LỆNH UNMUTE ---
@@ -349,9 +349,9 @@ client.on('interactionCreate', async interaction => {
         try {
             const targetMember = await interaction.guild.members.fetch(targetUser.id);
             await targetMember.timeout(null);
-            return interaction.editReply({ content: `✅ Đã gỡ mute thành công cho ${targetUser.tag || targetUser.username}.` });
+            return interaction.editReply({ content: `✅ Successfully unmuted ${targetUser.tag || targetUser.username}.` });
         } catch (err) {
-            return interaction.editReply({ content: `❌ Lỗi: ${err.message}` });
+            return interaction.editReply({ content: `❌ Error: ${err.message}` });
         }
     }
 
@@ -360,14 +360,14 @@ client.on('interactionCreate', async interaction => {
         const targetUser = interaction.options.getUser('user');
         const selectBan = new StringSelectMenuBuilder()
             .setCustomId(`select_ban_time_${targetUser.id}`) 
-            .setPlaceholder(`Chọn thời gian Ban cho ${targetUser.username}...`)
+            .setPlaceholder(`Select ban duration for ${targetUser.username}...`)
             .addOptions(
-                new StringSelectMenuOptionBuilder().setLabel('1 Giờ').setValue('1'),
-                new StringSelectMenuOptionBuilder().setLabel('1 Ngày').setValue('24'),
-                new StringSelectMenuOptionBuilder().setLabel('7 Ngày').setValue('168'),
-                new StringSelectMenuOptionBuilder().setLabel('🔨 Ban Vĩnh Viễn').setValue('0')
+                new StringSelectMenuOptionBuilder().setLabel('1 Hour').setValue('1'),
+                new StringSelectMenuOptionBuilder().setLabel('1 Day').setValue('24'),
+                new StringSelectMenuOptionBuilder().setLabel('7 Days').setValue('168'),
+                new StringSelectMenuOptionBuilder().setLabel('🔨 Permanent Ban').setValue('0')
             );
-        return interaction.reply({ content: `🔨 **Chọn thời gian Ban:**`, components: [new ActionRowBuilder().addComponents(selectBan)], ephemeral: true });
+        return interaction.reply({ content: `🔨 **Select Ban Duration:**`, components: [new ActionRowBuilder().addComponents(selectBan)], ephemeral: true });
     }
 
     // --- LỆNH UNBAN ---
@@ -376,9 +376,9 @@ client.on('interactionCreate', async interaction => {
         const targetId = interaction.options.getString('id').trim();
         try {
             await interaction.guild.members.unban(targetId);
-            return interaction.editReply({ content: `✅ Đã gỡ ban thành công cho ID: \`${targetId}\`.` });
+            return interaction.editReply({ content: `✅ Successfully unbanned ID: \`${targetId}\`.` });
         } catch (err) {
-            return interaction.editReply({ content: `❌ Lỗi: ${err.message}` });
+            return interaction.editReply({ content: `❌ Error: ${err.message}` });
         }
     }
 
@@ -391,29 +391,54 @@ client.on('interactionCreate', async interaction => {
 
         try {
             const targetMember = await interaction.guild.members.fetch(targetUser.id);
-            if (!targetMember) return interaction.editReply({ content: '❌ Không tìm thấy thành viên này.' });
+            if (!targetMember) return interaction.editReply({ content: '❌ Member not found.' });
 
             const botMember = await interaction.guild.members.fetch(client.user.id);
             if (targetRole.position >= botMember.roles.highest.position) {
-                return interaction.editReply({ content: `❌ Vai trò này nằm cao hơn hoặc bằng vai trò của Bot.` });
+                return interaction.editReply({ content: `❌ This role is higher than or equal to the bot's highest role.` });
             }
 
             if (action === 'add') {
-                if (targetMember.roles.cache.has(targetRole.id)) return interaction.editReply({ content: `ℹ️ Thành viên này đã có vai trò này rồi.` });
+                if (targetMember.roles.cache.has(targetRole.id)) return interaction.editReply({ content: `ℹ️ Member already has this role.` });
                 await targetMember.roles.add(targetRole);
-                return interaction.editReply({ content: `✅ Đã cấp vai trò ${targetRole.name} cho ${targetUser.tag || targetUser.username}.` });
+                return interaction.editReply({ content: `✅ Successfully added role ${targetRole.name} to ${targetUser.tag || targetUser.username}.` });
             } else {
-                if (!targetMember.roles.cache.has(targetRole.id)) return interaction.editReply({ content: `ℹ️ Thành viên này không có vai trò này.` });
+                if (!targetMember.roles.cache.has(targetRole.id)) return interaction.editReply({ content: `ℹ️ Member does not have this role.` });
                 await targetMember.roles.remove(targetRole);
-                return interaction.editReply({ content: `✅ Đã xóa vai trò ${targetRole.name} khỏi ${targetUser.tag || targetUser.username}.` });
+                return interaction.editReply({ content: `✅ Successfully removed role ${targetRole.name} from ${targetUser.tag || targetUser.username}.` });
             }
         } catch (err) {
-            return interaction.editReply({ content: `❌ Lỗi: ${err.message}` });
+            return interaction.editReply({ content: `❌ Error: ${err.message}` });
         }
     }
 
+    // --- LỆNH HELP (ĐÃ CẬP NHẬT TIÊU ĐỀ VÀ HƯỚNG DẪN TIẾNG ANH) ---
     if (interaction.commandName === 'help') {
-        return interaction.reply({ content: 'Hệ thống quản lý Anti-Nuke và Ticket Bot đang hoạt động bình thường.', ephemeral: true });
+        const helpEmbed = new EmbedBuilder()
+            .setColor('#2b2d31')
+            .setTitle('🛡️ ANTI-NUKE & SERVER MANAGEMENT BOT GUIDE')
+            .setDescription('Here is the complete list of commands and instructions for managing and protecting your server:')
+            .addFields(
+                { 
+                    name: '🔒 Anti-Nuke Commands (Server Protection)', 
+                    value: '`/@protect-server` - Activate server scanning, create backup storage, and enable auto-restoration.\n' +
+                           '`/@stop` - Stop the anti-nuke protection system.\n' +
+                           '`/@attach-trust` - Add a user or bot to the trusted list (exempt from anti-nuke scans).\n' +
+                           '`/@unattach-trust` - Remove a user or bot from the trusted list.' 
+                },
+                { 
+                    name: '⚙️ Server Management Commands', 
+                    value: '`/@ticket-dubo` - Set up the ticket button channel and log output channel.\n' +
+                           '`/@mute` - Timeout/mute a member for a selected duration.\n' +
+                           '`/@unmute` - Remove timeout from a member.\n' +
+                           '`/@ban` - Ban a member from the server.\n' +
+                           '`/@unban` - Unban a user via their account ID.\n' +
+                           '`/@role` - Add or remove roles from a server member.' 
+                }
+            )
+            .setTimestamp();
+
+        return interaction.reply({ embeds: [helpEmbed], ephemeral: true });
     }
 });
 
@@ -491,19 +516,19 @@ client.on('interactionCreate', async interaction => {
         else if (interaction.customId === 'open_ticket_modal') {
             const modal = new ModalBuilder()
                 .setCustomId('ticket_submission_modal')
-                .setTitle('Tạo Ticket Mới');
+                .setTitle('Create New Ticket');
 
             const fieldTitle = new TextInputBuilder()
                 .setCustomId('ticket_title')
-                .setLabel('TITLE (Tiêu đề chữ lớn)')
-                .setPlaceholder('Ví dụ: SUPPORT BOT')
+                .setLabel('TITLE (Bold Header Text)')
+                .setPlaceholder('Example: SUPPORT BOT')
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
             const fieldBody = new TextInputBuilder()
                 .setCustomId('ticket_body')
-                .setLabel('Nội dung chi tiết (Văn bản thường)')
-                .setPlaceholder('Nhập nội dung bạn muốn gửi...')
+                .setLabel('Detailed Content (Normal Text)')
+                .setPlaceholder('Enter your message here...')
                 .setStyle(TextInputStyle.Paragraph)
                 .setRequired(true);
 
@@ -526,7 +551,7 @@ client.on('interactionCreate', async interaction => {
             .setTitle(`📌 ${titleText}`)
             .setDescription(bodyText)
             .addFields(
-                { name: '👤 Người viết Ticket:', value: `${interaction.user} (ID: ${interaction.user.id})` }
+                { name: '👤 Ticket Author:', value: `${interaction.user} (ID: ${interaction.user.id})` }
             )
             .setTimestamp();
 
@@ -534,11 +559,11 @@ client.on('interactionCreate', async interaction => {
             const logChannel = await client.channels.fetch(TICKET_LOG_CHANNEL_ID).catch(() => null);
             if (logChannel) {
                 await logChannel.send({ embeds: [logEmbed] });
-                return interaction.editReply({ content: '✅ Đã gửi bài viết của bạn lên kênh nhận log thành công!' });
+                return interaction.editReply({ content: '✅ Successfully submitted your ticket to the log channel!' });
             }
-            return interaction.editReply({ content: '❌ Không tìm thấy kênh nhận log người viết ticket.' });
+            return interaction.editReply({ content: '❌ Ticket log channel not found.' });
         } catch (error) {
-            return interaction.editReply({ content: '❌ Lỗi hệ thống khi truyền tải dữ liệu.' });
+            return interaction.editReply({ content: '❌ System error while transferring data.' });
         }
     } 
     // --- XỬ LÝ MUTE / BAN SELECTION ---
@@ -550,9 +575,9 @@ client.on('interactionCreate', async interaction => {
             try {
                 const member = await interaction.guild.members.fetch(targetId);
                 await member.timeout(duration);
-                return interaction.editReply({ content: `✅ Đã Mute thành công tài khoản ${member.user.tag || member.user.username}.` });
+                return interaction.editReply({ content: `✅ Successfully muted ${member.user.tag || member.user.username}.` });
             } catch (e) {
-                return interaction.editReply({ content: `❌ Lỗi thực thi Mute.` });
+                return interaction.editReply({ content: `❌ Error executing mute.` });
             }
         }
 
@@ -563,9 +588,9 @@ client.on('interactionCreate', async interaction => {
             try {
                 const user = await client.users.fetch(targetId);
                 await interaction.guild.members.ban(user);
-                return interaction.editReply({ content: `✅ Đã Ban thành công tài khoản ${user.tag || user.username}.` });
+                return interaction.editReply({ content: `✅ Successfully banned ${user.tag || user.username}.` });
             } catch (e) {
-                return interaction.editReply({ content: `❌ Lỗi thực thi Ban.` });
+                return interaction.editReply({ content: `❌ Error executing ban.` });
             }
         }
     }
