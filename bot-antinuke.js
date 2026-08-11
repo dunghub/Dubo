@@ -277,9 +277,6 @@ client.on('interactionCreate', async interaction => {
         return await interaction.reply({ content: `⚠️ Successfully removed trust status from **${target.tag || target.username}**!`, ephemeral: true });
     }
 
-    // ==========================================
-    // XỬ LÝ LỆNH /TICKET-DUBO (BẬT MODAL ĐỂ NHẬP TITLE & CONTENT)
-    // ==========================================
     if (interaction.commandName === 'ticket-dubo') {
         const sourceChannel = interaction.options.getChannel('kenh-dang-embed');
         const targetChannel = interaction.options.getChannel('kenh-nhan-log');
@@ -523,10 +520,42 @@ client.on('interactionCreate', async interaction => {
 
             return interaction.showModal(modal);
         }
+        // ==========================================
+        // XỬ LÝ CÁC NÚT QUẢN TRỊ TRONG LOG TICKET
+        // ==========================================
+        else if (interaction.customId.startsWith('reply_ticket_')) {
+            const targetUserId = interaction.customId.replace('reply_ticket_', '');
+            const modal = new ModalBuilder()
+                .setCustomId(`reply_modal_${targetUserId}`)
+                .setTitle('Gửi tin nhắn trực tiếp cho User');
+
+            const msgInput = new TextInputBuilder()
+                .setCustomId('admin_reply_content')
+                .setLabel('Nội dung tin nhắn phản hồi')
+                .setPlaceholder('Nhập nội dung bạn muốn gửi...')
+                .setStyle(TextInputStyle.Paragraph)
+                .setRequired(true);
+
+            modal.addComponents(new ActionRowBuilder().addComponents(msgInput));
+            return interaction.showModal(modal);
+        }
+        else if (interaction.customId === 'mute_target_direct') {
+            await interaction.deferReply({ ephemeral: true });
+            return interaction.editReply({ content: '⏱️ Vui lòng sử dụng lệnh `/mute` trực tiếp để chọn thời gian cụ thể.' });
+        }
+        else if (interaction.customId === 'unmute_target_direct') {
+            await interaction.deferReply({ ephemeral: true });
+            return interaction.editReply({ content: '⏱️ Vui lòng sử dụng lệnh `/unmute` để bỏ mute thành viên.' });
+        }
+        else if (interaction.customId === 'ban_target_direct') {
+            await interaction.deferReply({ ephemeral: true });
+            return interaction.editReply({ content: '🔨 Vui lòng sử dụng lệnh `/ban` để chọn hình thức ban.' });
+        }
+        else if (interaction.customId === 'unban_target_direct') {
+            await interaction.deferReply({ ephemeral: true });
+            return interaction.editReply({ content: '🔓 Vui lòng sử dụng lệnh `/unban [ID]` để gỡ ban.' });
+        }
     } 
-    // ==========================================
-    // XỬ LÝ SUBMIT MODAL CÀI ĐẶT EMBED TICKET BAN ĐẦU
-    // ==========================================
     else if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_setup_modal_')) {
         await interaction.deferReply({ ephemeral: true });
         const sourceChannelId = interaction.customId.replace('ticket_setup_modal_', '');
@@ -558,9 +587,6 @@ client.on('interactionCreate', async interaction => {
             return interaction.editReply({ content: `❌ Error: ${err.message}` });
         }
     }
-    // ==========================================
-    // XỬ LÝ SUBMIT TICKET FORM CỦA USER KÈM CÁC NÚT QUẢN TRỊ ADMIN
-    // ==========================================
     else if (interaction.isModalSubmit() && interaction.customId === 'ticket_submission_modal') {
         await interaction.deferReply({ ephemeral: true });
         const userTag = interaction.fields.getTextInputValue('ticket_user_tag');
@@ -599,6 +625,19 @@ client.on('interactionCreate', async interaction => {
             return interaction.editReply({ content: '❌ System error while transferring data.' });
         }
     } 
+    else if (interaction.isModalSubmit() && interaction.customId.startsWith('reply_modal_')) {
+        await interaction.deferReply({ ephemeral: true });
+        const targetUserId = interaction.customId.replace('reply_modal_', '');
+        const replyMessage = interaction.fields.getTextInputValue('admin_reply_content');
+
+        try {
+            const targetUser = await client.users.fetch(targetUserId);
+            await targetUser.send({ content: `📩 **Phản hồi từ Ban Quản Trị:**\n${replyMessage}` });
+            return interaction.editReply({ content: '✅ Đã gửi tin nhắn trực tiếp cho người dùng thành công!' });
+        } catch (err) {
+            return interaction.editReply({ content: '❌ Không thể gửi tin nhắn cho người dùng này (Có thể họ đã tắt DM).' });
+        }
+    }
     else if (interaction.isStringSelectMenu()) {
         if (interaction.customId.startsWith('select_mute_time_')) {
             await interaction.deferReply({ ephemeral: true });
