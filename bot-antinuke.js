@@ -45,17 +45,17 @@ let db, nukedServersCollection, serverBackupsCollection, trustedEntitiesCollecti
 let TICKET_LOG_CHANNEL_ID = '1526179515355893811'; 
 
 // ==========================================
-// 1. ID DISCORD CỦA BẠN
+// 1. YOUR DISCORD ADMIN ID
 const MY_ADMIN_DISCORD_ID = '1501730680613114048'; 
 
-// 2. ID SERVER CỦA BẠN (Nơi chứa toàn bộ lệnh quản lý và help)
+// 2. YOUR SERVER ID (Where management and help commands are located)
 const MY_SERVER_ID = '1509197460512309298';
 // ==========================================
 
 const channelCreationTracker = new Map();
 const messageSpamTracker = new Map();
 
-// Web server giữ bot online
+// Web server to keep bot online
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Bot is active!\n');
@@ -210,7 +210,7 @@ client.on('interactionCreate', async interaction => {
     if (managementCommands.includes(interaction.commandName)) {
         if (interaction.user.id !== MY_ADMIN_DISCORD_ID || interaction.guildId !== MY_SERVER_ID) {
             return await interaction.reply({ 
-                content: '❌ Lệnh này không khả dụng ở server này hoặc bạn không có quyền!', 
+                content: '❌ This command is not available in this server or you do not have permission!', 
                 ephemeral: true 
             });
         }
@@ -306,15 +306,15 @@ client.on('interactionCreate', async interaction => {
 
         const titleInput = new TextInputBuilder()
             .setCustomId('setup_ticket_title')
-            .setLabel('TITLE (Tiêu đề bảng)')
-            .setPlaceholder('Ví dụ: Tố Cáo / Hỗ Trợ Chung')
+            .setLabel('TITLE (Embed Title)')
+            .setPlaceholder('Example: Report / General Support')
             .setStyle(TextInputStyle.Short)
             .setRequired(true);
 
         const contentInput = new TextInputBuilder()
             .setCustomId('setup_ticket_content')
-            .setLabel('Nội dung hướng dẫn chi tiết')
-            .setPlaceholder('Nhập nội dung mô tả ở đây...')
+            .setLabel('Detailed Instructions Content')
+            .setPlaceholder('Enter description content here...')
             .setStyle(TextInputStyle.Paragraph)
             .setRequired(true);
 
@@ -494,26 +494,26 @@ client.on('interactionCreate', async interaction => {
         else if (interaction.customId === 'open_ticket_modal') {
             const modal = new ModalBuilder()
                 .setCustomId('ticket_submission_modal')
-                .setTitle('Support - Tố Cáo & Hỗ Trợ');
+                .setTitle('Support - Report & General Support');
 
             const field1 = new TextInputBuilder()
                 .setCustomId('ticket_user_tag')
-                .setLabel('Tag/Tên người dùng tố cáo | User Tag')
-                .setPlaceholder('Ví dụ: @abcxyz...')
+                .setLabel('Reported User Tag / Name')
+                .setPlaceholder('Example: @abcxyz...')
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
             const field2 = new TextInputBuilder()
                 .setCustomId('ticket_reason')
-                .setLabel('Lý do gặp phải | Reason')
-                .setPlaceholder('Ghi rõ hành vi vi phạm tại đây...')
+                .setLabel('Reason / Issue')
+                .setPlaceholder('Describe the violation behavior here...')
                 .setStyle(TextInputStyle.Paragraph)
                 .setRequired(true);
 
             const field3 = new TextInputBuilder()
                 .setCustomId('ticket_evidence_link')
-                .setLabel('Link ảnh hoặc Video bằng chứng | Evidence')
-                .setPlaceholder('Dán link bằng chứng vào đây...')
+                .setLabel('Evidence Image or Video Link')
+                .setPlaceholder('Paste evidence link here...')
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
@@ -528,19 +528,19 @@ client.on('interactionCreate', async interaction => {
         else if (interaction.customId === 'open_ticket_support_modal') {
             const modal = new ModalBuilder()
                 .setCustomId('ticket_support_submission_modal')
-                .setTitle('Báo Lỗi Bot / Hướng Dẫn Sử Dụng');
+                .setTitle('Bot Bug Report / Usage Guide');
 
             const field1 = new TextInputBuilder()
                 .setCustomId('support_evidence_link')
-                .setLabel('Link ảnh hoặc link video')
-                .setPlaceholder('Dán link ảnh hoặc video vào đây...')
+                .setLabel('Image or Video Link')
+                .setPlaceholder('Paste image or video link here...')
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
             const field2 = new TextInputBuilder()
                 .setCustomId('support_question')
-                .setLabel('Vấn đề gặp phải / Vấn đề bot gặp phải')
-                .setPlaceholder('Mô tả chi tiết để tôi sửa...')
+                .setLabel('Problem Encountered / Bot Bug')
+                .setPlaceholder('Describe in detail so I can fix it...')
                 .setStyle(TextInputStyle.Paragraph)
                 .setRequired(true);
 
@@ -555,12 +555,12 @@ client.on('interactionCreate', async interaction => {
             const targetUserId = interaction.customId.replace('reply_ticket_', '');
             const modal = new ModalBuilder()
                 .setCustomId(`reply_modal_${targetUserId}`)
-                .setTitle('Gửi tin nhắn trực tiếp cho User');
+                .setTitle('Send Direct Message to User');
 
             const msgInput = new TextInputBuilder()
                 .setCustomId('admin_reply_content')
-                .setLabel('Nội dung tin nhắn phản hồi')
-                .setPlaceholder('Nhập nội dung bạn muốn gửi...')
+                .setLabel('Reply Message Content')
+                .setPlaceholder('Enter the content you want to send...')
                 .setStyle(TextInputStyle.Paragraph)
                 .setRequired(true);
 
@@ -574,22 +574,22 @@ client.on('interactionCreate', async interaction => {
 
             const userInput = new TextInputBuilder()
                 .setCustomId('mute_target_input')
-                .setLabel('Tag tên hoặc ID người cần Mute')
-                .setPlaceholder('@username hoặc ID...')
+                .setLabel('Member Tag or ID to Mute')
+                .setPlaceholder('@username or ID...')
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
             const timeInput = new TextInputBuilder()
                 .setCustomId('mute_duration_input')
-                .setLabel('Thời gian (VD: 1h, 1d, 1w, 1m)')
+                .setLabel('Duration (e.g., 1h, 1d, 1w, 1m)')
                 .setPlaceholder('1h / 1d / 1w / 1m...')
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
             const reasonInput = new TextInputBuilder()
                 .setCustomId('mute_reason_input')
-                .setLabel('Lý do mute')
-                .setPlaceholder('Nhập lý do gửi cho user...')
+                .setLabel('Mute Reason')
+                .setPlaceholder('Enter reason to send to user...')
                 .setStyle(TextInputStyle.Paragraph)
                 .setRequired(true);
 
@@ -607,15 +607,15 @@ client.on('interactionCreate', async interaction => {
 
             const userInput = new TextInputBuilder()
                 .setCustomId('ban_target_input')
-                .setLabel('Tag tên hoặc ID người cần Ban')
-                .setPlaceholder('@username hoặc ID...')
+                .setLabel('Member Tag or ID to Ban')
+                .setPlaceholder('@username or ID...')
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
             const reasonInput = new TextInputBuilder()
                 .setCustomId('ban_reason_input')
-                .setLabel('Lý do ban')
-                .setPlaceholder('Nhập lý do gửi cho user...')
+                .setLabel('Ban Reason')
+                .setPlaceholder('Enter reason to send to user...')
                 .setStyle(TextInputStyle.Paragraph)
                 .setRequired(true);
 
@@ -627,11 +627,11 @@ client.on('interactionCreate', async interaction => {
         }
         else if (interaction.customId === 'unmute_target_direct') {
             await interaction.deferReply({ ephemeral: true });
-            return interaction.editReply({ content: '⏱️ Vui lòng sử dụng lệnh `/unmute` để bỏ mute thành viên.' });
+            return interaction.editReply({ content: '⏱️ Please use the `/unmute` command to unmute the member.' });
         }
         else if (interaction.customId === 'unban_target_direct') {
             await interaction.deferReply({ ephemeral: true });
-            return interaction.editReply({ content: '🔓 Vui lòng sử dụng lệnh `/unban [ID]` để gỡ ban.' });
+            return interaction.editReply({ content: '🔓 Please use the `/unban [ID]` command to unban.' });
         }
     } 
     else if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_setup_report_modal_')) {
@@ -642,7 +642,7 @@ client.on('interactionCreate', async interaction => {
 
         const ticketButton = new ButtonBuilder()
             .setCustomId('open_ticket_modal')
-            .setLabel('🎫 Gửi Ticket Tố Cáo')
+            .setLabel('🎫 Send Report Ticket')
             .setStyle(ButtonStyle.Primary); 
         
         const row = new ActionRowBuilder().addComponents(ticketButton);
@@ -658,9 +658,9 @@ client.on('interactionCreate', async interaction => {
             const sourceChannel = await client.channels.fetch(sourceChannelId);
             if (sourceChannel) {
                 await sourceChannel.send({ embeds: [ticketEmbed], components: [row] });
-                return interaction.editReply({ content: `✅ Setup Report Ticket thành công!\n- Channel: ${sourceChannel}\n- Log Channel: <#${TICKET_LOG_CHANNEL_ID}>` });
+                return interaction.editReply({ content: `✅ Successfully setup Report Ticket!\n- Channel: ${sourceChannel}\n- Log Channel: <#${TICKET_LOG_CHANNEL_ID}>` });
             }
-            return interaction.editReply({ content: '❌ Thất bại! Kiểm tra quyền của bot.' });
+            return interaction.editReply({ content: '❌ Failure! Check bot permissions.' });
         } catch (err) {
             return interaction.editReply({ content: `❌ Error: ${err.message}` });
         }
@@ -673,7 +673,7 @@ client.on('interactionCreate', async interaction => {
 
         const ticketButton = new ButtonBuilder()
             .setCustomId('open_ticket_support_modal')
-            .setLabel('🛠️ Báo Lỗi Bot / Hướng Dẫn')
+            .setLabel('🛠️ Bot Bug Report / Guide')
             .setStyle(ButtonStyle.Success); 
         
         const row = new ActionRowBuilder().addComponents(ticketButton);
@@ -689,9 +689,9 @@ client.on('interactionCreate', async interaction => {
             const sourceChannel = await client.channels.fetch(sourceChannelId);
             if (sourceChannel) {
                 await sourceChannel.send({ embeds: [ticketEmbed], components: [row] });
-                return interaction.editReply({ content: `✅ Setup Support Ticket thành công!\n- Channel: ${sourceChannel}\n- Log Channel: <#${TICKET_LOG_CHANNEL_ID}>` });
+                return interaction.editReply({ content: `✅ Successfully setup Support Ticket!\n- Channel: ${sourceChannel}\n- Log Channel: <#${TICKET_LOG_CHANNEL_ID}>` });
             }
-            return interaction.editReply({ content: '❌ Thất bại! Kiểm tra quyền của bot.' });
+            return interaction.editReply({ content: '❌ Failure! Check bot permissions.' });
         } catch (err) {
             return interaction.editReply({ content: `❌ Error: ${err.message}` });
         }
@@ -703,16 +703,16 @@ client.on('interactionCreate', async interaction => {
 
         const logEmbed = new EmbedBuilder()
             .setColor('#00ff88')
-            .setTitle('🛠️ BÁO LỖI BOT / HƯỚNG DẪN SỬ DỤNG MỚI')
+            .setTitle('🛠️ NEW BOT BUG REPORT / USAGE GUIDE')
             .setThumbnail(interaction.user.displayAvatarURL())
             .addFields(
-                { name: '👤 Người gửi:', value: `${interaction.user} (ID: ${interaction.user.id})` },
-                { name: '🎥 Link ảnh hoặc video:', value: `${evidenceLink}` },
-                { name: '📝 Vấn đề gặp phải / Lỗi bot cần fix:', value: `${problemDescription}` }
+                { name: '👤 Sender:', value: `${interaction.user} (ID: ${interaction.user.id})` },
+                { name: '🎥 Image or Video Link:', value: `${evidenceLink}` },
+                { name: '📝 Issue Encountered / Bug to Fix:', value: `${problemDescription}` }
             )
             .setTimestamp();
 
-        const replyButton = new ButtonBuilder().setCustomId(`reply_ticket_${interaction.user.id}`).setLabel('Gửi tin nhắn').setStyle(ButtonStyle.Success);
+        const replyButton = new ButtonBuilder().setCustomId(`reply_ticket_${interaction.user.id}`).setLabel('Send Message').setStyle(ButtonStyle.Success);
         const muteButton = new ButtonBuilder().setCustomId('mute_target_direct').setLabel('Mute').setStyle(ButtonStyle.Primary);
         const unmuteButton = new ButtonBuilder().setCustomId('unmute_target_direct').setLabel('Unmute').setStyle(ButtonStyle.Secondary);
         const banButton = new ButtonBuilder().setCustomId('ban_target_direct').setLabel('Ban').setStyle(ButtonStyle.Danger);
@@ -725,9 +725,9 @@ client.on('interactionCreate', async interaction => {
             const logChannel = await client.channels.fetch(TICKET_LOG_CHANNEL_ID).catch(() => null);
             if (logChannel) {
                 await logChannel.send({ embeds: [logEmbed], components: [actionRow1, actionRow2] });
-                return interaction.editReply({ content: '✅ Đã gửi báo lỗi bot thành công! Tác giả sẽ xem xét và phản hồi bạn.' });
+                return interaction.editReply({ content: '✅ Successfully submitted bot bug report! The author will review and respond.' });
             }
-            return interaction.editReply({ content: '❌ Không tìm thấy kênh log.' });
+            return interaction.editReply({ content: '❌ Log channel not found.' });
         } catch (error) {
             return interaction.editReply({ content: '❌ System error.' });
         }
@@ -740,17 +740,17 @@ client.on('interactionCreate', async interaction => {
 
         const logEmbed = new EmbedBuilder()
             .setColor('#0055ff')
-            .setTitle('🚨 ĐƠN TỐ CÁO / YÊU CẦU HỖ TRỢ MỚI')
+            .setTitle('🚨 NEW REPORT / SUPPORT REQUEST')
             .setThumbnail(interaction.user.displayAvatarURL())
             .addFields(
-                { name: '👤 Người gửi đơn:', value: `${interaction.user} (ID: ${interaction.user.id})`, inline: true },
-                { name: '🎯 Đối tượng bị tố cáo:', value: `\`${userTag}\``, inline: true },
-                { name: '📝 Lý do chi tiết:', value: `${reason}` },
-                { name: '🎥 Link bằng chứng (Ảnh/Video):', value: `${evidenceLink}` }
+                { name: '👤 Sender:', value: `${interaction.user} (ID: ${interaction.user.id})`, inline: true },
+                { name: '🎯 Reported Target:', value: `\`${userTag}\``, inline: true },
+                { name: '📝 Detailed Reason:', value: `${reason}` },
+                { name: '🎥 Evidence Link (Image/Video):', value: `${evidenceLink}` }
             )
             .setTimestamp();
 
-        const replyButton = new ButtonBuilder().setCustomId(`reply_ticket_${interaction.user.id}`).setLabel('Gửi tin nhắn').setStyle(ButtonStyle.Success);
+        const replyButton = new ButtonBuilder().setCustomId(`reply_ticket_${interaction.user.id}`).setLabel('Send Message').setStyle(ButtonStyle.Success);
         const muteButton = new ButtonBuilder().setCustomId('mute_target_direct').setLabel('Mute').setStyle(ButtonStyle.Primary);
         const unmuteButton = new ButtonBuilder().setCustomId('unmute_target_direct').setLabel('Unmute').setStyle(ButtonStyle.Secondary);
         const banButton = new ButtonBuilder().setCustomId('ban_target_direct').setLabel('Ban').setStyle(ButtonStyle.Danger);
@@ -763,9 +763,9 @@ client.on('interactionCreate', async interaction => {
             const logChannel = await client.channels.fetch(TICKET_LOG_CHANNEL_ID).catch(() => null);
             if (logChannel) {
                 await logChannel.send({ embeds: [logEmbed], components: [actionRow1, actionRow2] });
-                return interaction.editReply({ content: '✅ Gửi yêu cầu hỗ trợ thành công! Ban quản trị sẽ sớm xử lý.' });
+                return interaction.editReply({ content: '✅ Successfully sent support request! The management team will process it soon.' });
             }
-            return interaction.editReply({ content: '❌ Thất bại: Không kết nối được tới đường ống đầu ra.' });
+            return interaction.editReply({ content: '❌ Failed: Could not connect to the output pipeline.' });
         } catch (error) {
             return interaction.editReply({ content: '❌ System error while transferring data.' });
         }
@@ -793,16 +793,16 @@ client.on('interactionCreate', async interaction => {
         try {
             const member = await interaction.guild.members.fetch(targetId).catch(() => null);
             if (!member) {
-                return interaction.editReply({ content: `❌ Không tìm thấy thành viên có ID/Tag: \`${rawTarget}\` trong server này!` });
+                return interaction.editReply({ content: `❌ Member not found with ID/Tag: \`${rawTarget}\` in this server!` });
             }
             
             await member.timeout(ms, `Muted via Panel by ${interaction.user.tag} - Reason: ${muteReason}`);
             
-            await member.send({ content: `⚠️ **Bạn đã bị MUTE tại server ${interaction.guild.name}**\n- **Thời gian áp dụng:** \`${durationStr}\`\n- **Lý do:** ${muteReason}` }).catch(() => {});
+            await member.send({ content: `⚠️ **You have been MUTED in server ${interaction.guild.name}**\n- **Duration applied:** \`${durationStr}\`\n- **Reason:** ${muteReason}` }).catch(() => {});
 
-            return interaction.editReply({ content: `✅ Đã Mute thành công **${member.user.tag || member.user.username}** với thời gian \`${durationStr}\`! Đã gửi thông báo DM.` });
+            return interaction.editReply({ content: `✅ Successfully muted **${member.user.tag || member.user.username}** for \`${durationStr}\`! DM notification sent.` });
         } catch (err) {
-            return interaction.editReply({ content: `❌ Lỗi khi thực hiện mute: ${err.message}` });
+            return interaction.editReply({ content: `❌ Error executing mute: ${err.message}` });
         }
     }
     else if (interaction.isModalSubmit() && interaction.customId === 'dyno_ban_modal') {
@@ -814,15 +814,15 @@ client.on('interactionCreate', async interaction => {
         try {
             const user = await client.users.fetch(targetId).catch(() => null);
             if (!user) {
-                return interaction.editReply({ content: `❌ Không tìm thấy user với ID/Tag: \`${rawTarget}\`!` });
+                return interaction.editReply({ content: `❌ User not found with ID/Tag: \`${rawTarget}\`!` });
             }
 
-            await user.send({ content: `🔨 **Bạn đã bị BAN (Cút) khỏi server ${interaction.guild.name}**\n- **Lý do:** ${banReason}` }).catch(() => {});
+            await user.send({ content: `🔨 **You have been BANNED from server ${interaction.guild.name}**\n- **Reason:** ${banReason}` }).catch(() => {});
 
             await interaction.guild.members.ban(user, { reason: `Banned via Panel by ${interaction.user.tag} - Reason: ${banReason}` });
-            return interaction.editReply({ content: `🔨 Đã ban thành công **${user.tag || user.username}** ra khỏi server! Đã gửi thông báo DM.` });
+            return interaction.editReply({ content: `🔨 Successfully banned **${user.tag || user.username}** from the server! DM notification sent.` });
         } catch (err) {
-            return interaction.editReply({ content: `❌ Lỗi khi ban: ${err.message}` });
+            return interaction.editReply({ content: `❌ Error banning: ${err.message}` });
         }
     }
     else if (interaction.isModalSubmit() && interaction.customId.startsWith('reply_modal_')) {
@@ -832,10 +832,10 @@ client.on('interactionCreate', async interaction => {
 
         try {
             const targetUser = await client.users.fetch(targetUserId);
-            await targetUser.send({ content: `📩 **Phản hồi từ Ban Quản Trị:**\n${replyMessage}` });
-            return interaction.editReply({ content: '✅ Đã gửi tin nhắn trực tiếp cho người dùng thành công!' });
+            await targetUser.send({ content: `📩 **Response from Management Team:**\n${replyMessage}` });
+            return interaction.editReply({ content: '✅ Successfully sent direct message to the user!' });
         } catch (err) {
-            return interaction.editReply({ content: '❌ Không thể gửi tin nhắn cho người dùng này (Có thể họ đã tắt DM).' });
+            return interaction.editReply({ content: '❌ Cannot send a message to this user (They might have DMs closed).' });
         }
     }
     else if (interaction.isStringSelectMenu()) {
