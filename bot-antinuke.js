@@ -86,7 +86,6 @@ client.once('ready', async () => {
     await ensureDbConnected();
     console.log(`Bot logged in successfully as: ${client.user.tag}`);
 
-    // Các lệnh bảo vệ chung cho mọi server
     const globalCommands = [
         new SlashCommandBuilder()
             .setName('protect-server')
@@ -110,25 +109,40 @@ client.once('ready', async () => {
                 option.setName('target').setDescription('Member or bot to untrust').setRequired(true))
     ].map(command => command.toJSON());
 
-    // Các lệnh quản lý RIÊNG BIỆT + LỆNH HELP (Chỉ đăng ký độc quyền ở server của bạn)
     const managementCommandsList = [
         new SlashCommandBuilder()
             .setName('help')
             .setDescription('Display bot usage guide and command categories')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
-            .setName('ticket-dubo')
-            .setDescription('Setup ticket embed channel and log channel')
+            .setName('ticket-report')
+            .setDescription('Setup report ticket channel')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addChannelOption(option => 
                 option.setName('kenh-dang-embed')
-                    .setDescription('Channel to show ticket button')
+                    .setDescription('Channel to show report ticket button')
                     .addChannelTypes(ChannelType.GuildText)
                     .setRequired(true)
             )
             .addChannelOption(option => 
                 option.setName('kenh-nhan-log')
-                    .setDescription('Channel to receive ticket logs')
+                    .setDescription('Channel to receive report logs')
+                    .addChannelTypes(ChannelType.GuildText)
+                    .setRequired(true)
+            ),
+        new SlashCommandBuilder()
+            .setName('ticket-support')
+            .setDescription('Setup bot bug report & support instructions channel')
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .addChannelOption(option => 
+                option.setName('kenh-dang-embed')
+                    .setDescription('Channel to show support ticket button')
+                    .addChannelTypes(ChannelType.GuildText)
+                    .setRequired(true)
+            )
+            .addChannelOption(option => 
+                option.setName('kenh-nhan-log')
+                    .setDescription('Channel to receive support logs')
                     .addChannelTypes(ChannelType.GuildText)
                     .setRequired(true)
             ),
@@ -191,7 +205,7 @@ async function isTrustedEntity(guildId, entityId) {
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
-    const managementCommands = ['help', 'ticket-dubo', 'mute', 'unmute', 'ban', 'unban', 'role'];
+    const managementCommands = ['help', 'ticket-report', 'ticket-support', 'mute', 'unmute', 'ban', 'unban', 'role'];
 
     if (managementCommands.includes(interaction.commandName)) {
         if (interaction.user.id !== MY_ADMIN_DISCORD_ID || interaction.guildId !== MY_SERVER_ID) {
@@ -277,26 +291,30 @@ client.on('interactionCreate', async interaction => {
         return await interaction.reply({ content: `⚠️ Successfully removed trust status from **${target.tag || target.username}**!`, ephemeral: true });
     }
 
-    if (interaction.commandName === 'ticket-dubo') {
+    if (interaction.commandName === 'ticket-report' || interaction.commandName === 'ticket-support') {
         const sourceChannel = interaction.options.getChannel('kenh-dang-embed');
         const targetChannel = interaction.options.getChannel('kenh-nhan-log');
         TICKET_LOG_CHANNEL_ID = targetChannel.id;
 
+        const isReport = interaction.commandName === 'ticket-report';
+        const modalId = isReport ? 'ticket_setup_report_modal' : 'ticket_setup_support_modal';
+        const modalTitle = isReport ? 'Setup Report Ticket' : 'Setup Bot Support Ticket';
+
         const modal = new ModalBuilder()
-            .setCustomId(`ticket_setup_modal_${sourceChannel.id}`)
-            .setTitle('Create New Ticket');
+            .setCustomId(`${modalId}_${sourceChannel.id}`)
+            .setTitle(modalTitle);
 
         const titleInput = new TextInputBuilder()
             .setCustomId('setup_ticket_title')
-            .setLabel('TITLE (Bold Header Text)')
-            .setPlaceholder('Example: SUPPORT BOT')
+            .setLabel('TITLE (Tiêu đề bảng)')
+            .setPlaceholder('Ví dụ: Tố Cáo / Hỗ Trợ Chung')
             .setStyle(TextInputStyle.Short)
             .setRequired(true);
 
         const contentInput = new TextInputBuilder()
             .setCustomId('setup_ticket_content')
-            .setLabel('Detailed Content (Normal Text)')
-            .setPlaceholder('Enter your message here...')
+            .setLabel('Nội dung hướng dẫn chi tiết')
+            .setPlaceholder('Nhập nội dung mô tả ở đây...')
             .setStyle(TextInputStyle.Paragraph)
             .setRequired(true);
 
@@ -403,7 +421,8 @@ client.on('interactionCreate', async interaction => {
                 },
                 { 
                     name: '⚙️ Server Management Commands', 
-                    value: '`/@ticket-dubo` - Set up the ticket button channel and log output channel.\n' +
+                    value: '`/@ticket-report` - Set up the report ticket channel.\n' +
+                           '`/@ticket-support` - Set up the bot support & bug fixing ticket channel.\n' +
                            '`/@mute` - Timeout/mute a member for a selected duration.\n' +
                            '`/@unmute` - Remove timeout from a member.\n' +
                            '`/@ban` - Ban a member from the server.\n' +
@@ -520,9 +539,32 @@ client.on('interactionCreate', async interaction => {
 
             return interaction.showModal(modal);
         }
-        // ==========================================
-        // XỬ LÝ CÁC NÚT QUẢN TRỊ TRONG LOG TICKET
-        // ==========================================
+        else if (interaction.customId === 'open_ticket_support_modal') {
+            const modal = new ModalBuilder()
+                .setCustomId('ticket_support_submission_modal')
+                .setTitle('Báo Lỗi Bot / Hướng Dẫn Sử Dụng');
+
+            const field1 = new TextInputBuilder()
+                .setCustomId('support_evidence_link')
+                .setLabel('Link ảnh hoặc link video')
+                .setPlaceholder('Dán link ảnh hoặc video vào đây...')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+
+            const field2 = new TextInputBuilder()
+                .setCustomId('support_question')
+                .setLabel('Vấn đề gặp phải / Vấn đề bot gặp phải')
+                .setPlaceholder('Mô tả chi tiết để tôi sửa...')
+                .setStyle(TextInputStyle.Paragraph)
+                .setRequired(true);
+
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(field1), 
+                new ActionRowBuilder().addComponents(field2)
+            );
+
+            return interaction.showModal(modal);
+        }
         else if (interaction.customId.startsWith('reply_ticket_')) {
             const targetUserId = interaction.customId.replace('reply_ticket_', '');
             const modal = new ModalBuilder()
@@ -540,51 +582,168 @@ client.on('interactionCreate', async interaction => {
             return interaction.showModal(modal);
         }
         else if (interaction.customId === 'mute_target_direct') {
-            await interaction.deferReply({ ephemeral: true });
-            return interaction.editReply({ content: '⏱️ Vui lòng sử dụng lệnh `/mute` trực tiếp để chọn thời gian cụ thể.' });
+            const modal = new ModalBuilder()
+                .setCustomId('dyno_mute_modal')
+                .setTitle('Mute Member Panel');
+
+            const userInput = new TextInputBuilder()
+                .setCustomId('mute_target_input')
+                .setLabel('Tag tên hoặc ID người cần Mute')
+                .setPlaceholder('@username hoặc ID...')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+
+            const timeInput = new TextInputBuilder()
+                .setCustomId('mute_duration_input')
+                .setLabel('Thời gian (VD: 1h, 1d, 1w, 1m)')
+                .setPlaceholder('1h / 1d / 1w / 1m...')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+
+            const reasonInput = new TextInputBuilder()
+                .setCustomId('mute_reason_input')
+                .setLabel('Lý do mute')
+                .setPlaceholder('Nhập lý do gửi cho user...')
+                .setStyle(TextInputStyle.Paragraph)
+                .setRequired(true);
+
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(userInput),
+                new ActionRowBuilder().addComponents(timeInput),
+                new ActionRowBuilder().addComponents(reasonInput)
+            );
+            return interaction.showModal(modal);
+        }
+        else if (interaction.customId === 'ban_target_direct') {
+            const modal = new ModalBuilder()
+                .setCustomId('dyno_ban_modal')
+                .setTitle('Ban Member Panel');
+
+            const userInput = new TextInputBuilder()
+                .setCustomId('ban_target_input')
+                .setLabel('Tag tên hoặc ID người cần Ban')
+                .setPlaceholder('@username hoặc ID...')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+
+            const reasonInput = new TextInputBuilder()
+                .setCustomId('ban_reason_input')
+                .setLabel('Lý do ban')
+                .setPlaceholder('Nhập lý do gửi cho user...')
+                .setStyle(TextInputStyle.Paragraph)
+                .setRequired(true);
+
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(userInput),
+                new ActionRowBuilder().addComponents(reasonInput)
+            );
+            return interaction.showModal(modal);
         }
         else if (interaction.customId === 'unmute_target_direct') {
             await interaction.deferReply({ ephemeral: true });
             return interaction.editReply({ content: '⏱️ Vui lòng sử dụng lệnh `/unmute` để bỏ mute thành viên.' });
-        }
-        else if (interaction.customId === 'ban_target_direct') {
-            await interaction.deferReply({ ephemeral: true });
-            return interaction.editReply({ content: '🔨 Vui lòng sử dụng lệnh `/ban` để chọn hình thức ban.' });
         }
         else if (interaction.customId === 'unban_target_direct') {
             await interaction.deferReply({ ephemeral: true });
             return interaction.editReply({ content: '🔓 Vui lòng sử dụng lệnh `/unban [ID]` để gỡ ban.' });
         }
     } 
-    else if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_setup_modal_')) {
+    else if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_setup_report_modal_')) {
         await interaction.deferReply({ ephemeral: true });
-        const sourceChannelId = interaction.customId.replace('ticket_setup_modal_', '');
+        const sourceChannelId = interaction.customId.replace('ticket_setup_report_modal_', '');
         const customTitle = interaction.fields.getTextInputValue('setup_ticket_title');
         const customContent = interaction.fields.getTextInputValue('setup_ticket_content');
 
         const ticketButton = new ButtonBuilder()
             .setCustomId('open_ticket_modal')
-            .setLabel('🎫 Gửi Ticket')
-            .setStyle(ButtonStyle.Danger); 
+            .setLabel('🎫 Gửi Ticket Tố Cáo')
+            .setStyle(ButtonStyle.Primary); 
         
         const row = new ActionRowBuilder().addComponents(ticketButton);
         
         const ticketEmbed = new EmbedBuilder()
-            .setColor('#0055ff')
+            .setColor('#5865F2')
             .setTitle(`📌 ${customTitle}`)
             .setDescription(customContent)
-            .setFooter({ text: 'Dubo Bypass Script Hub • Click Button Below' })
+            .setFooter({ text: 'Bot Ticket System • Click Button Below' })
             .setTimestamp();
 
         try {
             const sourceChannel = await client.channels.fetch(sourceChannelId);
             if (sourceChannel) {
                 await sourceChannel.send({ embeds: [ticketEmbed], components: [row] });
-                return interaction.editReply({ content: `✅ Setup successful!\n- Ticket Button Channel: ${sourceChannel}\n- Ticket Log Channel: <#${TICKET_LOG_CHANNEL_ID}>` });
+                return interaction.editReply({ content: `✅ Setup Report Ticket thành công!\n- Channel: ${sourceChannel}\n- Log Channel: <#${TICKET_LOG_CHANNEL_ID}>` });
             }
-            return interaction.editReply({ content: '❌ Failed! Please check bot permissions in that channel.' });
+            return interaction.editReply({ content: '❌ Thất bại! Kiểm tra quyền của bot.' });
         } catch (err) {
             return interaction.editReply({ content: `❌ Error: ${err.message}` });
+        }
+    }
+    else if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_setup_support_modal_')) {
+        await interaction.deferReply({ ephemeral: true });
+        const sourceChannelId = interaction.customId.replace('ticket_setup_support_modal_', '');
+        const customTitle = interaction.fields.getTextInputValue('setup_ticket_title');
+        const customContent = interaction.fields.getTextInputValue('setup_ticket_content');
+
+        const ticketButton = new ButtonBuilder()
+            .setCustomId('open_ticket_support_modal')
+            .setLabel('🛠️ Báo Lỗi Bot / Hướng Dẫn')
+            .setStyle(ButtonStyle.Success); 
+        
+        const row = new ActionRowBuilder().addComponents(ticketButton);
+        
+        const ticketEmbed = new EmbedBuilder()
+            .setColor('#00ff88')
+            .setTitle(`📌 ${customTitle}`)
+            .setDescription(customContent)
+            .setFooter({ text: 'Bot Support & Fix Hub • Click Button Below' })
+            .setTimestamp();
+
+        try {
+            const sourceChannel = await client.channels.fetch(sourceChannelId);
+            if (sourceChannel) {
+                await sourceChannel.send({ embeds: [ticketEmbed], components: [row] });
+                return interaction.editReply({ content: `✅ Setup Support Ticket thành công!\n- Channel: ${sourceChannel}\n- Log Channel: <#${TICKET_LOG_CHANNEL_ID}>` });
+            }
+            return interaction.editReply({ content: '❌ Thất bại! Kiểm tra quyền của bot.' });
+        } catch (err) {
+            return interaction.editReply({ content: `❌ Error: ${err.message}` });
+        }
+    }
+    else if (interaction.isModalSubmit() && interaction.customId === 'ticket_support_submission_modal') {
+        await interaction.deferReply({ ephemeral: true });
+        const evidenceLink = interaction.fields.getTextInputValue('support_evidence_link');
+        const problemDescription = interaction.fields.getTextInputValue('support_question');
+
+        const logEmbed = new EmbedBuilder()
+            .setColor('#00ff88')
+            .setTitle('🛠️ BÁO LỖI BOT / HƯỚNG DẪN SỬ DỤNG MỚI')
+            .setThumbnail(interaction.user.displayAvatarURL())
+            .addFields(
+                { name: '👤 Người gửi:', value: `${interaction.user} (ID: ${interaction.user.id})` },
+                { name: '🎥 Link ảnh hoặc video:', value: `${evidenceLink}` },
+                { name: '📝 Vấn đề gặp phải / Lỗi bot cần fix:', value: `${problemDescription}` }
+            )
+            .setTimestamp();
+
+        const replyButton = new ButtonBuilder().setCustomId(`reply_ticket_${interaction.user.id}`).setLabel('Gửi tin nhắn').setStyle(ButtonStyle.Success);
+        const muteButton = new ButtonBuilder().setCustomId('mute_target_direct').setLabel('Mute').setStyle(ButtonStyle.Primary);
+        const unmuteButton = new ButtonBuilder().setCustomId('unmute_target_direct').setLabel('Unmute').setStyle(ButtonStyle.Secondary);
+        const banButton = new ButtonBuilder().setCustomId('ban_target_direct').setLabel('Ban').setStyle(ButtonStyle.Danger);
+        const unbanButton = new ButtonBuilder().setCustomId('unban_target_direct').setLabel('Unban').setStyle(ButtonStyle.Danger);
+
+        const actionRow1 = new ActionRowBuilder().addComponents(replyButton, muteButton, unmuteButton);
+        const actionRow2 = new ActionRowBuilder().addComponents(banButton, unbanButton);
+
+        try {
+            const logChannel = await client.channels.fetch(TICKET_LOG_CHANNEL_ID).catch(() => null);
+            if (logChannel) {
+                await logChannel.send({ embeds: [logEmbed], components: [actionRow1, actionRow2] });
+                return interaction.editReply({ content: '✅ Đã gửi báo lỗi bot thành công! Tác giả sẽ xem xét và phản hồi bạn.' });
+            }
+            return interaction.editReply({ content: '❌ Không tìm thấy kênh log.' });
+        } catch (error) {
+            return interaction.editReply({ content: '❌ System error.' });
         }
     }
     else if (interaction.isModalSubmit() && interaction.customId === 'ticket_submission_modal') {
@@ -625,6 +784,63 @@ client.on('interactionCreate', async interaction => {
             return interaction.editReply({ content: '❌ System error while transferring data.' });
         }
     } 
+    else if (interaction.isModalSubmit() && interaction.customId === 'dyno_mute_modal') {
+        await interaction.deferReply({ ephemeral: true });
+        let rawTarget = interaction.fields.getTextInputValue('mute_target_input').trim();
+        const durationStr = interaction.fields.getTextInputValue('mute_duration_input').trim().toLowerCase();
+        const muteReason = interaction.fields.getTextInputValue('mute_reason_input').trim();
+
+        const targetId = rawTarget.replace(/<@!?&?(\d+)>/, '$1').replace('@', '');
+
+        let ms = 3600000;
+        const num = parseInt(durationStr) || 1;
+        if (durationStr.endsWith('h')) {
+            ms = num * 60 * 60 * 1000;
+        } else if (durationStr.endsWith('d')) {
+            ms = num * 24 * 60 * 60 * 1000;
+        } else if (durationStr.endsWith('w')) {
+            ms = num * 7 * 24 * 60 * 60 * 1000;
+        } else if (durationStr.endsWith('m')) {
+            ms = num * 30 * 24 * 60 * 60 * 1000;
+        }
+
+        try {
+            const member = await interaction.guild.members.fetch(targetId).catch(() => null);
+            if (!member) {
+                return interaction.editReply({ content: `❌ Không tìm thấy thành viên có ID/Tag: \`${rawTarget}\` trong server này!` });
+            }
+            
+            await member.timeout(ms, `Muted via Panel by ${interaction.user.tag} - Reason: ${muteReason}`);
+            
+            // Gửi tin nhắn DM thông báo cho user bị mute kèm thời gian và lý do
+            await member.send({ content: `⚠️ **Bạn đã bị MUTE tại server ${interaction.guild.name}**\n- **Thời gian áp dụng:** \`${durationStr}\`\n- **Lý do:** ${muteReason}` }).catch(() => {});
+
+            return interaction.editReply({ content: `✅ Đã Mute thành công **${member.user.tag || member.user.username}** với thời gian \`${durationStr}\`! Đã gửi thông báo DM.` });
+        } catch (err) {
+            return interaction.editReply({ content: `❌ Lỗi khi thực hiện mute: ${err.message}` });
+        }
+    }
+    else if (interaction.isModalSubmit() && interaction.customId === 'dyno_ban_modal') {
+        await interaction.deferReply({ ephemeral: true });
+        let rawTarget = interaction.fields.getTextInputValue('ban_target_input').trim();
+        const banReason = interaction.fields.getTextInputValue('ban_reason_input').trim();
+        const targetId = rawTarget.replace(/<@!?&?(\d+)>/, '$1').replace('@', '');
+
+        try {
+            const user = await client.users.fetch(targetId).catch(() => null);
+            if (!user) {
+                return interaction.editReply({ content: `❌ Không tìm thấy user với ID/Tag: \`${rawTarget}\`!` });
+            }
+
+            // Gửi tin nhắn DM thông báo cho user trước khi ban kèm lý do
+            await user.send({ content: `🔨 **Bạn đã bị BAN (Cút) khỏi server ${interaction.guild.name}**\n- **Lý do:** ${banReason}` }).catch(() => {});
+
+            await interaction.guild.members.ban(user, { reason: `Banned via Panel by ${interaction.user.tag} - Reason: ${banReason}` });
+            return interaction.editReply({ content: `🔨 Đã ban thành công **${user.tag || user.username}** ra khỏi server! Đã gửi thông báo DM.` });
+        } catch (err) {
+            return interaction.editReply({ content: `❌ Lỗi khi ban: ${err.message}` });
+        }
+    }
     else if (interaction.isModalSubmit() && interaction.customId.startsWith('reply_modal_')) {
         await interaction.deferReply({ ephemeral: true });
         const targetUserId = interaction.customId.replace('reply_modal_', '');
