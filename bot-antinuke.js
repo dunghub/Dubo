@@ -707,7 +707,7 @@ client.on('interactionCreate', async interaction => {
             .setThumbnail(interaction.user.displayAvatarURL())
             .addFields(
                 { name: '👤 Sender:', value: `${interaction.user} (ID: ${interaction.user.id})` },
-                { name: '🎥 Image or Video Link:', value: `${evidenceLink}` },
+                { name: '🎥 Image or Video Link:', value: `\`${evidenceLink}\`` },
                 { name: '📝 Issue Encountered / Bug to Fix:', value: `${problemDescription}` }
             )
             .setTimestamp();
@@ -746,7 +746,7 @@ client.on('interactionCreate', async interaction => {
                 { name: '👤 Sender:', value: `${interaction.user} (ID: ${interaction.user.id})`, inline: true },
                 { name: '🎯 Reported Target:', value: `\`${userTag}\``, inline: true },
                 { name: '📝 Detailed Reason:', value: `${reason}` },
-                { name: '🎥 Evidence Link (Image/Video):', value: `${evidenceLink}` }
+                { name: '🎥 Evidence Link (Image/Video):', value: `\`${evidenceLink}\`` }
             )
             .setTimestamp();
 
