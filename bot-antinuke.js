@@ -189,7 +189,7 @@ client.once('ready', async () => {
         await rest.put(Routes.applicationCommands(client.user.id), { body: globalCommands });
         await rest.put(Routes.applicationGuildCommands(client.user.id, MY_SERVER_ID), { body: managementCommandsList });
 
-        console.log('Successfully registered commands with inline code block help format!');
+        console.log('Successfully registered commands with fixed member lookup & link code blocks!');
     } catch (error) {
         console.error('Error registering commands:', error);
     }
@@ -200,6 +200,23 @@ async function isTrustedEntity(guildId, entityId) {
     if (!trustedEntitiesCollection) return false;
     const found = await trustedEntitiesCollection.findOne({ guild_id: guildId, entity_id: entityId });
     return !!found;
+}
+
+// Helper function to resolve member by ID, Mention, or Username/Tag
+async function resolveMember(guild, rawTarget) {
+    const cleanTarget = rawTarget.replace(/<@!?&?(\d+)>/, '$1').replace('@', '').trim();
+    
+    // 1. Try fetching by ID
+    let member = await guild.members.fetch(cleanTarget).catch(() => null);
+    if (member) return member;
+
+    // 2. Try searching by query (username / display name)
+    const results = await guild.members.fetch({ query: cleanTarget, limit: 1 }).catch(() => null);
+    if (results && results.size > 0) {
+        return results.first();
+    }
+
+    return null;
 }
 
 client.on('interactionCreate', async interaction => {
@@ -776,8 +793,6 @@ client.on('interactionCreate', async interaction => {
         const durationStr = interaction.fields.getTextInputValue('mute_duration_input').trim().toLowerCase();
         const muteReason = interaction.fields.getTextInputValue('mute_reason_input').trim();
 
-        const targetId = rawTarget.replace(/<@!?&?(\d+)>/, '$1').replace('@', '');
-
         let ms = 3600000;
         const num = parseInt(durationStr) || 1;
         if (durationStr.endsWith('h')) {
@@ -791,9 +806,9 @@ client.on('interactionCreate', async interaction => {
         }
 
         try {
-            const member = await interaction.guild.members.fetch(targetId).catch(() => null);
+            const member = await resolveMember(interaction.guild, rawTarget);
             if (!member) {
-                return interaction.editReply({ content: `❌ Member not found with ID/Tag: \`${rawTarget}\` in this server!` });
+                return interaction.editReply({ content: `❌ Member not found with ID/Tag/Name: \`${rawTarget}\` in this server!` });
             }
             
             await member.timeout(ms, `Muted via Panel by ${interaction.user.tag} - Reason: ${muteReason}`);
@@ -809,18 +824,19 @@ client.on('interactionCreate', async interaction => {
         await interaction.deferReply({ ephemeral: true });
         let rawTarget = interaction.fields.getTextInputValue('ban_target_input').trim();
         const banReason = interaction.fields.getTextInputValue('ban_reason_input').trim();
-        const targetId = rawTarget.replace(/<@!?&?(\d+)>/, '$1').replace('@', '');
 
         try {
-            const user = await client.users.fetch(targetId).catch(() => null);
-            if (!user) {
-                return interaction.editReply({ content: `❌ User not found with ID/Tag: \`${rawTarget}\`!` });
+            const member = await resolveMember(interaction.guild, rawTarget);
+            const userToBan = member ? member.user : await client.users.fetch(rawTarget.replace(/<@!?&?(\d+)>/, '$1').replace('@', '')).catch(() => null);
+
+            if (!userToBan) {
+                return interaction.editReply({ content: `❌ User not found with ID/Tag/Name: \`${rawTarget}\`!` });
             }
 
-            await user.send({ content: `🔨 **You have been BANNED from server ${interaction.guild.name}**\n- **Reason:** ${banReason}` }).catch(() => {});
+            await userToBan.send({ content: `🔨 **You have been BANNED from server ${interaction.guild.name}**\n- **Reason:** ${banReason}` }).catch(() => {});
 
-            await interaction.guild.members.ban(user, { reason: `Banned via Panel by ${interaction.user.tag} - Reason: ${banReason}` });
-            return interaction.editReply({ content: `🔨 Successfully banned **${user.tag || user.username}** from the server! DM notification sent.` });
+            await interaction.guild.members.ban(userToBan, { reason: `Banned via Panel by ${interaction.user.tag} - Reason: ${banReason}` });
+            return interaction.editReply({ content: `🔨 Successfully banned **${userToBan.tag || userToBan.username}** from the server! DM notification sent.` });
         } catch (err) {
             return interaction.editReply({ content: `❌ Error banning: ${err.message}` });
         }
