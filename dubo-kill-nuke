@@ -994,7 +994,4 @@ client.on('messageCreate', async (message) => {
         messageSpamTracker.delete(userId);
     }
 });
-
-client.login("MTUxNjQ2NDY1MDA3NjY4ODQ0NA.G6iY5D.k5M2812QE-CfhaSJuHO5S3bzWRx-d98lrq1XZY").catch(err => {
-    console.error("❌ LỖI ĐĂNG NHẬP CHI TIẾT:", err.message);
-});
+client.login("MTUxNjQ2NDY1MDA3NjY4ODQ0NA.G6iY5D.k5M2812QE-CfhaSJuHO5S3bzWRx-d98lrq1XZY");
