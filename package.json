@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "bot-antinuke.js",
   "scripts": {
-    "start": "node bot-antinuke.js"
+    "start": "node Dubo-kill-nuke"
   },
   "dependencies": {
     "discord.js": "^14.14.0",
