@@ -1,7 +1,7 @@
 {
   "name": "dubo-kill-nuke",
   "version": "1.0.0",
-  "main": "bot-antinuke.js",
+  "main": "Dubo-kill-nuke",
   "scripts": {
     "start": "node Dubo-kill-nuke"
   },
