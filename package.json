@@ -1,9 +1,9 @@
 {
-  "name": "my-discord-bots",
+  "name": "dubo-kill-nuke",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "bot-antinuke.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node bot-antinuke.js"
   },
   "dependencies": {
     "discord.js": "^14.14.0",
