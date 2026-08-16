@@ -1,9 +1,9 @@
 {
   "name": "dubo-kill-nuke",
   "version": "1.0.0",
-  "main": "Dubo-kill-nuke",
+  "main": "dubo-kill-nuke",
   "scripts": {
-    "start": "node Dubo-kill-nuke"
+    "start": "node dubo-kill-nuke"
   },
   "dependencies": {
     "discord.js": "^14.14.0",
