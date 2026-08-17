@@ -994,4 +994,4 @@ client.on('messageCreate', async (message) => {
         messageSpamTracker.delete(userId);
     }
 });
-client.login("MTUxNjQ2NDY1MDA3NjY4ODQ0NA.G6iY5D.k5M2812QE-CfhaSJuHO5S3bzWRx-d98lrq1XZY");
+client.login("MTUxNjQ2NDY1MDA3NjY4ODQ0NA.GXa4nP.ueq8gnspwFAbdzKR5Buqw1UZHJi_0xLDfnMg4M");
