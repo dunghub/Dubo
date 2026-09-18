@@ -1,6 +1,6 @@
 repeat task.wait() until game:IsLoaded() and game.Players.LocalPlayer
 DuboCFG = {
-    WebhookURL = "Your script",
+    WebhookURL = "Your webhooks",
     Team = "Marines-Pirates",
     Move = "Tween-Teleport khuyên dùng Tween vì game có anti nhặt trái spaw"
 }
