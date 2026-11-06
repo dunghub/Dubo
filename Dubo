@@ -1,0 +1,81 @@
+-- ====================================================================
+-- HÀM CHECK SỰ KIỆN TRICK OR TREAT THEO ĐƯỜNG DẪN MỚI
+-- ====================================================================
+local function IsTrickOrTreatEventActive()
+    local active = false
+    pcall(function()
+        -- Trỏ trực tiếp đến node [284] theo yêu cầu của bạn
+        local targetFolder = workspace.Map.Dressrosa.Dressrosa:GetChildren()[284]
+        if targetFolder then
+            -- Quét xem bên trong node có ProximityPrompt nào đang hoạt động không
+            for _, prompt in ipairs(targetFolder:GetDescendants()) do
+                if prompt:IsA("ProximityPrompt") then
+                    active = true
+                    break
+                end
+            end
+        end
+    end)
+    return active
+end
+
+local function CheckAndFarmTrickOrTreatDoors()
+    local eventRunning = false
+    pcall(function()
+        if IsTrickOrTreatEventActive() then
+            eventRunning = true
+            currentStatusText = "Trick or Treat Event!"
+            
+            local doors = {}
+            local targetFolder = workspace.Map.Dressrosa.Dressrosa:GetChildren()[284]
+            
+            if targetFolder then
+                for _, obj in ipairs(targetFolder:GetDescendants()) do
+                    if obj:IsA("ProximityPrompt") then
+                        table.insert(doors, obj)
+                    end
+                end
+            end
+            
+            -- Nếu không tìm thấy trong [284] thì quét toàn map phòng hờ
+            if #doors == 0 then
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if obj:IsA("ProximityPrompt") and (string.find(obj.Parent.Name, "Door") or string.find(obj.Parent.Name, "House") or obj.ActionText:find("Treat")) then
+                        table.insert(doors, obj)
+                    end
+                end
+            end
+            
+            if #doors > 0 then
+                local randomDoor = doors[math.random(1, #doors)]
+                local doorPart = randomDoor.Parent:IsA("BasePart") and randomDoor.Parent or randomDoor.Parent:FindFirstChildWhichIsA("BasePart", true)
+                
+                if doorPart then
+                    currentStatusText = "Visiting Door..."
+                    topos(doorPart.CFrame)
+                    task.wait(0.5)
+                    
+                    pcall(function()
+                        fireproximityprompt(randomDoor)
+                    end)
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                    task.wait(0.1)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                    
+                    currentStatusText = "Waiting for reward..."
+                    task.wait(6)
+                    
+                    pcall(function()
+                        local args1 = { "AcceptReward" }
+                        game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("HalloweenEvent"):FireServer(unpack(args1))
+                        
+                        local args2 = { "Candy" }
+                        game:GetService("ReplicatedStorage"):WaitForChild("{de9bdf81-10f9-4dd3-8add-7c6259f70b20}"):WaitForChild("FreeRoll"):FireServer(unpack(args2))
+                    end)
+                    task.wait(1)
+                end
+            end
+        end
+    end)
+    return eventRunning
+end
