@@ -879,11 +879,12 @@ local function CheckAndFarmWolfBoss()
 end
 
 -- ====================================================================
--- PHẦN 3.4: HÀM CHECK VÀ AUTO GÕ CỬA DỰA TRÊN PROXIMITY [284] MỚI
+-- PHẦN 3.4: HÀM KÍCH HOẠT VÀ GÕ CỬA TRICK OR TREAT
 -- ====================================================================
 local function IsTrickOrTreatEventActive()
     local active = false
     pcall(function()
+        -- Chỉ đọc thông tin phản ứng từ node [284] để kiểm tra xem sự kiện có diễn ra hay không (KHÔNG bay vào node này)
         local targetFolder = workspace.Map.Dressrosa.Dressrosa:GetChildren()[284]
         if targetFolder then
             for _, prompt in ipairs(targetFolder:GetDescendants()) do
@@ -900,26 +901,15 @@ end
 local function CheckAndFarmTrickOrTreatDoors()
     local eventRunning = false
     pcall(function()
+        -- Nếu node [284] có phản ứng (kích hoạt sự kiện), tiến hành quét tìm các cửa thực sự để bay tới gõ
         if IsTrickOrTreatEventActive() then
             eventRunning = true
             currentStatusText = "Trick or Treat Event!"
             
             local doors = {}
-            local targetFolder = workspace.Map.Dressrosa.Dressrosa:GetChildren()[284]
-            
-            if targetFolder then
-                for _, obj in ipairs(targetFolder:GetDescendants()) do
-                    if obj:IsA("ProximityPrompt") then
-                        table.insert(doors, obj)
-                    end
-                end
-            end
-            
-            if #doors == 0 then
-                for _, obj in ipairs(workspace:GetDescendants()) do
-                    if obj:IsA("ProximityPrompt") and (string.find(obj.Parent.Name, "Door") or string.find(obj.Parent.Name, "House") or obj.ActionText:find("Treat")) then
-                        table.insert(doors, obj)
-                    end
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") and (string.find(obj.Parent.Name, "Door") or string.find(obj.Parent.Name, "House") or (obj.ActionText and obj.ActionText:find("Treat"))) then
+                    table.insert(doors, obj)
                 end
             end
             
@@ -977,7 +967,7 @@ task.spawn(function()
                 return
             end
 
-            -- 3. AUTO SỰ KIỆN GÕ CỬA (TRICK OR TREAT - THEO PROXIMITY [284] MỚI)
+            -- 3. AUTO SỰ KIỆN GÕ CỬA (TRICK OR TREAT)
             if CheckAndFarmTrickOrTreatDoors() then
                 return
             end
