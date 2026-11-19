@@ -1,1 +1,454 @@
+return {
+    {
+        Name = "Starter Island",
+        MinLevel = 1,
+        MaxLevel = 5,
+        QuestName = "BanditQuest",
+        QuestLevel = 1,
+        KillCount = 5,
+        NoQuest = false,
+        TakeOnce = true,
+        NPCName = "Bandit Quest Giver",
+        MobName = "Bandit",
+        NPCCFrame = CFrame.new(1052.41, 14.68, 1555.85),
+        MobPositions = {
+            CFrame.new(1001.81, 14.51, 1566.67),
+            CFrame.new(928.30, 14.51, 1595.58),
+            CFrame.new(921.35, 14.51, 1529.19),
+            CFrame.new(1114.59, 14.51, 1588.37),
+            CFrame.new(1148.70, 14.51, 1675.04),
+            CFrame.new(1208.58, 14.51, 1674.22),
+            CFrame.new(1253.29, 14.51, 1623.07),
+            CFrame.new(1204.05, 14.51, 1564.44)
+        }
+    },
+
+    {
+        Name = "Sky 2 Shanda",
+        MinLevel = 6,
+        MaxLevel = 59,
+        QuestName = "SkyExp1Quest",
+        QuestLevel = 2,
+        KillCount = 9,
+        NoQuest = true,
+        TakeOnce = false,
+        NPCName = "Mole",
+        MobName = "Shanda",
+        NPCCFrame = CFrame.new(-5950.59, 5469.15, 2085.72),
+        MobPositions = {
+            CFrame.new(-6025.60, 5469.15, 1851.20),
+            CFrame.new(-5891.98, 5469.15, 1956.11),
+            CFrame.new(-5879.35, 5469.15, 1866.82),
+            CFrame.new(-5953.25, 5469.15, 1753.73),
+            CFrame.new(-6038.41, 5469.15, 1735.94)
+        }
+    },
+
+    {
+        Name = "Snow",
+        MinLevel = 90,
+        MaxLevel = 119,
+        QuestName = "SnowQuest",
+        QuestLevel = 1,
+        KillCount = 7,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Villager",
+        MobName = "Snow Bandit",
+        NPCCFrame = CFrame.new(1400.19, 79.90, -1309.60),
+        MobPositions = {
+            CFrame.new(1260.42, 78.02, -1386.97),
+            CFrame.new(1362.93, 78.02, -1429.17),
+            CFrame.new(1431.04, 78.02, -1445.16),
+            CFrame.new(1501.03, 78.02, -1402.50),
+            CFrame.new(1519.03, 78.02, -1510.60)
+        }
+    },
+
+    {
+        Name = "Snow 2",
+        MinLevel = 100,
+        MaxLevel = 119,
+        QuestName = "SnowQuest",
+        QuestLevel = 2,
+        KillCount = 8,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Villager",
+        MobName = "Snowman",
+        NPCCFrame = CFrame.new(1400.19, 79.90, -1309.60),
+        MobPositions = {
+            CFrame.new(1247.04, 97.38, -1556.78),
+            CFrame.new(1272.09, 97.38, -1645.68),
+            CFrame.new(1122.47, 97.38, -1669.62),
+            CFrame.new(1148.85, 97.38, -1540.67)
+        }
+    },
+
+    {
+        Name = "Marine Fortress",
+        MinLevel = 120,
+        MaxLevel = 149,
+        QuestName = "MarineQuest2",
+        QuestLevel = 1,
+        KillCount = 8,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Marine",
+        MobName = "Chief Petty Officer",
+        NPCCFrame = CFrame.new(-4699.39, 6.18, 4226.24),
+        MobPositions = {
+            CFrame.new(-4762.93, 14.21, 4287.91),
+            CFrame.new(-4780.95, 14.21, 4419.18),
+            CFrame.new(-4836.64, 14.21, 4466.21),
+            CFrame.new(-4676.43, 5.88, 4483.10),
+            CFrame.new(-4650.90, 5.88, 4562.34),
+            CFrame.new(-4828.61, 14.21, 4196.19),
+            CFrame.new(-4938.38, 5.88, 3997.00),
+            CFrame.new(-5001.67, 5.88, 4005.66)
+        }
+    },
+
+    {
+        Name = "Sky",
+        MinLevel = 150,
+        MaxLevel = 199,
+        QuestName = "SkyQuest",
+        QuestLevel = 1,
+        KillCount = 7,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Sky Adventurer",
+        MobName = "Sky Bandit",
+        NPCCFrame = CFrame.new(-5405.79, 410.74, -695.36),
+        MobPositions = {
+            CFrame.new(-5157.47, 279.18, -916.99),
+            CFrame.new(-5013.92, 279.18, -970.86),
+            CFrame.new(-4974.31, 279.38, -1118.08),
+            CFrame.new(-5221.14, 279.38, -1067.88)
+        }
+    },
+
+    {
+        Name = "Sky 2",
+        MinLevel = 175,
+        MaxLevel = 199,
+        QuestName = "SkyQuest",
+        QuestLevel = 2,
+        KillCount = 8,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Sky Adventurer",
+        MobName = "Dark Master",
+        NPCCFrame = CFrame.new(-5405.79, 410.74, -695.36),
+        MobPositions = {
+            CFrame.new(-5269.72, 501.50, -461.03),
+            CFrame.new(-5208.85, 501.50, -348.93),
+            CFrame.new(-5285.74, 501.50, -222.12),
+            CFrame.new(-5407.64, 501.50, -374.21)
+        }
+    },
+
+    {
+        Name = "Prison",
+        MinLevel = 200,
+        MaxLevel = 249,
+        QuestName = "PrisonerQuest",
+        QuestLevel = 1,
+        KillCount = 8,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Jail Keeper",
+        MobName = "Prisoner",
+        NPCCFrame = CFrame.new(5206.54, 19.55, 736.05),
+        MobPositions = {
+            CFrame.new(5457.48, 10.31, 507.84),
+            CFrame.new(5371.72, 10.31, 458.79),
+            CFrame.new(5280.57, 9.49, 391.97),
+            CFrame.new(5194.54, 9.49, 413.72),
+            CFrame.new(5058.29, 10.31, 566.90)
+        }
+    },
+
+    {
+        Name = "Prison 2",
+        MinLevel = 210,
+        MaxLevel = 249,
+        QuestName = "PrisonerQuest",
+        QuestLevel = 2,
+        KillCount = 8,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Jail Keeper",
+        MobName = "Dangerous Prisoner",
+        NPCCFrame = CFrame.new(5206.54, 19.55, 736.05),
+        MobPositions = {
+            CFrame.new(5059.54, 10.31, 900.75),
+            CFrame.new(5122.52, 10.31, 969.27),
+            CFrame.new(5190.41, 9.49, 1056.59),
+            CFrame.new(5293.88, 9.49, 1104.67),
+            CFrame.new(5454.98, 10.31, 957.04)
+        }
+    },
+
+    {
+        Name = "Colosseum",
+        MinLevel = 250,
+        MaxLevel = 299,
+        QuestName = "ColosseumQuest",
+        QuestLevel = 1,
+        KillCount = 7,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Colosseum Quest Giver",
+        MobName = "Toga Warrior",
+        NPCCFrame = CFrame.new(-1342.11, 12.87, -2926.93),
+        MobPositions = {
+            CFrame.new(-1533.93, 12.20, -2779.14),
+            CFrame.new(-1621.75, 12.20, -2672.02),
+            CFrame.new(-1693.04, 12.20, -2634.98),
+            CFrame.new(-1829.29, 12.20, -2662.19),
+            CFrame.new(-1820.16, 12.20, -2736.69),
+            CFrame.new(-1971.53, 12.20, -2746.23)
+        }
+    },
+
+    {
+        Name = "Colosseum 2",
+        MinLevel = 275,
+        MaxLevel = 299,
+        QuestName = "ColosseumQuest",
+        QuestLevel = 2,
+        KillCount = 8,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Colosseum Quest Giver",
+        MobName = "Mob Leader",
+        NPCCFrame = CFrame.new(-1342.11, 12.87, -2926.93),
+        MobPositions = {
+            CFrame.new(-1163.32, 12.20, -3095.61),
+            CFrame.new(-1120.11, 12.20, -3014.83),
+            CFrame.new(-1237.91, 12.20, -3239.88),
+            CFrame.new(-1144.82, 12.20, -3335.23),
+            CFrame.new(-1211.80, 12.20, -3377.97)
+        }
+    },
+
+    {
+        Name = "Volcano",
+        MinLevel = 300,
+        MaxLevel = 374,
+        QuestName = "MagmaQuest",
+        QuestLevel = 1,
+        KillCount = 7,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "The Mayor",
+        MobName = "Military Soldier",
+        NPCCFrame = CFrame.new(-5310.64, 18.46, 8482.92),
+        MobPositions = {
+            CFrame.new(-5419.00, 18.46, 8421.24),
+            CFrame.new(-5620.39, 18.46, 8316.12),
+            CFrame.new(-5690.55, 18.46, 8328.18),
+            CFrame.new(-5268.18, 18.46, 8551.63),
+            CFrame.new(-5336.87, 18.46, 8626.78)
+        }
+    },
+
+    {
+        Name = "Volcano 2",
+        MinLevel = 325,
+        MaxLevel = 374,
+        QuestName = "MagmaQuest",
+        QuestLevel = 2,
+        KillCount = 8,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "The Mayor",
+        MobName = "Military Spy",
+        NPCCFrame = CFrame.new(-5310.64, 18.46, 8482.92),
+        MobPositions = {
+            CFrame.new(-5951.68, 77.31, 8741.88),
+            CFrame.new(-5810.24, 77.31, 8790.60),
+            CFrame.new(-5716.43, 77.31, 8835.90),
+            CFrame.new(-5888.61, 77.31, 8722.53)
+        }
+    },
+
+    {
+        Name = "Underwater",
+        MinLevel = 375,
+        MaxLevel = 449,
+        QuestName = "FishmanQuest",
+        QuestLevel = 1,
+        KillCount = 8,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "King Neptune",
+        MobName = "Fishman Warrior",
+        NPCCFrame = CFrame.new(61404.37, 25.86, 1626.76),
+        MobPositions = {
+            CFrame.new(60931.03, 24.93, 1395.48),
+            CFrame.new(60789.84, 24.92, 1484.50),
+            CFrame.new(60891.67, 24.92, 1500.73),
+            CFrame.new(60739.62, 24.92, 1396.12),
+            CFrame.new(60715.01, 24.92, 1282.72),
+            CFrame.new(60625.31, 24.92, 1142.29),
+            CFrame.new(60858.94, 24.92, 1328.61)
+        }
+    },
+
+    {
+        Name = "Underwater 2",
+        MinLevel = 400,
+        MaxLevel = 449,
+        QuestName = "FishmanQuest",
+        QuestLevel = 2,
+        KillCount = 7,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "King Neptune",
+        MobName = "Fishman Commando",
+        NPCCFrame = CFrame.new(61404.37, 25.86, 1626.76),
+        MobPositions = {
+            CFrame.new(61807.26, 24.93, 1328.87),
+            CFrame.new(61887.79, 24.93, 1231.55),
+            CFrame.new(61992.71, 24.93, 1205.50),
+            CFrame.new(62012.83, 24.93, 1330.70),
+            CFrame.new(61995.85, 24.93, 1425.14),
+            CFrame.new(61871.82, 24.93, 1464.48)
+        }
+    },
+
+    {
+        Name = "Upper Sky",
+        MinLevel = 450,
+        MaxLevel = 524,
+        QuestName = "SkyExp1Quest",
+        QuestLevel = 1,
+        KillCount = 7,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Mole",
+        MobName = "God’s Guard",
+        NPCCFrame = CFrame.new(-4310.99, 1088.41, -556.90),
+        MobPositions = {
+            CFrame.new(-4225.30, 1087.12, -565.72),
+            CFrame.new(-4085.80, 1087.12, -416.09),
+            CFrame.new(-4131.00, 1087.12, -290.52),
+            CFrame.new(-4235.11, 1087.12, -266.59),
+            CFrame.new(-4363.13, 1087.12, -381.85),
+            CFrame.new(-4403.33, 1087.12, -499.43)
+        }
+    },
+
+    {
+        Name = "Upper Sky Shanda",
+        MinLevel = 475,
+        MaxLevel = 524,
+        QuestName = "SkyExp1Quest",
+        QuestLevel = 2,
+        KillCount = 9,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Mole",
+        MobName = "Shanda",
+        NPCCFrame = CFrame.new(-5950.59, 5469.15, 2085.72),
+        MobPositions = {
+            CFrame.new(-6025.60, 5469.15, 1851.20),
+            CFrame.new(-5891.98, 5469.15, 1956.11),
+            CFrame.new(-5879.35, 5469.15, 1866.82),
+            CFrame.new(-5953.25, 5469.15, 1753.73),
+            CFrame.new(-6038.41, 5469.15, 1735.94)
+        }
+    },
+
+    {
+        Name = "Upper Sky 2",
+        MinLevel = 525,
+        MaxLevel = 624,
+        QuestName = "SkyExp2Quest",
+        QuestLevel = 1,
+        KillCount = 8,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Sky Quest Giver 2",
+        MobName = "Royal Squads",
+        NPCCFrame = CFrame.new(-7031.71, 5592.21, 1352.71),
+        MobPositions = {
+            CFrame.new(-6869.90, 5552.69, 1320.06),
+            CFrame.new(-6919.98, 5549.46, 1193.65),
+            CFrame.new(-6804.38, 5549.46, 1085.27),
+            CFrame.new(-6705.29, 5549.46, 1156.68),
+            CFrame.new(-6693.02, 5549.46, 1313.54)
+        }
+    },
+
+    {
+        Name = "Upper Sky 2 Soldier",
+        MinLevel = 550,
+        MaxLevel = 624,
+        QuestName = "SkyExp2Quest",
+        QuestLevel = 2,
+        KillCount = 8,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Sky Quest Giver 2",
+        MobName = "Royal Soldier",
+        NPCCFrame = CFrame.new(-7031.71, 5592.21, 1352.71),
+        MobPositions = {
+            CFrame.new(-7137.98, 5540.58, 1054.46),
+            CFrame.new(-7174.08, 5540.58, 949.89),
+            CFrame.new(-7135.64, 5540.58, 894.02),
+            CFrame.new(-6934.38, 5540.58, 845.07),
+            CFrame.new(-6938.84, 5540.58, 963.07)
+        }
+    },
+
+    {
+        Name = "Fountain",
+        MinLevel = 625,
+        MaxLevel = 699,
+        QuestName = "FountainQuest",
+        QuestLevel = 1,
+        KillCount = 8,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Freezeburg Quest Giver",
+        MobName = "Galley Pirate",
+        NPCCFrame = CFrame.new(5262.31, 76.61, 4088.04),
+        MobPositions = {
+            CFrame.new(5326.12, 76.08, 4017.13),
+            CFrame.new(5429.21, 76.08, 3955.06),
+            CFrame.new(5451.34, 76.08, 4112.59),
+            CFrame.new(5670.31, 76.08, 4074.14),
+            CFrame.new(5709.27, 76.08, 3928.28),
+            CFrame.new(5839.78, 76.08, 3975.91)
+        }
+    },
+
+    {
+        Name = "Fountain 2",
+        MinLevel = 650,
+        MaxLevel = 699,
+        QuestName = "FountainQuest",
+        QuestLevel = 2,
+        KillCount = 9,
+        NoQuest = false,
+        TakeOnce = false,
+        NPCName = "Freezeburg Quest Giver",
+        MobName = "Galley Captain",
+        NPCCFrame = CFrame.new(5262.31, 76.61, 4088.04),
+        MobPositions = {
+            CFrame.new(5899.50, 76.08, 4809.37),
+            CFrame.new(5782.89, 76.08, 4869.27),
+            CFrame.new(5774.93, 76.08, 4703.36),
+            CFrame.new(5685.02, 76.08, 4743.56),
+            CFrame.new(5595.33, 76.08, 4751.32),
+            CFrame.new(5545.19, 76.08, 4898.59),
+            CFrame.new(5385.64, 76.08, 4851.56),
+            CFrame.new(5409.35, 76.08, 4686.97)
+        }
+    }
+}
 
