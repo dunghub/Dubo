@@ -953,4 +953,71 @@ task.spawn(function()
                 local humCheck = charCheck and charCheck:FindFirstChildOfClass("Humanoid")
                 if not humCheck or humCheck.Health <= 0 then return end
                 
-             
+                _G.AutoAttack = true 
+                if humCheck then humCheck.PlatformStand = true end
+                
+                local attackTimeOut = tick()
+                while nearbyMob and nearbyMob.Parent and mobHum and mobHum.Health > 0 and _G.AutoPumpkin do
+                    local char = LocalPlayer.Character
+                    local humC = char and char:FindFirstChildOfClass("Humanoid")
+                    
+                    -- Thoát vòng lặp nếu chết, quá 15 giây kẹt, hoặc quái rớt xuống đất
+                    if not humC or humC.Health <= 0 then break end
+                    if tick() - attackTimeOut > 15 then break end
+                    if mobHrp.Position.Y < 5 then break end
+                    
+                    topos(mobHrp.CFrame * CFrame.new(0, 15, 0))
+                    task.wait(0.015)
+                end
+                
+                local finalHum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if finalHum and finalHum.Health > 0 and (not mobHum or mobHum.Health <= 0) then
+                    statMobKills = statMobKills + 1
+                end
+                
+                if humCheck then humCheck.PlatformStand = false end
+                _G.AutoAttack = false
+                return
+            end
+            
+            -- 7. Săn và khóa chặt đánh quả bí ngô
+            local closestPumpkin = GetClosestPumpkin()
+            if closestPumpkin then
+                currentStatusText = "Farm Candy"
+                
+                local charCheck = LocalPlayer.Character
+                local hrp = charCheck and charCheck:FindFirstChild("HumanoidRootPart")
+                local humCheck = charCheck and charCheck:FindFirstChildOfClass("Humanoid")
+                if not hrp or not humCheck or humCheck.Health <= 0 then return end
+                
+                while closestPumpkin and closestPumpkin.Parent and closestPumpkin:IsDescendantOf(workspace) and _G.AutoPumpkin do
+                    topos(closestPumpkin.CFrame * CFrame.new(0, 1.5, 0))
+                    
+                    local dist = (hrp.Position - closestPumpkin.Position).Magnitude
+                    if dist < 6 then
+                        humCheck.PlatformStand = true
+                        EquipMelee()
+                        
+                        local tool = EquipMelee()
+                        if tool then tool:Activate() end
+                        
+                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                        task.wait(0.015)
+                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+                        
+                        VirtualUser:CaptureController()
+                        VirtualUser:Button1Down(Vector2.new(500, 500))
+                        VirtualUser:Button1Up(Vector2.new(500, 500))
+                        
+                        humCheck.PlatformStand = false
+                    end
+                    task.wait(0.015)
+                end
+                
+                statPumpkins = statPumpkins + 1
+            else
+                currentStatusText = "Searching..."
+            end
+        end)
+    end
+end)
