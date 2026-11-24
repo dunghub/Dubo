@@ -1,4 +1,6 @@
 -- Recovered Luau source by ZeroVector
+-- Original script: Jay, Zyro and Garou (Synvextia). UI customization: DUBO HUB.
+-- WindUI remains a third-party dependency.
 local result, Players, HttpService, UserInputService, RunService, Workspace, CollectionService, localPlayer, currentCamera, Lighting, Stats, genv, fn, fn2, v, fn3, fn4, tbl, credits, remoteEvents
 local items, fn5
 
@@ -163,34 +165,18 @@ do
     frame3.BorderSizePixel = 0
     frame3.ZIndex = 3
     frame3.Parent = frame2
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(0, 26, 1, 0)
-    textLabel.Position = UDim2.new(0, 0, 0, 0)
+    local textLabel = Instance.new("ImageLabel")
+    textLabel.Size = UDim2.fromOffset(32, 32)
     textLabel.BackgroundTransparency = 1
-    textLabel.Text = "*"
-    textLabel.TextColor3 = Color3.fromHex("#78B4FF")
-    textLabel.TextSize = 22
-    textLabel.Font = Enum.Font.GothamBold
-    textLabel.TextXAlignment = Enum.TextXAlignment.Center
-    textLabel.TextYAlignment = Enum.TextYAlignment.Center
-    textLabel.RichText = false
+    textLabel.Image = "rbxassetid://84619537136529"
+    textLabel.ScaleType = Enum.ScaleType.Fit
     textLabel.ZIndex = 4
     textLabel.Parent = frame3
-
-    task.spawn(function()
-        local tbl2 = {22, 24, 22, 19, 22}
-        local n = 1
-
-        while screenGui.Parent do
-            textLabel.TextSize = tbl2[n]
-            n = n % #tbl2 + 1
-            task.wait(0.18)
-        end
-    end)
+    Instance.new("UICorner", textLabel).CornerRadius = UDim.new(0, 7)
 
     local textLabel2 = Instance.new("TextLabel")
-    textLabel2.Size = UDim2.new(1, -30, 1, 0)
-    textLabel2.Position = UDim2.new(0, 30, 0, 0)
+    textLabel2.Size = UDim2.new(1, -42, 1, 0)
+    textLabel2.Position = UDim2.new(0, 42, 0, 0)
     textLabel2.BackgroundTransparency = 1
     textLabel2.Text = "DUBO HUB"
     textLabel2.TextColor3 = Color3.fromHex("#FFFFFF")
@@ -205,7 +191,7 @@ do
     textLabel3.Size = UDim2.new(0, 60, 1, 0)
     textLabel3.Position = UDim2.new(1, -62, 0, 0)
     textLabel3.BackgroundTransparency = 1
-    textLabel3.Text = "* * *"
+    textLabel3.Text = ""
     textLabel3.TextColor3 = Color3.fromHex("#3A4090")
     textLabel3.TextSize = 11
     textLabel3.Font = Enum.Font.GothamBold
@@ -427,8 +413,8 @@ do
 
     v = result:CreateWindow({
         Title = fn("DUBO HUB"),
-        Author = "Rainbow Dark Edition",
-        Icon = "vegan",
+        Icon = "rbxassetid://84619537136529",
+        Author = "99 Nights in the Forest",
         Folder = "Synvextia/bbn",
         Size = UDim2.fromOffset(640, 380),
         Transparent = false,
@@ -451,7 +437,7 @@ do
                     Title = fn(localPlayer.Name),
                     Content = "Account Age: " .. localPlayer.AccountAge .. " days\nUser ID: " .. localPlayer.UserId,
                     Duration = 5,
-                    Icon = "user",
+
                 })
             end,
         },
@@ -463,21 +449,9 @@ do
     end
 
     pcall(function()
-        v:Tag({
-            Title = "v1.0.0",
-            Color = result:Gradient({
-                ["0"] = {Color = Color3.fromHex("#78B4FF"), Transparency = 0},
-                ["50"] = {Color = Color3.fromHex("#5B8CFF"), Transparency = 0},
-                ["100"] = {Color = Color3.fromHex("#9B50FF"), Transparency = 0},
-            }, {Rotation = 90}),
-            Radius = 13,
-        })
-    end)
-
-    pcall(function()
         v:EditOpenButton({
-            Title = "DUBO HUB [v1.0.0]",
-            Icon = "vegan",
+            Title = "DUBO HUB",
+            Icon = "rbxassetid://84619537136529",
             CornerRadius = UDim.new(0, 16),
             StrokeThickness = 2,
             Color = ColorSequence.new({
@@ -495,102 +469,50 @@ do
         })
     end)
 
-    pcall(function()
-        v:CreateTopbarButton("youtube", "youtube", function()
-            setclipboard("https://youtube.com/@jay-r2v4y?si=NqgiGPzzRVZhXMBy")
-
-            result:Notify({
-                Title = "YouTube",
-                Content = "Channel link copied! youtube.com/@jay-r2v4y",
-                Duration = 4,
-                Icon = "youtube",
-            })
-        end, 990)
-    end)
-
     task.spawn(function()
-        local TweenService2 = game:GetService("TweenService")
-        local playerGui2 = localPlayer:WaitForChild("PlayerGui")
-        local v4 = nil
-        local n5 = 0
-        local n6, v5, v6, v7, v8, v9, v10, v11, v12
-
-        repeat
-            n6 = n5 + 1
-            if n6 > 60 then
-                break
-            end
-            task.wait(0.1)
-            v5, v6, v7 = ipairs(playerGui2:GetChildren())
-            v8 = v7
-            v9 = v5
-            v10 = v6
-
-            repeat
-                v11, v12 = v9(v10, v8)
-                if v11 == nil then
-                    break
-                end
-                v8 = v11
-
-                if v12:IsA("ScreenGui") then
-                    for i, descendant in ipairs(v12:GetDescendants()) do
-                        if descendant:IsA("Frame") and descendant.AbsoluteSize.X >= 400 then
-                            v4 = v12
-                            break
+        local target
+        for attempt = 1, 100 do
+            local best = math.huge
+            for _, root in ipairs({localPlayer:WaitForChild("PlayerGui"), game:GetService("CoreGui")}) do
+                for _, obj in ipairs(root:GetDescendants()) do
+                    if obj:IsA("TextLabel") and obj.Text:gsub("<[^>]+>", "") == "DUBO HUB" then
+                        local parent = obj.Parent
+                        while parent and not parent:IsA("ScreenGui") do
+                            if parent:IsA("GuiObject") then
+                                local sz = parent.AbsoluteSize
+                                if sz.X >= 300 and sz.Y >= 180 then
+                                    local score = math.abs(sz.X / sz.Y - 640 / 380)
+                                    if score < best then target, best = parent, score end
+                                end
+                            end
+                            parent = parent.Parent
                         end
                     end
-
-                    v8 = v11
                 end
-            until v4
-
-            n5 = n6
-        until v4
-
-        if not v4 then
-            return
-        end
-        local v13 = nil
-
-        for i, descendant in ipairs(v4:GetDescendants()) do
-            if descendant:IsA("Frame") and descendant.Visible and (not v13 or v13.AbsoluteSize.X < descendant.AbsoluteSize.X) then
-                v13 = descendant
             end
+            if target then break end
+            task.wait(0.1)
         end
-
-        if not v13 then
-            return
+        if not target then return end
+        local stroke = Instance.new("UIStroke")
+        stroke.Name = "DuboRainbowOutline"
+        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        stroke.Thickness = 2.5
+        stroke.Color = Color3.new(1, 1, 1)
+        stroke.Parent = target
+        local gradient = Instance.new("UIGradient")
+        local colors = {}
+        for i = 0, 6 do
+            colors[#colors + 1] = ColorSequenceKeypoint.new(i / 6, Color3.fromHSV(i / 6, 0.85, 1))
         end
-        -- DUBO HUB: animated rainbow window outline
-        local duboStroke = Instance.new("UIStroke")
-        duboStroke.Name = "DuboRainbowOutline"
-        duboStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        duboStroke.Thickness = 2.5
-        duboStroke.Color = Color3.new(1, 1, 1)
-        duboStroke.Parent = v13
-        local duboGradient = Instance.new("UIGradient")
-        duboGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0.0, Color3.fromHSV(0.0, 0.85, 1)),
-        ColorSequenceKeypoint.new(0.16666666666666666, Color3.fromHSV(0.16666666666666666, 0.85, 1)),
-        ColorSequenceKeypoint.new(0.3333333333333333, Color3.fromHSV(0.3333333333333333, 0.85, 1)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromHSV(0.5, 0.85, 1)),
-        ColorSequenceKeypoint.new(0.6666666666666666, Color3.fromHSV(0.6666666666666666, 0.85, 1)),
-        ColorSequenceKeypoint.new(0.8333333333333334, Color3.fromHSV(0.8333333333333334, 0.85, 1)),
-        ColorSequenceKeypoint.new(1.0, Color3.fromHSV(1.0, 0.85, 1))
-    })
-        duboGradient.Parent = duboStroke
-        task.spawn(function()
-            while duboStroke.Parent and v13:IsDescendantOf(game) do
-                local t = os.clock()
-                duboGradient.Rotation = (t * 75) % 360
-                duboStroke.Transparency = 0.12 + 0.12 * (1 + math.sin(t * 2))
-                task.wait(0.04)
-            end
-        end)
-        local position = v13.Position
-        v13.Position = UDim2.new(position.X.Scale, position.X.Offset, position.Y.Scale + 0.03, position.Y.Offset)
-        TweenService2:Create(v13, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Position = position}):Play()
+        gradient.Color = ColorSequence.new(colors)
+        gradient.Parent = stroke
+        while stroke.Parent and target:IsDescendantOf(game) do
+            local t = os.clock()
+            gradient.Rotation = (t * 65) % 360
+            stroke.Transparency = 0.04 + 0.06 * (1 + math.sin(t * 1.5))
+            task.wait(0.04)
+        end
     end)
 
     task.spawn(function()
@@ -724,23 +646,6 @@ do
         end)
     end)
 
-    pcall(function()
-        v:Dialog({
-            Icon = "house",
-            Title = "Synvextia Community",
-            Content = "Join our official Discord server for updates, scripts and support.",
-            Buttons = {
-                {
-                    Title = "Sure!",
-                    Callback = function()
-                        setclipboard("https://discord.gg/synvextia")
-                    end,
-                },
-                {Title = "Close", Callback = function() end},
-            },
-        })
-    end)
-
     fn3 = function(arg)
         result:Notify({Title = "DUBO HUB", Content = arg, Duration = 3})
     end
@@ -789,106 +694,22 @@ do
 
     local v4 = v:Tab({
         Title = fn("Introduction"),
-        Icon = "house",
+
         Opened = false,
     })
 
     v4:Section({
         Title = "— Welcome to DUBO HUB —",
-        Icon = "sparkles",
+
         Opened = false,
         Desc = "",
-    })
-
-    local tbl2 = {
-        serverParagraph = nil,
-        memberCount = "...",
-        onlineCount = "...",
-    }
-
-    local function fn8()
-        return "• Members: " .. tbl2.memberCount .. "\n• Online: " .. tbl2.onlineCount
-    end;
-
-    (function()
-        local ok2, result2 = pcall(function()
-            return HttpService:JSONDecode(fn7({
-                Url = "https://discord.com/api/v10/invites/synvextia?with_counts=true&with_expiration=true",
-                Method = "GET",
-                Headers = {
-                    ["User-Agent"] = "RobloxBot/1.0",
-                    Accept = "application/json",
-                },
-            }).Body)
-        end)
-
-        if ok2 and result2 and result2.guild then
-            tbl2.memberCount = tostring(result2.approximate_member_count)
-            tbl2.onlineCount = tostring(result2.approximate_presence_count)
-
-            tbl2.serverParagraph = v4:Paragraph({
-                Title = result2.guild.name,
-                Desc = fn8(),
-                Image = "https://cdn.discordapp.com/icons/" .. result2.guild.id .. "/" .. result2.guild.icon .. ".png?size=1024",
-                ImageSize = 52,
-            })
-        else
-            tbl2.serverParagraph = v4:Paragraph({
-                Title = "Synvextia",
-                Desc = "• Members: Unavailable\n• Online: Unavailable",
-            })
-        end
-    end)()
-
-    v4:Button({
-        Title = "  Discord",
-        Icon = "message-circle",
-        Description = "Join our official Discord community",
-        Callback = function()
-            setclipboard("https://discord.gg/synvextia")
-            fn3("Discord invite copied to clipboard!")
-
-            result:Notify({
-                Title = "Discord",
-                Content = "discord.gg/synvextia — invite copied!",
-                Duration = 4,
-                Icon = "message-circle",
-            })
-        end,
-    })
-
-    v4:Button({
-        Title = "  Youtube",
-        Icon = "youtube",
-        Description = "Watch our official YouTube channel",
-        Callback = function()
-            setclipboard("https://youtube.com/@jay-r2v4y?si=NqgiGPzzRVZhXMBy")
-            fn3("YouTube link copied to clipboard!")
-
-            result:Notify({
-                Title = "YouTube",
-                Content = "youtube.com/@jay-r2v4y — link copied!",
-                Duration = 4,
-                Icon = "youtube",
-            })
-        end,
-    })
-
-    v4:Button({
-        Title = "  TikTok",
-        Icon = "video",
-        Description = "Follow us on TikTok for clips & shorts",
-        Callback = function()
-            setclipboard("https://www.tiktok.com/@synexitahub?_r=1&_t=ZS-97870JmvI5w")
-            fn3("TikTok link copied to clipboard!")
-        end,
     })
 
     v4:Divider()
 
     v4:Section({
         Title = fn("Information"),
-        Icon = "info",
+
         Opened = false,
         Desc = "",
     })
@@ -902,7 +723,7 @@ do
 
     v4:Section({
         Title = fn("Features"),
-        Icon = "list",
+
         Opened = false,
         Desc = "",
     })
@@ -914,57 +735,22 @@ do
 
     v4:Divider()
 
-    v4:Section({
-        Title = fn("Refresh"),
-        Icon = "refresh-cw",
-        Opened = false,
-        Desc = "",
-    })
-
-    v4:Button({
-        Title = "Refresh Server Info",
-        Description = "Re-fetch live Discord member and online counts",
-        Callback = function()
-            local ok2, result2 = pcall(function()
-                return HttpService:JSONDecode(fn7({
-                    Url = "https://discord.com/api/v10/invites/synvextia?with_counts=true&with_expiration=true",
-                    Method = "GET",
-                }).Body)
-            end)
-
-            if ok2 and result2 and result2.guild then
-                tbl2.memberCount = tostring(result2.approximate_member_count)
-                tbl2.onlineCount = tostring(result2.approximate_presence_count)
-
-                if tbl2.serverParagraph then
-                    pcall(function()
-                        tbl2.serverParagraph:SetDesc(fn8())
-                    end)
-                end
-
-                fn3("Discord info updated!")
-            else
-                fn3("Failed to refresh Discord info.")
-            end
-        end,
-    })
-
     tbl = {
-        Main = v:Tab({Title = fn("Main"), Icon = "star", Opened = false}),
-        Teleport = v:Tab({Title = fn("Teleport"), Icon = "rocket", Opened = false}),
+        Main = v:Tab({Title = fn("Main"), Opened = false}),
+        Teleport = v:Tab({Title = fn("Teleport"), Opened = false}),
         Bring = v:Tab({
             Title = fn("Bring Items"),
-            Icon = "package",
+
             Opened = false,
         }),
-        Scanner = v:Tab({Title = fn("Scanner"), Icon = "scan", Opened = false}),
-        AutoDays = v:Tab({Title = fn("Auto Farm"), Icon = "sun", Opened = false}),
-        Combat = v:Tab({Title = fn("Combat"), Icon = "swords", Opened = false}),
-        Esp = v:Tab({Title = fn("ESP"), Icon = "eye", Opened = false}),
-        Stats = v:Tab({Title = fn("Stats"), Icon = "bar-chart-2", Opened = false}),
-        Misc = v:Tab({Title = fn("Misc"), Icon = "gift", Opened = false}),
-        Settings = v:Tab({Title = fn("Settings"), Icon = "settings"}),
-        Credits = v:Tab({Title = fn("Credits"), Icon = "award", Opened = false}),
+        Scanner = v:Tab({Title = fn("Scanner"), Opened = false}),
+        AutoDays = v:Tab({Title = fn("Auto Farm"), Opened = false}),
+        Combat = v:Tab({Title = fn("Combat"), Opened = false}),
+        Esp = v:Tab({Title = fn("ESP"), Opened = false}),
+        Stats = v:Tab({Title = fn("Stats"), Opened = false}),
+        Misc = v:Tab({Title = fn("Misc"), Opened = false}),
+        Settings = v:Tab({Title = fn("Settings")}),
+        Credits = v:Tab({Title = fn("Credits"), Opened = false}),
     }
 
     credits = tbl.Credits
@@ -1233,7 +1019,7 @@ do
 
     tbl.Main:Section({
         Title = fn("Infinite Dupe Saplings"),
-        Icon = "leaf",
+
         Opened = false,
         Desc = "",
     })
@@ -1373,7 +1159,7 @@ do
 
     tbl.Main:Section({
         Title = fn("Auto Plant"),
-        Icon = "sprout",
+
         Opened = false,
         Desc = "",
     })
@@ -1419,7 +1205,7 @@ do
 
     tbl.Main:Section({
         Title = fn("Auto Fuel Campfire"),
-        Icon = "flame",
+
         Opened = false,
         Desc = "",
     })
@@ -1598,7 +1384,7 @@ do
 
     tbl.Main:Section({
         Title = fn("Auto Compress"),
-        Icon = "cog",
+
         Opened = false,
         Desc = "",
     })
@@ -1705,7 +1491,7 @@ do
 
     tbl.Main:Section({
         Title = fn("Auto Consume"),
-        Icon = "apple",
+
         Opened = false,
         Desc = "",
     })
@@ -1870,7 +1656,7 @@ do
 
     tbl.Combat:Section({
         Title = fn("Godmode"),
-        Icon = "shield",
+
         Opened = false,
         Desc = "",
     })
@@ -1964,7 +1750,7 @@ do
 
     tbl.Combat:Section({
         Title = fn("Kill Aura"),
-        Icon = "swords",
+
         Opened = false,
         Desc = "",
     })
@@ -2068,7 +1854,7 @@ do
 
     tbl.Combat:Section({
         Title = fn("Auto Escape"),
-        Icon = "zap",
+
         Opened = false,
         Desc = "",
     })
@@ -2329,7 +2115,7 @@ do
 
     tbl.Combat:Section({
         Title = fn("Auto Bandage"),
-        Icon = "heart",
+
         Opened = false,
         Desc = "",
     })
@@ -2516,7 +2302,7 @@ do
 
     tbl.Main:Section({
         Title = fn("Landmarks"),
-        Icon = "map-pin",
+
         Opened = false,
         Desc = "",
     })
@@ -2528,7 +2314,7 @@ do
 
     tbl.Main:Button({
         Title = "  Reveal Landmarks (Full Map)",
-        Icon = "map-pin",
+
         Description = "Reveals all landmarks on the full map.",
         Callback = function()
             task.spawn(function()
@@ -2654,7 +2440,7 @@ do
 
     tbl.Main:Section({
         Title = fn("Send to Volcano"),
-        Icon = "flame",
+
         Opened = false,
         Desc = "",
     })
@@ -2723,7 +2509,7 @@ do
 
     tbl.Main:Button({
         Title = "  Send to Volcano",
-        Icon = "flame",
+
         Description = "Drags all selected items into the volcano lava, one by one, FAST.",
         Callback = function()
             if #tbl12 == 0 then
@@ -2780,7 +2566,7 @@ do
 
     tbl.Main:Section({
         Title = fn("Auto Tree Chop"),
-        Icon = "axe",
+
         Opened = false,
         Desc = "",
     })
@@ -3189,7 +2975,7 @@ do
 
     tbl.Teleport:Section({
         Title = fn("Teleport Locations"),
-        Icon = "map-pin",
+
         Opened = false,
         Desc = "",
     })
@@ -3480,7 +3266,7 @@ do
 
     tbl.Teleport:Section({
         Title = fn("TP to Caves"),
-        Icon = "landmark",
+
         Opened = false,
         Desc = "",
     })
@@ -3653,7 +3439,7 @@ do
 
     tbl.Teleport:Section({
         Title = fn("TP to Lost Children"),
-        Icon = "user",
+
         Opened = false,
         Desc = "",
     })
@@ -3822,7 +3608,7 @@ do
 
     tbl.Teleport:Section({
         Title = fn("Teleport to Chest"),
-        Icon = "package",
+
         Opened = false,
         Desc = "",
     })
@@ -4368,7 +4154,7 @@ do
 
     tbl.Bring:Section({
         Title = fn("Quick Actions"),
-        Icon = "zap",
+
         Opened = false,
         Desc = "",
     })
@@ -4581,7 +4367,7 @@ do
 
     tbl.Bring:Section({
         Title = fn("Bring Items"),
-        Icon = "inbox",
+
         Opened = false,
         Desc = "",
     })
@@ -4789,7 +4575,7 @@ do
 
     tbl.Bring:Section({
         Title = fn("Armor"),
-        Icon = "shield",
+
         Opened = false,
         Desc = "",
     })
@@ -4858,7 +4644,7 @@ do
 
     tbl.Bring:Section({
         Title = fn("Weapons"),
-        Icon = "sword",
+
         Opened = false,
         Desc = "",
     })
@@ -4941,7 +4727,7 @@ do
 
     tbl.Bring:Section({
         Title = fn("Equipment"),
-        Icon = "backpack",
+
         Opened = false,
         Desc = "",
     })
@@ -5015,7 +4801,7 @@ do
 
     tbl.Bring:Section({
         Title = fn("Food"),
-        Icon = "utensils",
+
         Opened = false,
         Desc = "",
     })
@@ -5093,7 +4879,7 @@ do
 
     tbl.Bring:Section({
         Title = fn("Vegetables"),
-        Icon = "leaf",
+
         Opened = false,
         Desc = "",
     })
@@ -5165,7 +4951,7 @@ do
 
     tbl.Bring:Section({
         Title = fn("Mob Drops"),
-        Icon = "skull",
+
         Opened = false,
         Desc = "",
     })
@@ -5244,7 +5030,7 @@ do
 
     tbl.Bring:Section({
         Title = fn("Others"),
-        Icon = "package",
+
         Opened = false,
         Desc = "",
     })
@@ -5324,7 +5110,7 @@ do
 
     tbl.Bring:Section({
         Title = fn("Containers"),
-        Icon = "package",
+
         Opened = false,
         Desc = "",
     })
@@ -5765,7 +5551,7 @@ do
 
     tbl.Combat:Section({
         Title = fn("Hitbox Settings"),
-        Icon = "settings-2",
+
         Opened = false,
         Desc = "",
     })
@@ -5796,7 +5582,7 @@ do
 
     tbl.Combat:Section({
         Title = fn("Select Mobs"),
-        Icon = "crosshair",
+
         Opened = false,
         Desc = "",
     })
@@ -5875,7 +5661,7 @@ do
 
     tbl.AutoDays:Section({
         Title = fn("Day Auto Farm"),
-        Icon = "sun",
+
         Opened = false,
         Desc = "",
     })
@@ -6081,7 +5867,7 @@ do
 
     tbl.AutoDays:Section({
         Title = fn("Auto Cook Food"),
-        Icon = "utensils",
+
         Opened = false,
         Desc = "",
     })
@@ -6172,7 +5958,7 @@ do
     end)
 
     tbl.Scanner:Divider()
-    tbl.Scanner:Section({Title = fn("Auto Scanner"), Icon = "scan", Opened = false})
+    tbl.Scanner:Section({Title = fn("Auto Scanner"), Opened = false})
 
     tbl.Scanner:Paragraph({
         Title = "Auto Scanner",
@@ -6360,7 +6146,7 @@ do
 
     tbl.Combat:Section({
         Title = fn("Silent Aim"),
-        Icon = "crosshair",
+
         Opened = false,
         Desc = "",
     })
@@ -6482,7 +6268,7 @@ do
 
     tbl.Combat:Section({
         Title = fn("Revive Players"),
-        Icon = "heart",
+
         Opened = false,
         Desc = "",
     })
@@ -6928,7 +6714,7 @@ do
 
     tbl.Combat:Section({
         Title = fn("Auto Stun"),
-        Icon = "zap",
+
         Opened = false,
         Desc = "",
     })
@@ -7239,7 +7025,7 @@ tbl.Combat:Toggle({
                 Title = "Auto Stun",
                 Content = "Enabled — targeting " .. tbl2.target .. ". Will teleport back after each stun.",
                 Duration = 4,
-                Icon = "zap",
+
             })
         else
             fn3("Auto Stun OFF")
@@ -7252,7 +7038,7 @@ tbl.Misc:Divider()
 
 tbl.Misc:Section({
     Title = fn("Remove Fog"),
-    Icon = "wind",
+
     Opened = false,
     Desc = "",
 })
@@ -7281,7 +7067,7 @@ tbl.Misc:Divider()
 
 tbl.Misc:Section({
     Title = fn("Anti Void"),
-    Icon = "shield",
+
     Opened = false,
     Desc = "",
 })
@@ -7408,7 +7194,7 @@ tbl.Misc:Divider()
 
 tbl.Misc:Section({
     Title = fn("Fly"),
-    Icon = "plane",
+
     Opened = false,
     Desc = "",
 })
@@ -7438,7 +7224,7 @@ tbl.Misc:Divider()
 
 tbl.Misc:Section({
     Title = fn("Movement"),
-    Icon = "footprints",
+
     Opened = false,
     Desc = "",
 })
@@ -7635,7 +7421,7 @@ tbl.Misc:Divider()
 
 tbl.Misc:Section({
     Title = fn("Performance Monitor"),
-    Icon = "activity",
+
     Opened = false,
     Desc = "",
 })
@@ -7709,7 +7495,7 @@ tbl.Misc:Divider()
 
 tbl.Misc:Section({
     Title = fn("Visual"),
-    Icon = "eye",
+
     Opened = false,
     Desc = "",
 })
@@ -7771,7 +7557,7 @@ tbl.Misc:Divider()
 
 tbl.Misc:Section({
     Title = fn("Universal Scripts"),
-    Icon = "terminal",
+
     Opened = false,
     Desc = "",
 })
@@ -7908,7 +7694,7 @@ tbl.Misc:Divider()
 
 tbl.Misc:Section({
     Title = fn("Tools"),
-    Icon = "wrench",
+
     Opened = false,
     Desc = "",
 })
@@ -8048,7 +7834,7 @@ tbl.Misc:Divider()
 
 tbl.Misc:Section({
     Title = fn("Anti AFK"),
-    Icon = "shield-check",
+
     Opened = false,
     Desc = "",
 })
@@ -8099,7 +7885,7 @@ tbl.Misc:Divider()
 
 tbl.Misc:Section({
     Title = fn("Server Hop"),
-    Icon = "shuffle",
+
     Opened = false,
     Desc = "",
 })
@@ -8773,7 +8559,7 @@ tbl.Esp:Divider()
 
 tbl.Esp:Section({
     Title = fn("Global ESP Settings"),
-    Icon = "sliders",
+
     Opened = false,
     Desc = "",
 })
@@ -8791,7 +8577,7 @@ tbl.Esp:Divider()
 
 tbl.Esp:Section({
     Title = fn("Player ESP"),
-    Icon = "user",
+
     Opened = false,
     Desc = "",
 })
@@ -8854,7 +8640,7 @@ tbl.Esp:Divider()
 
 tbl.Esp:Section({
     Title = fn("World Item ESP"),
-    Icon = "globe",
+
     Opened = false,
     Desc = "",
 })
@@ -8931,7 +8717,7 @@ tbl.Esp:Divider()
 
 tbl.Esp:Section({
     Title = fn("Chest ESP"),
-    Icon = "package",
+
     Opened = false,
     Desc = "",
 })
@@ -9447,7 +9233,7 @@ tbl.Esp:Divider()
 
 tbl.Esp:Section({
     Title = fn("Mob ESP"),
-    Icon = "ghost",
+
     Opened = false,
     Desc = "",
 })
@@ -9576,7 +9362,7 @@ tbl.Stats:Divider()
 
 tbl.Stats:Section({
     Title = fn("Game Stats"),
-    Icon = "bar-chart-2",
+
     Opened = false,
 })
 
@@ -9590,17 +9376,17 @@ tbl21.SunTime = tbl.Stats:Paragraph({Title = "⏱  Phase Timer", Desc = "..."})
 tbl21.DayCounter = tbl.Stats:Paragraph({Title = "📅  Day Count", Desc = "..."})
 tbl21.RealClock = tbl.Stats:Paragraph({Title = "🕐  Real Clock", Desc = "..."})
 tbl.Stats:Divider()
-tbl.Stats:Section({Title = fn("Environment"), Icon = "cloud", Opened = false})
+tbl.Stats:Section({Title = fn("Environment"), Opened = false})
 tbl21.Weather = tbl.Stats:Paragraph({Title = "🌤  Weather", Desc = "..."})
 tbl21.Temperature = tbl.Stats:Paragraph({Title = "🌡  Temperature", Desc = "..."})
 tbl21.LightLevel = tbl.Stats:Paragraph({Title = "💡  Light Level", Desc = "..."})
 tbl21.NightsSafe = tbl.Stats:Paragraph({Title = "🌙  Nights Safe", Desc = "..."})
 tbl.Stats:Divider()
-tbl.Stats:Section({Title = fn("Campfire"), Icon = "flame", Opened = false})
+tbl.Stats:Section({Title = fn("Campfire"), Opened = false})
 tbl21.FireLevel = tbl.Stats:Paragraph({Title = "🔥  Fire Level", Desc = "..."})
 tbl21.FireStatus = tbl.Stats:Paragraph({Title = "🪵  Fire Status", Desc = "..."})
 tbl.Stats:Divider()
-tbl.Stats:Section({Title = fn("Player"), Icon = "user", Opened = false})
+tbl.Stats:Section({Title = fn("Player"), Opened = false})
 tbl21.Health = tbl.Stats:Paragraph({Title = "❤  Health", Desc = "..."})
 tbl21.Hunger = tbl.Stats:Paragraph({Title = "🍖  Hunger", Desc = "..."})
 tbl21.Armour = tbl.Stats:Paragraph({Title = "🛡  Armour", Desc = "..."})
@@ -9613,7 +9399,7 @@ tbl.Stats:Divider()
 
 tbl.Stats:Section({
     Title = fn("Session & System"),
-    Icon = "monitor",
+
     Opened = false,
 })
 
@@ -9940,7 +9726,7 @@ task.spawn(function()
 end)
 
 tbl.Stats:Divider()
-tbl.Stats:Section({Title = fn("Controls"), Icon = "settings", Opened = false})
+tbl.Stats:Section({Title = fn("Controls"), Opened = false})
 
 tbl.Stats:Button({
     Title = "🔄 Refresh Stats",
@@ -10392,7 +10178,7 @@ local function fn43()
     return true
 end
 
-tbl.Settings:Section({Title = fn("Config"), Icon = "save"})
+tbl.Settings:Section({Title = fn("Config")})
 
 tbl.Settings:Paragraph({
     Title = "Save / Load Config",
@@ -10456,7 +10242,7 @@ tbl.Settings:Button({
 })
 
 tbl.Settings:Divider()
-tbl.Settings:Section({Title = fn("Discord Webhook"), Icon = "bell"})
+tbl.Settings:Section({Title = fn("Discord Webhook")})
 
 tbl.Settings:Paragraph({
     Title = "Webhook Notifications",
@@ -10501,33 +10287,11 @@ tbl.Settings:Toggle({
 })
 
 tbl.Settings:Divider()
-tbl.Settings:Section({Title = fn("PC Keybinds"), Icon = "keyboard"})
+tbl.Settings:Section({Title = fn("PC Keybinds")})
 
 tbl.Settings:Paragraph({
     Title = "PC Keyboard Shortcuts",
-    Desc = "These keybinds work on PC only:\n\n→ RightShift — Open or Close the hub\n→ RightControl — Minimize or Restore the hub\n→ Delete — Hide the hub completely\n\nTo reopen after hiding: click the ❄ DUBO HUB button at the top of your screen, or press RightShift.\n\nThe ▶ button in the hub titlebar copies the official Synvextia YouTube channel link.",
-})
-
-credits:Button({
-    Title = "Click To Copy The Discord Server Link",
-    Callback = function()
-        setclipboard("https://discord.gg/synvextia")
-
-        result:Notify({
-            Title = "Copied!",
-            Content = "Discord invite copied to clipboard.",
-            Duration = 3,
-        })
-    end,
-})
-
-credits:Divider()
-
-credits:Paragraph({
-    Title = "PLEASE JOIN THE DISCORD SERVER",
-    Desc = "Join the Discord server! Be part of huge events, get early access to scripts, share ideas, report bugs, and connect with the community. The key is completely keyless, and give a feedback helps make the scripts even better.",
-    Color = "Green",
-    Locked = false,
+    Desc = "These keybinds work on PC only:\n\n→ RightShift — Open or Close the hub\n→ RightControl — Minimize or Restore the hub\n→ Delete — Hide the hub completely\n\nTo reopen after hiding: click the ❄ DUBO HUB button at the top of your screen, or press RightShift.",
 })
 
 credits:Paragraph({
@@ -10541,7 +10305,7 @@ credits:Divider()
 
 credits:Paragraph({
     Title = "Garou",
-    Desc = "Core developer of DUBO HUB.\nHandles scripting, bug fixes, performance, and new feature implementation.",
+    Desc = "Core developer of the original script.\nHandles scripting, bug fixes, performance, and new feature implementation.",
     Color = "Purple",
     Locked = false,
 })
@@ -10554,21 +10318,10 @@ task.spawn(function()
             Title = "Loading...",
             Content = "This Script might take a little bit to load.",
             Duration = 5,
-            Icon = "loader",
+
         })
     end)
 
-    local n3 = math.random(60, 300)
-    task.wait(n3)
-
-    pcall(function()
-        result:Notify({
-            Title = "Discord Server",
-            Content = "Please join the offical discord server for more scripts! If you're a content creator, make a video on this script and we will post it",
-            Duration = 9,
-            Icon = "youtube",
-        })
-    end)
 end)
 
 localPlayer.CharacterAdded:Connect(function(character)
