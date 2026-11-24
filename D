@@ -772,7 +772,7 @@ do
 
     v4:Paragraph({
         Title = "What's Included",
-        Desc = "→ Auto Farm Days\n→ Auto Fuel Campfire\n→ Auto Cook Food\n→ Auto Compress Items\n→ Auto Bring / Collect Items\n→ Tree Aura (Auto Chop)\n→ Landmarks Reveal (Full Map)\n→ Send to Volcano\n→ Godmode (Combat)\n→ Silent Aim + Revive Players\n→ Player & Mob ESP\n→ Detailed Game Stats\n→ And much MORE!!",
+        Desc = "→ Auto Full\n→ Auto Fuel Campfire\n→ Auto Cook Food\n→ Auto Compress Items\n→ Auto Bring / Collect Items\n→ Tree Aura (Auto Chop)\n→ Landmarks Reveal (Full Map)\n→ Send to Volcano\n→ Godmode (Combat)\n→ Silent Aim + Revive Players\n→ Player & Mob ESP\n→ Detailed Game Stats\n→ And much MORE!!",
     })
 
     v4:Divider()
@@ -1258,7 +1258,6 @@ do
         "Fuel Canister",
         "Oil Barrel",
         "Biofuel",
-        "Chair",
         "Wolf Corpse",
         "Alpha Wolf Corpse",
         "Bear Corpse",
@@ -1309,39 +1308,23 @@ do
 
     local function fn17(arg)
         local tbl5 = {}
-        local cultistCorpse = type(arg) == "table" and arg["Cultist Corpse"]
-
-        local function fn18(arg2)
-            if not arg2 then
-                return
-            end
-
-            for i, child in ipairs(arg2:GetChildren()) do
-                if child.Parent then
-                    local flag2 = arg == true or arg[child.Name]
-
-                    if not flag2 and cultistCorpse and child.Name:lower():find("cultist") then
-                        flag2 = true
-                    end
-
-                    if flag2 then
-                        table.insert(tbl5, child)
+        if type(arg) ~= "table" then return tbl5 end
+        local folder = workspace:FindFirstChild("Items")
+        if folder then
+            for _, child in ipairs(folder:GetChildren()) do
+                if arg[child.Name] then
+                    local part = child:IsA("BasePart") and child or child:FindFirstChildWhichIsA("BasePart", true)
+                    if part and not part.Anchored and not part.Locked and (child:IsA("Model") or child:IsA("BasePart")) then
+                        local valid = true
+                        for _, descendant in ipairs(child:GetDescendants()) do
+                            if descendant:IsA("BasePart") and (descendant.Anchored or descendant.Locked) then
+                                valid = false
+                                break
+                            end
+                        end
+                        if valid then table.insert(tbl5, child) end
                     end
                 end
-            end
-        end
-
-        fn18(items)
-
-        for i, v5 in ipairs({"DroppedItems", "WorldItems", "Drops", "Loot", "Pickups"}) do
-            fn18(workspace:FindFirstChild(v5))
-        end
-
-        local map = workspace:FindFirstChild("Map")
-
-        if map then
-            for i, child in ipairs(map:GetChildren()) do
-                fn18(child)
             end
         end
 
@@ -1440,8 +1423,6 @@ do
         "Old Radio",
         "Broken Microwave",
         "Tyre",
-        "Chair",
-        "Metal Chair",
         "Old Car Engine",
         "Washing Machine",
         "Bone",
@@ -3780,7 +3761,7 @@ do
         local n9 = 0
 
         for i, child in ipairs(workspace.Items:GetChildren()) do
-            if child.Name:lower():find(arg:lower()) then
+            if child.Name:lower() == arg:lower() then
                 pcall(function()
                     remoteEvents.RequestStartDraggingItem:FireServer(child)
                     task.wait(0.05)
@@ -3918,7 +3899,7 @@ do
             end
 
             for k, child in pairs(workspace.Items:GetChildren()) do
-                if child.Name:lower():find("log") and child:IsA("Model") then
+                if child.Name:lower() == "log" and child:IsA("Model") then
                     local basePart = child:FindFirstChildWhichIsA("BasePart")
 
                     if basePart then
@@ -4134,7 +4115,7 @@ do
         end
 
         for i, child in ipairs(workspace.Items:GetChildren()) do
-            if child.Name:lower():find(arg:lower()) then
+            if child.Name:lower() == arg:lower() then
                 pcall(function()
                     remoteEvents.RequestStartDraggingItem:FireServer(child)
                     task.wait(0.05)
@@ -4231,13 +4212,14 @@ do
     for _, name in ipairs({"Log", "Scrap", "Scrap Metal", "Car Engine", "Broken Fan", "Broken Radio", "Sheet Metal", "Tyre", "Coal", "Fuel Canister", "Biofuel", "Oil Barrel", "Carrot", "Berry", "Apple", "Meat", "Cooked Meat", "Morsel", "Cooked Morsel", "Bandage", "Medkit", "Coin Stack", "Wolf Pelt", "Bear Pelt", "Alpha Wolf Pelt", "Rabbit Foot", "Good Sack", "Giant Sack", "Good Axe", "Strong Axe", "Revolver", "Rifle", "Rifle Ammo", "Revolver Ammo"}) do
         allowedBring[name:lower()] = true
     end
-    local function fn45(arg)
+    local function fn45(arg, skip, seen, running)
         if not arg then return 0 end
         local folder = workspace:FindFirstChild("Items")
         if not folder then return 0 end
         local count = 0
         for _, item in ipairs(folder:GetChildren()) do
-            if allowedBring[item.Name:lower()] and not fn44(item) then
+            if running and not running() then break end
+            if allowedBring[item.Name:lower()] and not fn44(item) and not (skip and skip[item.Name]) and not (seen and seen[item]) then
                 local part = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart", true)
                 if part and not part.Anchored and not part.Locked then
                     local ok = pcall(function()
@@ -4249,7 +4231,10 @@ do
                         if item:IsA("Model") then item:PivotTo(cf) else part.CFrame = cf end
                         remoteEvents.StopDraggingItem:FireServer(item)
                     end)
-                    if ok then count = count + 1 end
+                    if ok then
+                        count = count + 1
+                        if seen then seen[item] = true end
+                    end
                 end
             end
         end
@@ -5603,205 +5588,22 @@ do
     tbl.AutoDays:Divider()
 
     tbl.AutoDays:Section({
-        Title = fn("Day Auto Farm"),
+        Title = fn("Auto Full"),
 
         Opened = false,
         Desc = "",
     })
 
-    local tbl35 = {active = false, thread = nil}
-    local vector4 = Vector3.new(-37.08, 6.98, -16.33)
-
-    tbl.AutoDays:Toggle({
-        Title = "Activate Auto Days",
+    local autoFullRef, autoFullStart, autoFullStop
+    autoFullRef = tbl.AutoDays:Toggle({
+        Title = "Auto Full",
+        Desc = "One scanner sweep with fuel, compress and campfire collection.",
         Default = false,
         Callback = function(active)
-            tbl35.active = active
-
             if active then
-                tbl35.thread = task.spawn(function()
-                    local VirtualInputManager = game:GetService("VirtualInputManager")
-                    local vector5 = Vector3.new(0.25, 7.82, -0.65)
-                    local vector6 = Vector3.new(-1.88, -40.59, 3.62)
-
-                    local function fn49(arg)
-                        currentCamera.CFrame = CFrame.new(currentCamera.CFrame.Position, arg.Position)
-                    end
-
-                    local function fn50(arg)
-                        local character = localPlayer.Character
-                        local result2 = character or localPlayer.CharacterAdded:Wait()
-                        local humanoidRootPart = result2:WaitForChild("HumanoidRootPart")
-
-                        for i = 1, arg do
-                            if not tbl35.active then
-                                return
-                            end
-                            local tbl36 = {}
-                            local items3 = Workspace:FindFirstChild("Items")
-                            local carrot = items3 and Workspace.Items:FindFirstChild("Carrot")
-                            local map = Workspace:FindFirstChild("Map")
-                            local carrotPatch = map and Workspace.Map:FindFirstChild("Foliage") and Workspace.Map.Foliage:FindFirstChild("Carrot Patch")
-                            local items4 = Workspace:FindFirstChild("Items")
-                            local berry = items4 and Workspace.Items:FindFirstChild("Berry")
-
-                            if carrot then
-                                table.insert(tbl36, carrot)
-                            end
-
-                            if carrotPatch then
-                                table.insert(tbl36, carrotPatch)
-                            end
-
-                            if berry then
-                                table.insert(tbl36, berry)
-                            end
-
-                            for i2, v12 in ipairs(tbl36) do
-                                if not tbl35.active then
-                                    return
-                                end
-                                local isModel = v12:IsA("Model")
-                                local primaryPart = isModel and v12.PrimaryPart or v12
-
-                                if primaryPart then
-                                    humanoidRootPart.CFrame = CFrame.new(primaryPart.Position - (primaryPart.Position - humanoidRootPart.Position).Unit * 2 + Vector3.new(0, 2, 0))
-                                    fn49(primaryPart)
-
-                                    pcall(function()
-                                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-                                        task.wait(0.1)
-                                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-                                    end)
-
-                                    break
-                                end
-                            end
-
-                            task.wait(0.2)
-                        end
-                    end;
-
-                    (function()
-                        if not workspace:FindFirstChild("SafePlatform") then
-                            local part = Instance.new("Part")
-                            part.Size = Vector3.new(10, 1, 10)
-                            part.Position = vector6 - Vector3.new(0, 0.5, 0)
-                            part.Anchored = true
-                            part.Name = "SafePlatform"
-                            part.Parent = workspace
-                        end
-                    end)();
-
-                    (function(arg)
-                        local character, result2, humanoidRootPart, now2, n9, n10, n11, n12, v12, n13, n14, n15
-                        n15 = 1
-
-                        while true do
-                            if n15 == 1 then
-                                character = localPlayer.Character
-                                result2 = character
-
-                                if character then
-                                    n15 = 3
-                                else
-                                    n15 = 2
-                                end
-                            elseif n15 == 2 then
-                                result2 = localPlayer.CharacterAdded:Wait()
-                                n15 = 3
-                            elseif n15 == 3 then
-                                humanoidRootPart = result2:WaitForChild("HumanoidRootPart")
-                                now2 = os.clock()
-                                n15 = 4
-                            elseif n15 == 4 then
-                                if os.clock() - now2 < arg and tbl35.active then
-                                    n15 = 6
-                                else
-                                    n15 = 5
-                                end
-                            elseif n15 == 5 then
-                                return
-                            elseif n15 == 6 then
-                                n9 = -50
-                                n15 = 7
-                            elseif n15 == 7 then
-                                n10 = n9 + 50
-
-                                if n10 <= 1500 then
-                                    n15 = 8
-                                else
-                                    n15 = 4
-                                end
-                            elseif n15 == 8 then
-                                n11 = -10
-                                n15 = 9
-                            elseif n15 == 9 then
-                                n12 = n11 + 10
-
-                                if n12 <= 360 then
-                                    n15 = 11
-                                else
-                                    n15 = 10
-                                end
-                            elseif n15 == 10 then
-                                n9 = n10
-                                n15 = 7
-                            elseif n15 == 11 then
-                                n11 = n12
-
-                                if tbl35.active then
-                                    n15 = 12
-                                else
-                                    n15 = 14
-                                end
-                            elseif n15 == 12 then
-                                v12 = math.rad(n12)
-                                n13 = vector5.X + n10 * math.cos(v12)
-                                n14 = vector5.Z + n10 * math.sin(v12)
-                                humanoidRootPart.CFrame = CFrame.new(n13, vector5.Y, n14)
-                                task.wait(0.05)
-
-                                if arg <= os.clock() - now2 then
-                                    n15 = 13
-                                else
-                                    n15 = 9
-                                end
-                            elseif n15 == 13 then
-                                return
-                            elseif n15 == 14 then
-                                return
-                            end
-                        end
-                    end)(80)
-
-                    if not tbl35.active then
-                        return
-                    end
-                    local character = localPlayer.Character
-                    local result2 = character or localPlayer.CharacterAdded:Wait()
-                    local humanoidRootPart = result2:WaitForChild("HumanoidRootPart")
-                    humanoidRootPart.CFrame = CFrame.new(vector6)
-                    task.wait(60)
-
-                    while tbl35.active do
-                        fn50(15)
-                        if not tbl35.active then
-                            break
-                        end
-                        humanoidRootPart.CFrame = CFrame.new(vector6)
-                        task.wait(60)
-                    end
-                end)
-            else
-                tbl35.active = false
-                local character = localPlayer.Character
-                local result2 = character or localPlayer.CharacterAdded:Wait()
-                local humanoidRootPart = result2:FindFirstChild("HumanoidRootPart")
-
-                if humanoidRootPart then
-                    humanoidRootPart.CFrame = CFrame.new(vector4)
-                end
+                if autoFullStart then autoFullStart() end
+            elseif autoFullStop then
+                autoFullStop()
             end
         end,
     })
@@ -6054,6 +5856,64 @@ do
             end
         end,
     })
+
+    local fullRun = nil
+    autoFullStop = function()
+        local run = fullRun
+        if not run then return end
+        fullRun = nil
+        genv.AutoLoadMapActive = false
+        genv.AutoFuelCampfireOn = run.fuelOn
+        genv.AutoWoodCompressOn = run.compressOn
+        genv.AutoFuelCampfireList = run.fuelList
+        genv.AutoWoodCompressList = run.compressList
+        pcall(function() tbl38.toggleRef:Set(false) end)
+        pcall(function() autoFullRef:Set(false) end)
+    end
+    autoFullStart = function()
+        if fullRun then return end
+        if genv.AutoLoadMapActive then
+            fn3("Stop the current scanner before starting Auto Full.")
+            pcall(function() autoFullRef:Set(false) end)
+            return
+        end
+        local run = {
+            fuelOn = genv.AutoFuelCampfireOn,
+            compressOn = genv.AutoWoodCompressOn,
+            fuelList = genv.AutoFuelCampfireList,
+            compressList = genv.AutoWoodCompressList,
+        }
+        fullRun = run
+        local fuel, compress, skip, seen = {}, {}, {}, {}
+        for _, name in ipairs(tbl4) do fuel[name] = true; skip[name] = true end
+        for _, name in ipairs(tbl5) do
+            if not fuel[name] then compress[name] = true end
+            skip[name] = true
+        end
+        genv.AutoFuelCampfireList = fuel
+        genv.AutoWoodCompressList = compress
+        genv.AutoFuelCampfireOn = true
+        genv.AutoWoodCompressOn = true
+        tbl39.speed = 100
+        genv.AutoLoadMapActive = true
+        task.spawn(function()
+            local ok, err = pcall(fn51)
+            if fullRun == run then
+                autoFullStop()
+                fn3(ok and "Auto Full stopped." or tostring(err))
+            end
+        end)
+        task.spawn(function()
+            while fullRun == run and genv.AutoLoadMapActive do
+                pcall(function()
+                    fn45({Position = tbl38.campfireReturn}, skip, seen, function()
+                        return fullRun == run and genv.AutoLoadMapActive
+                    end)
+                end)
+                task.wait(0.5)
+            end
+        end)
+    end
 
     tbl.Scanner:Slider({
         Title = "Scan Speed",
