@@ -3873,8 +3873,10 @@ do
             end
             local n9 = 0
 
+            local allowed = {Log=true, Scrap=true, ["Scrap Metal"]=true, ["Car Engine"]=true, ["Broken Fan"]=true, ["Broken Radio"]=true, ["Sheet Metal"]=true, Tyre=true, Coal=true, ["Fuel Canister"]=true, Biofuel=true, ["Oil Barrel"]=true, Carrot=true, Berry=true, Meat=true, ["Cooked Meat"]=true}
             for i, child in ipairs(workspace.Items:GetChildren()) do
-                if pcall(function()
+                local part = child:IsA("BasePart") and child or child:FindFirstChildWhichIsA("BasePart", true)
+                if allowed[child.Name] and part and not part.Anchored and not part.Locked and pcall(function()
                     remoteEvents.RequestStartDraggingItem:FireServer(child)
                     task.wait(0.03)
                     local cframe = CFrame.new(humanoidRootPart.Position + Vector3.new(math.random(-4, 4), 3, math.random(-4, 4)))
@@ -4225,143 +4227,42 @@ do
         return false
     end
 
+    local allowedBring = {}
+    for _, name in ipairs({"Log", "Scrap", "Scrap Metal", "Car Engine", "Broken Fan", "Broken Radio", "Sheet Metal", "Tyre", "Coal", "Fuel Canister", "Biofuel", "Oil Barrel", "Carrot", "Berry", "Apple", "Meat", "Cooked Meat", "Morsel", "Cooked Morsel", "Bandage", "Medkit", "Coin Stack", "Wolf Pelt", "Bear Pelt", "Alpha Wolf Pelt", "Rabbit Foot", "Good Sack", "Giant Sack", "Good Axe", "Strong Axe", "Revolver", "Rifle", "Rifle Ammo", "Revolver Ammo"}) do
+        allowedBring[name:lower()] = true
+    end
     local function fn45(arg)
-        if not arg then
-            return 0
-        end
-        local position = arg.Position
-        local n9 = 0
-
-        local function fn46(arg2)
-            if not arg2 or not arg2.Parent then
-                return
-            end
-
-            if fn44(arg2) then
-                return
-            end
-            local handle = arg2:FindFirstChild("Handle")
-            local basePart = handle or arg2:FindFirstChildWhichIsA("BasePart")
-            if not basePart then
-                return
-            end
-
-            if basePart.Locked or basePart.Anchored then
-                return
-            end
-
-            pcall(function()
-                remoteEvents.RequestStartDraggingItem:FireServer(arg2)
-                local cframe = CFrame.new(position + Vector3.new(math.random(-4, 4), 3, math.random(-4, 4)))
-
-                if arg2:IsA("Model") then
-                    arg2:PivotTo(cframe)
-                else
-                    basePart.CFrame = cframe
+        if not arg then return 0 end
+        local folder = workspace:FindFirstChild("Items")
+        if not folder then return 0 end
+        local count = 0
+        for _, item in ipairs(folder:GetChildren()) do
+            if allowedBring[item.Name:lower()] and not fn44(item) then
+                local part = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart", true)
+                if part and not part.Anchored and not part.Locked then
+                    local ok = pcall(function()
+                        remoteEvents.RequestStartDraggingItem:FireServer(item)
+                        task.wait(0.03)
+                        local angle = count * 2.39996
+                        local radius = 5 + math.sqrt(count) * 2
+                        local cf = CFrame.new(arg.Position + Vector3.new(math.cos(angle)*radius, -1, math.sin(angle)*radius))
+                        if item:IsA("Model") then item:PivotTo(cf) else part.CFrame = cf end
+                        remoteEvents.StopDraggingItem:FireServer(item)
+                    end)
+                    if ok then count = count + 1 end
                 end
-
-                remoteEvents.StopDraggingItem:FireServer(arg2)
-            end)
-
-            n9 = n9 + 1
-        end
-
-        local tbl24 = {}
-
-        local function fn47(arg2)
-            if not arg2 then
-                return
-            end
-
-            for i, child in ipairs(arg2:GetChildren()) do
-                table.insert(tbl24, task.spawn(fn46, child))
             end
         end
-
-        fn47(workspace:FindFirstChild("Items"))
-        fn47(workspace:FindFirstChild("DroppedItems"))
-        fn47(workspace:FindFirstChild("WorldItems"))
-        fn47(workspace:FindFirstChild("Drops"))
-        fn47(workspace:FindFirstChild("Loot"))
-        fn47(workspace:FindFirstChild("Pickups"))
-        local map = workspace:FindFirstChild("Map")
-
-        if map then
-            for i, child in ipairs(map:GetChildren()) do
-                fn47(child)
-            end
-        end
-
-        return n9
+        return count
     end
 
     tbl.Bring:Button({
         Title = "Bring Everything",
+        Desc = "Only recognized loose items; excludes buildings and chests.",
         Callback = function()
             local character = localPlayer.Character
-            local humanoidRootPart = character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if not humanoidRootPart then
-                fn3("No character!")
-                return
-            end
-            local position = humanoidRootPart.Position
-            local n9 = 0
-            local tbl24 = {}
-
-            local tbl25 = {
-                workspace:FindFirstChild("Items"),
-                workspace:FindFirstChild("DroppedItems"),
-                workspace:FindFirstChild("WorldItems"),
-                workspace:FindFirstChild("Drops"),
-                workspace:FindFirstChild("Loot"),
-            }
-
-            local v12, v13, v14 = ipairs(tbl25)
-            local v15 = v14
-            local v16 = v12
-            local v17 = v13
-
-            while true do
-                local v18, v19 = v16(v17, v15)
-                if v18 == nil then
-                    break
-                end
-                v15 = v18
-
-                if v19 then
-                    for i, child in ipairs(v19:GetChildren()) do
-                        table.insert(tbl24, task.spawn(function()
-                            if not child or not child.Parent then
-                                return
-                            end
-                            local handle = child:FindFirstChild("Handle")
-                            local basePart = handle or child:FindFirstChildWhichIsA("BasePart")
-
-                            if basePart and not basePart.Locked and not basePart.Anchored then
-                                pcall(function()
-                                    remoteEvents.RequestStartDraggingItem:FireServer(child)
-                                    local cframe = CFrame.new(position + Vector3.new(math.random(-4, 4), 3, math.random(-4, 4)))
-
-                                    if child:IsA("Model") then
-                                        child:PivotTo(cframe)
-                                    else
-                                        basePart.CFrame = cframe
-                                    end
-
-                                    remoteEvents.StopDraggingItem:FireServer(child)
-                                end)
-
-                                n9 = n9 + 1
-                            end
-                        end))
-                    end
-
-                    v15 = v18
-                end
-            end
-
-            task.wait(0.2)
-            fn3("Bring Everything: " .. n9 .. " items brought (including chests)!")
+            local root = character and character:FindFirstChild("HumanoidRootPart")
+            if root then fn3("Bring: " .. fn45(root) .. " items") end
         end,
     })
 
