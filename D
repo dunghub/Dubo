@@ -34,12 +34,12 @@ do
         local str = ""
 
         local tbl2 = {
-            Color3.fromRGB(120, 180, 255),
-            Color3.fromRGB(90, 140, 255),
-            Color3.fromRGB(110, 100, 255),
-            Color3.fromRGB(140, 70, 255),
-            Color3.fromRGB(160, 40, 230),
-            Color3.fromRGB(100, 20, 190),
+            Color3.fromRGB(255, 80, 110),
+            Color3.fromRGB(255, 185, 65),
+            Color3.fromRGB(100, 255, 145),
+            Color3.fromRGB(65, 220, 255),
+            Color3.fromRGB(125, 130, 255),
+            Color3.fromRGB(235, 100, 255),
         }
 
         local n = #arg:gsub("[^%w]", "")
@@ -100,7 +100,7 @@ do
     local TweenService = game:GetService("TweenService")
     local playerGui = localPlayer:WaitForChild("PlayerGui")
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "SynvextiaLoader"
+    screenGui.Name = "DuboLoader"
     screenGui.ResetOnSpawn = false
     screenGui.DisplayOrder = 99999
     screenGui.IgnoreGuiInset = true
@@ -116,7 +116,7 @@ do
     frame2.Size = UDim2.new(0, 360, 0, 130)
     frame2.AnchorPoint = Vector2.new(0.5, 0.5)
     frame2.Position = UDim2.new(0.5, 0, 0.58, 0)
-    frame2.BackgroundColor3 = Color3.fromHex("#07020F")
+    frame2.BackgroundColor3 = Color3.fromHex("#080808")
     frame2.BackgroundTransparency = 1
     frame2.BorderSizePixel = 0
     frame2.ZIndex = 2
@@ -130,10 +130,13 @@ do
     local uiGradient = Instance.new("UIGradient")
 
     uiGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromHex("#78B4FF")),
-        ColorSequenceKeypoint.new(0.33, Color3.fromHex("#5B8CFF")),
-        ColorSequenceKeypoint.new(0.66, Color3.fromHex("#9B50FF")),
-        ColorSequenceKeypoint.new(1, Color3.fromHex("#78B4FF")),
+        ColorSequenceKeypoint.new(0.0, Color3.fromHSV(0.0, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.16666666666666666, Color3.fromHSV(0.16666666666666666, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.3333333333333333, Color3.fromHSV(0.3333333333333333, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromHSV(0.5, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.6666666666666666, Color3.fromHSV(0.6666666666666666, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.8333333333333334, Color3.fromHSV(0.8333333333333334, 0.85, 1)),
+        ColorSequenceKeypoint.new(1.0, Color3.fromHSV(1.0, 0.85, 1))
     })
 
     uiGradient.Rotation = 0
@@ -146,6 +149,9 @@ do
             local rotation = (n + 2) % 360
             n = rotation
             uiGradient.Rotation = rotation
+            if uiStroke.Transparency < 0.5 then
+                uiStroke.Transparency = 0.08 + 0.12 * (1 + math.sin(os.clock() * 2))
+            end
             task.wait(0.03)
         end
     end)
@@ -186,9 +192,9 @@ do
     textLabel2.Size = UDim2.new(1, -30, 1, 0)
     textLabel2.Position = UDim2.new(0, 30, 0, 0)
     textLabel2.BackgroundTransparency = 1
-    textLabel2.Text = "Synvextia Hub"
-    textLabel2.TextColor3 = Color3.fromHex("#78B4FF")
-    textLabel2.TextSize = 17
+    textLabel2.Text = "DUBO HUB"
+    textLabel2.TextColor3 = Color3.fromHex("#FFFFFF")
+    textLabel2.TextSize = 20
     textLabel2.Font = Enum.Font.GothamBold
     textLabel2.TextXAlignment = Enum.TextXAlignment.Left
     textLabel2.TextYAlignment = Enum.TextYAlignment.Center
@@ -230,7 +236,7 @@ do
     local frame4 = Instance.new("Frame")
     frame4.Size = UDim2.new(1, -20, 0, 1)
     frame4.Position = UDim2.new(0, 10, 0, 46)
-    frame4.BackgroundColor3 = Color3.fromHex("#1A2850")
+    frame4.BackgroundColor3 = Color3.fromHex("#303030")
     frame4.BorderSizePixel = 0
     frame4.ZIndex = 3
     frame4.Parent = frame2
@@ -239,7 +245,7 @@ do
     textLabel4.Position = UDim2.new(0, 14, 0, 52)
     textLabel4.BackgroundTransparency = 1
     textLabel4.Text = "*  Starting..."
-    textLabel4.TextColor3 = Color3.fromHex("#8BB5FF")
+    textLabel4.TextColor3 = Color3.fromHex("#EEEEEE")
     textLabel4.TextSize = 12
     textLabel4.Font = Enum.Font.Gotham
     textLabel4.TextXAlignment = Enum.TextXAlignment.Left
@@ -248,7 +254,7 @@ do
     local frame5 = Instance.new("Frame")
     frame5.Size = UDim2.new(1, -20, 0, 7)
     frame5.Position = UDim2.new(0, 10, 0, 76)
-    frame5.BackgroundColor3 = Color3.fromHex("#0A1840")
+    frame5.BackgroundColor3 = Color3.fromHex("#202020")
     frame5.BorderSizePixel = 0
     frame5.ZIndex = 3
     frame5.Parent = frame2
@@ -263,9 +269,13 @@ do
     local uiGradient2 = Instance.new("UIGradient")
 
     uiGradient2.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromHex("#78B4FF")),
-        ColorSequenceKeypoint.new(0.5, Color3.fromHex("#5060EE")),
-        ColorSequenceKeypoint.new(1, Color3.fromHex("#9B30CC")),
+        ColorSequenceKeypoint.new(0.0, Color3.fromHSV(0.0, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.16666666666666666, Color3.fromHSV(0.16666666666666666, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.3333333333333333, Color3.fromHSV(0.3333333333333333, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromHSV(0.5, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.6666666666666666, Color3.fromHSV(0.6666666666666666, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.8333333333333334, Color3.fromHSV(0.8333333333333334, 0.85, 1)),
+        ColorSequenceKeypoint.new(1.0, Color3.fromHSV(1.0, 0.85, 1))
     })
 
     uiGradient2.Parent = frame6
@@ -284,7 +294,7 @@ do
     textLabel5.Position = UDim2.new(0, 10, 0, 89)
     textLabel5.BackgroundTransparency = 1
     textLabel5.Text = "*  0%"
-    textLabel5.TextColor3 = Color3.fromHex("#DC82FF")
+    textLabel5.TextColor3 = Color3.fromHex("#FFFFFF")
     textLabel5.TextSize = 11
     textLabel5.Font = Enum.Font.GothamBold
     textLabel5.TextXAlignment = Enum.TextXAlignment.Right
@@ -295,7 +305,7 @@ do
     textLabel6.Position = UDim2.new(0, 14, 0, 89)
     textLabel6.BackgroundTransparency = 1
     textLabel6.Text = "v1.0.0"
-    textLabel6.TextColor3 = Color3.fromHex("#3A1060")
+    textLabel6.TextColor3 = Color3.fromHex("#AAAAAA")
     textLabel6.TextSize = 10
     textLabel6.Font = Enum.Font.Gotham
     textLabel6.TextXAlignment = Enum.TextXAlignment.Left
@@ -395,11 +405,11 @@ do
     pcall(function()
         result:AddTheme({
             Name = "Synvextia Purple",
-            Dialog = Color3.fromHex("#050A18"),
-            Outline = Color3.fromHex("#1E3080"),
+            Dialog = Color3.fromHex("#101010"),
+            Outline = Color3.fromHex("#353535"),
             Text = Color3.fromHex("#E6F0FF"),
-            Placeholder = Color3.fromHex("#4060A0"),
-            Background = Color3.fromHex("#030510"),
+            Placeholder = Color3.fromHex("#999999"),
+            Background = Color3.fromHex("#080808"),
             Button = result:Gradient({
                 ["0"] = {Color = Color3.fromHex("#5B8CFF"), Transparency = 0},
                 ["50"] = {Color = Color3.fromHex("#7B4FEE"), Transparency = 0},
@@ -416,22 +426,22 @@ do
     end)
 
     v = result:CreateWindow({
-        Title = fn("Synvextia Hub"),
-        Author = "Synvextia Developments - Synvextia                                   ",
+        Title = fn("DUBO HUB"),
+        Author = "Rainbow Dark Edition",
         Icon = "vegan",
         Folder = "Synvextia/bbn",
         Size = UDim2.fromOffset(640, 380),
-        Transparent = true,
+        Transparent = false,
         Resizable = true,
         Theme = "Synvextia Purple",
         SideBarWidth = 210,
         HideSearchBar = false,
         ScrollBarEnabled = true,
         Background = result:Gradient({
-            ["0"] = {Color = Color3.fromHex("#050F30"), Transparency = 0},
-            ["40"] = {Color = Color3.fromHex("#080A28"), Transparency = 0},
-            ["70"] = {Color = Color3.fromHex("#0A0820"), Transparency = 0},
-            ["100"] = {Color = Color3.fromHex("#030510"), Transparency = 0},
+            ["0"] = {Color = Color3.fromHex("#151515"), Transparency = 0},
+            ["40"] = {Color = Color3.fromHex("#101010"), Transparency = 0},
+            ["70"] = {Color = Color3.fromHex("#0B0B0B"), Transparency = 0},
+            ["100"] = {Color = Color3.fromHex("#080808"), Transparency = 0},
         }, {Rotation = 135}),
         User = {
             Enabled = true,
@@ -448,7 +458,7 @@ do
     })
 
     if not v then
-        warn("[SynvextiaHub] Window failed to create — aborting.")
+        warn("[DUBO HUB] Window failed to create — aborting.")
         return
     end
 
@@ -466,11 +476,19 @@ do
 
     pcall(function()
         v:EditOpenButton({
-            Title = "Synvextia Hub [v1.0.0]",
+            Title = "DUBO HUB [v1.0.0]",
             Icon = "vegan",
             CornerRadius = UDim.new(0, 16),
             StrokeThickness = 2,
-            Color = ColorSequence.new(Color3.fromHex("#5B8CFF"), Color3.fromHex("#9B50FF")),
+            Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.0, Color3.fromHSV(0.0, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.16666666666666666, Color3.fromHSV(0.16666666666666666, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.3333333333333333, Color3.fromHSV(0.3333333333333333, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromHSV(0.5, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.6666666666666666, Color3.fromHSV(0.6666666666666666, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.8333333333333334, Color3.fromHSV(0.8333333333333334, 0.85, 1)),
+        ColorSequenceKeypoint.new(1.0, Color3.fromHSV(1.0, 0.85, 1))
+    }),
             OnlyMobile = false,
             Enabled = true,
             Draggable = true,
@@ -544,6 +562,32 @@ do
         if not v13 then
             return
         end
+        -- DUBO HUB: animated rainbow window outline
+        local duboStroke = Instance.new("UIStroke")
+        duboStroke.Name = "DuboRainbowOutline"
+        duboStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        duboStroke.Thickness = 2.5
+        duboStroke.Color = Color3.new(1, 1, 1)
+        duboStroke.Parent = v13
+        local duboGradient = Instance.new("UIGradient")
+        duboGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.0, Color3.fromHSV(0.0, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.16666666666666666, Color3.fromHSV(0.16666666666666666, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.3333333333333333, Color3.fromHSV(0.3333333333333333, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromHSV(0.5, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.6666666666666666, Color3.fromHSV(0.6666666666666666, 0.85, 1)),
+        ColorSequenceKeypoint.new(0.8333333333333334, Color3.fromHSV(0.8333333333333334, 0.85, 1)),
+        ColorSequenceKeypoint.new(1.0, Color3.fromHSV(1.0, 0.85, 1))
+    })
+        duboGradient.Parent = duboStroke
+        task.spawn(function()
+            while duboStroke.Parent and v13:IsDescendantOf(game) do
+                local t = os.clock()
+                duboGradient.Rotation = (t * 75) % 360
+                duboStroke.Transparency = 0.12 + 0.12 * (1 + math.sin(t * 2))
+                task.wait(0.04)
+            end
+        end)
         local position = v13.Position
         v13.Position = UDim2.new(position.X.Scale, position.X.Offset, position.Y.Scale + 0.03, position.Y.Offset)
         TweenService2:Create(v13, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Position = position}):Play()
@@ -698,7 +742,7 @@ do
     end)
 
     fn3 = function(arg)
-        result:Notify({Title = "Synvextia Hub", Content = arg, Duration = 3})
+        result:Notify({Title = "DUBO HUB", Content = arg, Duration = 3})
     end
 
     fn4 = function(arg)
@@ -750,7 +794,7 @@ do
     })
 
     v4:Section({
-        Title = "— Welcome to Synvextia Hub —",
+        Title = "— Welcome to DUBO HUB —",
         Icon = "sparkles",
         Opened = false,
         Desc = "",
@@ -850,8 +894,8 @@ do
     })
 
     v4:Paragraph({
-        Title = "About Synvextia Hub",
-        Desc = "→ Synvextia Hub is a Keyless scripting assistant hub.\n→ Designed to help people with Grinding and more!\n→ Free to use and constantly updated.\n→ Version: 1.0.0",
+        Title = "About DUBO HUB",
+        Desc = "→ DUBO HUB is a Keyless scripting assistant hub.\n→ Designed to help people with Grinding and more!\n→ Free to use and constantly updated.\n→ Version: 1.0.0",
     })
 
     v4:Divider()
@@ -10269,7 +10313,7 @@ local function fn41(arg, arg2, arg3)
                     title = arg,
                     description = arg2,
                     color = v4,
-                    footer = {text = "Synvextia Hub v1.0.0 | " .. localPlayer.Name},
+                    footer = {text = "DUBO HUB v1.0.0 | " .. localPlayer.Name},
                 },
             },
         })
@@ -10428,7 +10472,7 @@ tbl.Settings:Input({
 
         if str ~= "" then
             fn3("Webhook URL saved!")
-            fn41("Webhook Connected", "Synvextia Hub connected to this channel.\nPlayer: **" .. localPlayer.Name .. "**", 3447003)
+            fn41("Webhook Connected", "DUBO HUB connected to this channel.\nPlayer: **" .. localPlayer.Name .. "**", 3447003)
         end
     end,
 })
@@ -10441,7 +10485,7 @@ tbl.Settings:Button({
             fn3("No webhook URL set!")
             return
         end
-        fn41("Test Message ✅", "Your webhook is working correctly!\nSent from Synvextia Hub v1.0.0", 3066993)
+        fn41("Test Message ✅", "Your webhook is working correctly!\nSent from DUBO HUB v1.0.0", 3066993)
         fn3("Test message sent!")
     end,
 })
@@ -10461,7 +10505,7 @@ tbl.Settings:Section({Title = fn("PC Keybinds"), Icon = "keyboard"})
 
 tbl.Settings:Paragraph({
     Title = "PC Keyboard Shortcuts",
-    Desc = "These keybinds work on PC only:\n\n→ RightShift — Open or Close the hub\n→ RightControl — Minimize or Restore the hub\n→ Delete — Hide the hub completely\n\nTo reopen after hiding: click the ❄ Synvextia Hub button at the top of your screen, or press RightShift.\n\nThe ▶ button in the hub titlebar copies the official Synvextia YouTube channel link.",
+    Desc = "These keybinds work on PC only:\n\n→ RightShift — Open or Close the hub\n→ RightControl — Minimize or Restore the hub\n→ Delete — Hide the hub completely\n\nTo reopen after hiding: click the ❄ DUBO HUB button at the top of your screen, or press RightShift.\n\nThe ▶ button in the hub titlebar copies the official Synvextia YouTube channel link.",
 })
 
 credits:Button({
@@ -10497,7 +10541,7 @@ credits:Divider()
 
 credits:Paragraph({
     Title = "Garou",
-    Desc = "Core developer of Synvextia Hub.\nHandles scripting, bug fixes, performance, and new feature implementation.",
+    Desc = "Core developer of DUBO HUB.\nHandles scripting, bug fixes, performance, and new feature implementation.",
     Color = "Purple",
     Locked = false,
 })
