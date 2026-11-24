@@ -508,7 +508,7 @@ do
                     if not layout then
                         local oldX = image.Position.X
                         image.AnchorPoint = Vector2.new(image.AnchorPoint.X, 0.5)
-                        image.Position = UDim2.new(oldX.Scale, oldX.Offset, 0.5, 0)
+                        image.Position = UDim2.new(oldX.Scale, oldX.Offset - 6, 0.5, 0)
                         for _, sibling in ipairs(parent:GetChildren()) do
                             if sibling ~= image and sibling:IsA("GuiObject") and sibling.AbsolutePosition.X > image.AbsolutePosition.X + oldWidth - 2 then
                                 local pos = sibling.Position
@@ -721,8 +721,24 @@ do
     local v4 = v:Tab({
         Title = fn("Introduction"),
 
-        Opened = false,
+        Opened = true,
     })
+
+    v4:Button({
+        Title = "Join Server DUBO HUB",
+        Desc = "discord.gg/KeWB6MB7x",
+        Callback = function()
+            result:Notify({
+                Title = "DUBO HUB",
+                Content = "Discord: https://discord.gg/KeWB6MB7x",
+                Duration = 8,
+            })
+        end,
+    })
+
+    pcall(function()
+        v:SelectTab(1)
+    end)
 
     v4:Section({
         Title = "— Welcome to DUBO HUB —",
