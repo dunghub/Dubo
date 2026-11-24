@@ -172,7 +172,7 @@ do
     textLabel.ScaleType = Enum.ScaleType.Fit
     textLabel.ZIndex = 4
     textLabel.Parent = frame3
-    Instance.new("UICorner", textLabel).CornerRadius = UDim.new(0, 7)
+    Instance.new("UICorner", textLabel).CornerRadius = UDim.new(0.5, 0)
 
     local textLabel2 = Instance.new("TextLabel")
     textLabel2.Size = UDim2.new(1, -42, 1, 0)
@@ -494,6 +494,32 @@ do
             task.wait(0.1)
         end
         if not target then return end
+        -- Enlarge only the existing DUBO header image.
+        for _, image in ipairs(target:GetDescendants()) do
+            if image:IsA("ImageLabel") and image.Image == "rbxassetid://115992626946528" then
+                local parent = image.Parent
+                if parent:IsA("GuiObject") then
+                    local layout = parent:FindFirstChildOfClass("UIListLayout")
+                    local oldWidth = image.AbsoluteSize.X
+                    image.Size = UDim2.fromOffset(42, 42)
+                    image.ScaleType = Enum.ScaleType.Fit
+                    local corner = image:FindFirstChildOfClass("UICorner") or Instance.new("UICorner", image)
+                    corner.CornerRadius = UDim.new(0.5, 0)
+                    if not layout then
+                        local oldX = image.Position.X
+                        image.AnchorPoint = Vector2.new(image.AnchorPoint.X, 0.5)
+                        image.Position = UDim2.new(oldX.Scale, oldX.Offset, 0.5, 0)
+                        for _, sibling in ipairs(parent:GetChildren()) do
+                            if sibling ~= image and sibling:IsA("GuiObject") and sibling.AbsolutePosition.X > image.AbsolutePosition.X + oldWidth - 2 then
+                                local pos = sibling.Position
+                                sibling.Position = UDim2.new(pos.X.Scale, pos.X.Offset + math.max(0, 42 - oldWidth), pos.Y.Scale, pos.Y.Offset)
+                            end
+                        end
+                    end
+                end
+                break
+            end
+        end
         local stroke = Instance.new("UIStroke")
         stroke.Name = "DuboRainbowOutline"
         stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
