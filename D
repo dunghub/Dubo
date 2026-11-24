@@ -168,7 +168,7 @@ do
     local textLabel = Instance.new("ImageLabel")
     textLabel.Size = UDim2.fromOffset(32, 32)
     textLabel.BackgroundTransparency = 1
-    textLabel.Image = "rbxassetid://84619537136529"
+    textLabel.Image = "rbxassetid://115992626946528"
     textLabel.ScaleType = Enum.ScaleType.Fit
     textLabel.ZIndex = 4
     textLabel.Parent = frame3
@@ -413,7 +413,7 @@ do
 
     v = result:CreateWindow({
         Title = fn("DUBO HUB"),
-        Icon = "rbxassetid://84619537136529",
+        Icon = "rbxassetid://115992626946528",
         Author = "99 Nights in the Forest",
         Folder = "Synvextia/bbn",
         Size = UDim2.fromOffset(640, 380),
@@ -451,7 +451,7 @@ do
     pcall(function()
         v:EditOpenButton({
             Title = "DUBO HUB",
-            Icon = "rbxassetid://84619537136529",
+            Icon = "rbxassetid://115992626946528",
             CornerRadius = UDim.new(0, 16),
             StrokeThickness = 2,
             Color = ColorSequence.new({
