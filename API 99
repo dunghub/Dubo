@@ -1,3 +1,6 @@
+-- Recovered Luau source by ZeroVector
+-- Original script: Jay, Zyro and Garou (Synvextia). UI customization: DUBO HUB.
+-- WindUI remains a third-party dependency.
 return function(ctx)
 local result, Players, HttpService, UserInputService, RunService, Workspace, CollectionService, localPlayer, currentCamera, Lighting, Stats, genv, fn, fn2, v, fn3, fn4, tbl, credits, remoteEvents, items, fn5 = ctx.result, ctx.Players, ctx.HttpService, ctx.UserInputService, ctx.RunService, ctx.Workspace, ctx.CollectionService, ctx.localPlayer, ctx.currentCamera, ctx.Lighting, ctx.Stats, ctx.genv, ctx.fn, ctx.fn2, ctx.v, ctx.fn3, ctx.fn4, ctx.tbl, ctx.credits, ctx.remoteEvents, ctx.items, ctx.fn5
 do
@@ -5109,7 +5112,10 @@ do
         }
         fullRun = run
         local fuel, compress, skip, seen = {}, {}, {}, {}
-        for _, name in ipairs(tbl4) do fuel[name] = true; skip[name] = true end
+        for _, name in ipairs(tbl4) do
+            if name ~= "Log" then fuel[name] = true end
+            skip[name] = true
+        end
         for _, name in ipairs(tbl5) do
             if not fuel[name] then compress[name] = true end
             skip[name] = true
