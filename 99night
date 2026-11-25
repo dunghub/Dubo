@@ -326,8 +326,7 @@ do
     end
 
     fn6(0.08, "Connecting...", 0.2)
-    local coreSource
-    local coreChunk
+    local coreExport
     local now = os.clock()
     local flag = false
     local n = 1
@@ -335,21 +334,13 @@ do
     task.spawn(function()
         for attempt = 1, 3 do
             local fetched, body = pcall(function()
-                return game:HttpGet("https://raw.githubusercontent.com/dunghub/Dubo/refs/heads/main/API%2099", true)
+                return loadstring(game:HttpGet("https://raw.githubusercontent.com/dunghub/Dubo/refs/heads/main/API%2099", true))()
             end)
-            if fetched and type(body) == "string" and body:match("%S") then
-                coreSource = body
-                -- Compile downloaded Luau immediately using the runtime compiler.
-                local source = body:gsub("^\239\187\191", "")
-                local okCompile, compiled, compileError = pcall(loadstring, source)
-                if okCompile and type(compiled) == "function" then
-                    coreChunk = compiled
-                    print("[DUBO HUB] Core downloaded and compiled")
-                    break
-                end
-                warn("[DUBO HUB] Core compile error:", okCompile and compileError or compiled)
+            if fetched and (type(body) == "function" or type(body) == "table") then
+                coreExport = body
+                break
             end
-            warn("[DUBO HUB] Core download attempt:", attempt, fetched and "empty response" or body)
+            warn("[DUBO HUB] Core load attempt:", attempt, fetched and ("invalid export: " .. type(body)) or body)
             if attempt < 3 then task.wait(0.5) end
         end
 
@@ -822,8 +813,8 @@ do
     }
 
     credits = tbl.Credits
-    if type(coreSource) ~= "string" or coreSource == "" then
-        warn("[DUBO HUB] Core download failed")
+    if coreExport == nil then
+        warn("[DUBO HUB] Core load failed")
         return
     end
     local ctx = {
@@ -884,15 +875,7 @@ do
         v4 = v4,
     }
     -- Core contract: return a function(ctx), or a table with start/init(ctx).
-    if type(coreChunk) ~= "function" then
-        warn("[DUBO HUB] No compiled core available")
-        return
-    end
-    local loaded, exported = pcall(coreChunk, ctx)
-    if not loaded then
-        warn("[DUBO HUB] Core initialization error:", exported)
-        return
-    end
+    local exported = coreExport
     local startCore = exported
     if type(exported) == "table" then
         startCore = exported.start or exported.init
