@@ -1,3 +1,6 @@
+-- Recovered Luau source by ZeroVector
+-- Original script: Jay, Zyro and Garou (Synvextia). UI customization: DUBO HUB.
+-- WindUI remains a third-party dependency.
 return function(ctx)
 local result, Players, HttpService, UserInputService, RunService, Workspace, CollectionService, localPlayer, currentCamera, Lighting, Stats, genv, fn, fn2, v, fn3, fn4, tbl, credits, remoteEvents, items, fn5 = ctx.result, ctx.Players, ctx.HttpService, ctx.UserInputService, ctx.RunService, ctx.Workspace, ctx.CollectionService, ctx.localPlayer, ctx.currentCamera, ctx.Lighting, ctx.Stats, ctx.genv, ctx.fn, ctx.fn2, ctx.v, ctx.fn3, ctx.fn4, ctx.tbl, ctx.credits, ctx.remoteEvents, ctx.items, ctx.fn5
 do
@@ -3313,6 +3316,7 @@ do
     genv.autoBringSelectedItems = {}
     genv.autoBringEnabled = false
 
+    local autoAllBringTarget, autoAllBringSkip, autoAllBringSeen
     local function fn43(arg)
         local character = localPlayer.Character
         local humanoidRootPart = character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -3321,11 +3325,12 @@ do
         end
 
         for i, child in ipairs(workspace.Items:GetChildren()) do
-            if child.Name:lower() == arg:lower() then
-                pcall(function()
+            if not genv.autoBringEnabled then break end
+            if child.Name:lower() == arg:lower() and not (autoAllBringSkip and autoAllBringSkip[child.Name]) and not (autoAllBringSeen and autoAllBringSeen[child]) then
+                local ok = pcall(function()
                     remoteEvents.RequestStartDraggingItem:FireServer(child)
                     task.wait(0.05)
-                    local cframe = CFrame.new(humanoidRootPart.Position + Vector3.new(math.random(-2, 2), 3, math.random(-2, 2)))
+                    local cframe = CFrame.new((autoAllBringTarget or humanoidRootPart.Position) + Vector3.new(math.random(-2, 2), 3, math.random(-2, 2)))
 
                     if child:IsA("Model") then
                         child:PivotTo(cframe)
@@ -3336,6 +3341,7 @@ do
                     task.wait(0.05)
                     remoteEvents.StopDraggingItem:FireServer(child)
                 end)
+                if ok and autoAllBringSeen then autoAllBringSeen[child] = true end
             end
         end
     end
@@ -3471,12 +3477,16 @@ do
         end,
     })
 
-    tbl.Bring:Button({
-        Title = "Open Chests",
+    local autoChestEnabled = false
+    local autoChestRef = tbl.Bring:Toggle({
+        Title = "Auto Open Chests",
         Desc = "Continuously fires proximity prompts on all Item Chests in the map.",
-        Callback = function()
-            task.spawn(function()
-                while true do
+        Default = false,
+        Callback = function(active) autoChestEnabled = active end,
+    })
+    task.spawn(function()
+        while true do
+            if autoChestEnabled then
                     local items3 = workspace:FindFirstChild("Items")
 
                     if items3 then
@@ -3491,11 +3501,10 @@ do
                         end
                     end
 
-                    task.wait(2)
-                end
-            end)
-        end,
-    })
+            end
+            task.wait(2)
+        end
+    end)
 
     tbl.Bring:Divider()
 
@@ -3506,7 +3515,7 @@ do
         Desc = "",
     })
 
-    tbl.Bring:Dropdown({
+    local autoBringDropdown = tbl.Bring:Dropdown({
         Title = "Select Items to Bring",
         Desc = "Choose items. Use 'Bring Selected Now' or enable Auto Bring.",
         Values = (function()
@@ -3603,7 +3612,7 @@ do
         end,
     })
 
-    tbl.Bring:Toggle({
+    local autoBringRef = tbl.Bring:Toggle({
         Title = "🔄 Auto Bring Items",
         Desc = "Continuously brings all selected items to you every second.",
         Default = false,
@@ -4794,7 +4803,7 @@ do
     tbl.AutoDays:Divider()
 
     tbl.AutoDays:Section({
-        Title = fn("Auto Full"),
+        Title = fn("Auto All"),
 
         Opened = false,
         Desc = "",
@@ -4802,8 +4811,8 @@ do
 
     local autoFullRef, autoFullStart, autoFullStop
     autoFullRef = tbl.AutoDays:Toggle({
-        Title = "Auto Full",
-        Desc = "One scanner sweep with fuel, compress and campfire collection.",
+        Title = "Auto All",
+        Desc = "One scanner sweep with fuel, compress, auto chests and auto bring to campfire.",
         Default = false,
         Callback = function(active)
             if active then
@@ -5069,6 +5078,15 @@ do
         if not run then return end
         fullRun = nil
         genv.AutoLoadMapActive = false
+        autoAllBringTarget, autoAllBringSkip, autoAllBringSeen = nil, nil, nil
+        autoChestEnabled = run.chestOn
+        genv.autoBringEnabled = run.bringOn
+        pcall(function() autoChestRef:Set(run.chestOn) end)
+        pcall(function() autoBringRef:Set(run.bringOn) end)
+        local selection = {}
+        for name, enabled in pairs(run.bringList) do if enabled then table.insert(selection, name) end end
+        pcall(function() autoBringDropdown:Select(selection) end)
+        genv.autoBringSelectedItems = run.bringList
         genv.AutoFuelCampfireOn = run.fuelOn
         genv.AutoWoodCompressOn = run.compressOn
         genv.AutoFuelCampfireList = run.fuelList
@@ -5079,11 +5097,14 @@ do
     autoFullStart = function()
         if fullRun then return end
         if genv.AutoLoadMapActive then
-            fn3("Stop the current scanner before starting Auto Full.")
+            fn3("Stop the current scanner before starting Auto All.")
             pcall(function() autoFullRef:Set(false) end)
             return
         end
         local run = {
+            chestOn = autoChestEnabled,
+            bringOn = genv.autoBringEnabled,
+            bringList = genv.autoBringSelectedItems,
             fuelOn = genv.AutoFuelCampfireOn,
             compressOn = genv.AutoWoodCompressOn,
             fuelList = genv.AutoFuelCampfireList,
@@ -5100,23 +5121,22 @@ do
         genv.AutoWoodCompressList = compress
         genv.AutoFuelCampfireOn = true
         genv.AutoWoodCompressOn = true
+        autoAllBringTarget = tbl38.campfireReturn
+        autoAllBringSkip, autoAllBringSeen = skip, seen
+        pcall(function() autoBringDropdown:Select({"All"}) end)
+        genv.autoBringSelectedItems = {}
+        for _, name in ipairs(tbl22) do genv.autoBringSelectedItems[name] = true end
+        autoChestEnabled = true
+        genv.autoBringEnabled = true
+        pcall(function() autoChestRef:Set(true) end)
+        pcall(function() autoBringRef:Set(true) end)
         tbl39.speed = 100
         genv.AutoLoadMapActive = true
         task.spawn(function()
             local ok, err = pcall(fn51)
             if fullRun == run then
                 autoFullStop()
-                fn3(ok and "Auto Full stopped." or tostring(err))
-            end
-        end)
-        task.spawn(function()
-            while fullRun == run and genv.AutoLoadMapActive do
-                pcall(function()
-                    fn45({Position = tbl38.campfireReturn}, skip, seen, function()
-                        return fullRun == run and genv.AutoLoadMapActive
-                    end)
-                end)
-                task.wait(0.5)
+                fn3(ok and "Auto All stopped." or tostring(err))
             end
         end)
     end
