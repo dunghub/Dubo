@@ -1,4 +1,6 @@
-return function(ctx)
+local function startCore(ctx)
+    assert(type(ctx) == "table", "DUBO Core: missing UI context")
+    assert(ctx.tbl and ctx.ReplicatedStorage and ctx.genv, "DUBO Core: incomplete UI context")
 local result, Players, HttpService, UserInputService, RunService, Workspace, CollectionService, localPlayer, currentCamera, Lighting, Stats, genv, fn, fn2, v, fn3, fn4, tbl, credits, remoteEvents, items, fn5 = ctx.result, ctx.Players, ctx.HttpService, ctx.UserInputService, ctx.RunService, ctx.Workspace, ctx.CollectionService, ctx.localPlayer, ctx.currentCamera, ctx.Lighting, ctx.Stats, ctx.genv, ctx.fn, ctx.fn2, ctx.v, ctx.fn3, ctx.fn4, ctx.tbl, ctx.credits, ctx.remoteEvents, ctx.items, ctx.fn5
 do
     local ok, ReplicatedStorage, v2, v3, TweenService, playerGui, screenGui, frame, frame2, uiStroke, uiGradient, frame3, textLabel, textLabel2, textLabel3, frame4, textLabel4, frame5, frame6, uiGradient2, frame7, textLabel5, textLabel6, fn6, now, flag, n, n2, n3, n4, str, fn7, v4 = ctx.ok, ctx.ReplicatedStorage, ctx.v2, ctx.v3, ctx.TweenService, ctx.playerGui, ctx.screenGui, ctx.frame, ctx.frame2, ctx.uiStroke, ctx.uiGradient, ctx.frame3, ctx.textLabel, ctx.textLabel2, ctx.textLabel3, ctx.frame4, ctx.textLabel4, ctx.frame5, ctx.frame6, ctx.uiGradient2, ctx.frame7, ctx.textLabel5, ctx.textLabel6, ctx.fn6, ctx.now, ctx.flag, ctx.n, ctx.n2, ctx.n3, ctx.n4, ctx.str, ctx.fn7, ctx.v4
@@ -9458,3 +9460,5 @@ game:GetService("Players").LocalPlayer.OnTeleport:Connect(function()
     end
 end)
 end
+
+return {start = startCore, version = 2}
