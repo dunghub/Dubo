@@ -1,3 +1,6 @@
+-- Recovered Luau source by ZeroVector
+-- Original script: Jay, Zyro and Garou (Synvextia). UI customization: DUBO HUB.
+-- WindUI remains a third-party dependency.
 return function(ctx)
 local result, Players, HttpService, UserInputService, RunService, Workspace, CollectionService, localPlayer, currentCamera, Lighting, Stats, genv, fn, fn2, v, fn3, fn4, tbl, credits, remoteEvents, items, fn5 = ctx.result, ctx.Players, ctx.HttpService, ctx.UserInputService, ctx.RunService, ctx.Workspace, ctx.CollectionService, ctx.localPlayer, ctx.currentCamera, ctx.Lighting, ctx.Stats, ctx.genv, ctx.fn, ctx.fn2, ctx.v, ctx.fn3, ctx.fn4, ctx.tbl, ctx.credits, ctx.remoteEvents, ctx.items, ctx.fn5
 do
@@ -5135,8 +5138,48 @@ do
         task.spawn(function()
             local ok, err = pcall(fn51)
             if fullRun == run then
-                autoFullStop()
-                fn3(ok and "Auto All stopped." or tostring(err))
+                if ok then
+                    local pickupOK, pickupError = pcall(function()
+                        local character = localPlayer.Character
+                        local root = character and character:FindFirstChild("HumanoidRootPart")
+                        local camp = tbl38.campfireReturn
+                        if not root or (root.Position - camp).Magnitude > 12 then
+                            fn3("Auto Pickup skipped: not at campfire.")
+                            return
+                        end
+                        local items = workspace:FindFirstChild("Items")
+                        local request = remoteEvents:FindFirstChild("RequestHotbarItem")
+                        if not items or not request then return end
+                        local unique = {}
+                        for _, item in ipairs(items:GetChildren()) do
+                            local position
+                            if item:IsA("Model") then
+                                position = item:GetPivot().Position
+                            elseif item:IsA("BasePart") then
+                                position = item.Position
+                            end
+                            if position and (position - root.Position).Magnitude <= 12 then
+                                local previous = unique[item.Name]
+                                local distance = (position - root.Position).Magnitude
+                                if not previous or distance < previous.distance then
+                                    unique[item.Name] = {item = item, distance = distance}
+                                end
+                            end
+                        end
+                        for name, entry in pairs(unique) do
+                            if fullRun ~= run or not root.Parent or (root.Position - camp).Magnitude > 12 then break end
+                            if entry.item.Parent == items then
+                                pcall(function() request:InvokeServer(entry.item) end)
+                                task.wait(0.15)
+                            end
+                        end
+                    end)
+                    if not pickupOK then fn3(tostring(pickupError)) end
+                end
+                if fullRun == run then
+                    autoFullStop()
+                    fn3(ok and "Auto All stopped." or tostring(err))
+                end
             end
         end)
     end
