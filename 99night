@@ -327,6 +327,7 @@ do
 
     fn6(0.08, "Connecting...", 0.2)
     local coreSource
+    local coreChunk
     local now = os.clock()
     local flag = false
     local n = 1
@@ -338,7 +339,15 @@ do
             end)
             if fetched and type(body) == "string" and body:match("%S") then
                 coreSource = body
-                break
+                -- Compile downloaded Luau immediately using the runtime compiler.
+                local source = body:gsub("^\239\187\191", "")
+                local okCompile, compiled, compileError = pcall(loadstring, source)
+                if okCompile and type(compiled) == "function" then
+                    coreChunk = compiled
+                    print("[DUBO HUB] Core downloaded and compiled")
+                    break
+                end
+                warn("[DUBO HUB] Core compile error:", okCompile and compileError or compiled)
             end
             warn("[DUBO HUB] Core download attempt:", attempt, fetched and "empty response" or body)
             if attempt < 3 then task.wait(0.5) end
@@ -875,13 +884,11 @@ do
         v4 = v4,
     }
     -- Core contract: return a function(ctx), or a table with start/init(ctx).
-    local source = coreSource:gsub("^\239\187\191", "")
-    local compileOK, chunk, compileError = pcall(loadstring, source)
-    if not compileOK or type(chunk) ~= "function" then
-        warn("[DUBO HUB] Core compile error:", compileOK and compileError or chunk)
+    if type(coreChunk) ~= "function" then
+        warn("[DUBO HUB] No compiled core available")
         return
     end
-    local loaded, exported = pcall(chunk, ctx)
+    local loaded, exported = pcall(coreChunk, ctx)
     if not loaded then
         warn("[DUBO HUB] Core initialization error:", exported)
         return
