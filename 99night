@@ -1,16 +1,9 @@
--- Remote enable switch: only T permits startup.
 local switchOK, switchValue = pcall(function()
     return game:HttpGet("https://raw.githubusercontent.com/dunghub/HOP-FRUIT/refs/heads/main/Dubo%20off%20on", true)
 end)
 if not switchOK or type(switchValue) ~= "string" or switchValue:match("^%s*(.-)%s*$") ~= "T" then
     return
 end
-
--- Recovered Luau source by ZeroVector
--- Original script: Jay, Zyro and Garou (Synvextia). UI customization: DUBO HUB.
--- WindUI remains a third-party dependency.
-local result, Players, HttpService, UserInputService, RunService, Workspace, CollectionService, localPlayer, currentCamera, Lighting, Stats, genv, fn, fn2, v, fn3, fn4, tbl, credits, remoteEvents
-local items, fn5
 
 do
     local ok
