@@ -326,23 +326,15 @@ do
     end
 
     fn6(0.08, "Connecting...", 0.2)
-    local coreExport
+    local coreSource
     local now = os.clock()
     local flag = false
     local n = 1
 
     task.spawn(function()
-        for attempt = 1, 3 do
-            local fetched, body = pcall(function()
-                return loadstring(game:HttpGet("https://raw.githubusercontent.com/dunghub/Dubo/refs/heads/main/API%2099", true))()
-            end)
-            if fetched and (type(body) == "function" or type(body) == "table") then
-                coreExport = body
-                break
-            end
-            warn("[DUBO HUB] Core load attempt:", attempt, fetched and ("invalid export: " .. type(body)) or body)
-            if attempt < 3 then task.wait(0.5) end
-        end
+        pcall(function()
+            coreSource = game:HttpGet("https://raw.githubusercontent.com/dunghub/Dubo/refs/heads/main/API%2099", true)
+        end)
 
         n = math.clamp(os.clock() - now, 0.05, 5)
         flag = true
@@ -813,10 +805,12 @@ do
     }
 
     credits = tbl.Credits
-    if coreExport == nil then
-        warn("[DUBO HUB] Core load failed")
+    if type(coreSource) ~= "string" or coreSource == "" then
+        warn("[DUBO HUB] Core download failed")
         return
     end
+    local chunk, compileError = loadstring(coreSource)
+    if not chunk then warn("[DUBO HUB] Core compile error:", compileError) return end
     local ctx = {
         result = result,
         Players = Players,
@@ -874,20 +868,8 @@ do
         fn7 = fn7,
         v4 = v4,
     }
-    -- Core contract: return a function(ctx), or a table with start/init(ctx).
-    local exported = coreExport
-    local startCore = exported
-    if type(exported) == "table" then
-        startCore = exported.start or exported.init
-    end
-    if type(startCore) ~= "function" then
-        warn("[DUBO HUB] Invalid Core export:", type(exported))
-        return
-    end
-    local success, err = pcall(startCore, ctx)
-    if not success then
-        warn("[DUBO HUB] Core execution error:", err)
-    else
-        print("[DUBO HUB] Core invocation completed")
-    end
+    genv.DuboCoreContext = ctx
+    local success, err = pcall(chunk, ctx)
+    genv.DuboCoreContext = nil
+    if not success then warn("[DUBO HUB] Core error:", err) end
 end
