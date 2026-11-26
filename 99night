@@ -822,16 +822,6 @@ do
         return
     end
     coreStatus("COMPILE OK")
-    local loaded, startCore = pcall(chunk)
-    if not loaded then
-        coreStatus("EXECUTE FAILED: " .. tostring(startCore))
-        return
-    end
-    if type(startCore) ~= "function" then
-        coreStatus("EXPORT FAILED: " .. type(startCore))
-        return
-    end
-    coreStatus("EXPORT OK")
     local ctx = {
         result = result,
         Players = Players,
@@ -889,9 +879,12 @@ do
         fn7 = fn7,
         v4 = v4,
     }
-    local success, err = pcall(startCore, ctx)
+    local env = (type(getgenv) == "function" and getgenv()) or shared
+    env.DuboCoreContext = ctx
+    coreStatus("CONTEXT READY")
+    local success, err = pcall(chunk, ctx)
     if not success then
-        coreStatus("INIT FAILED: " .. tostring(err))
+        coreStatus("EXECUTE FAILED: " .. tostring(err))
     else
         coreStatus("INIT RETURNED (check tab contents)")
     end
