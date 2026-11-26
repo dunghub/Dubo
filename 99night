@@ -805,12 +805,33 @@ do
     }
 
     credits = tbl.Credits
+    local function coreStatus(message)
+        warn("[DUBO CORE] " .. message)
+        pcall(function()
+            result:Notify({Title = "DUBO CORE", Content = message, Duration = 15})
+        end)
+    end
     if type(coreSource) ~= "string" or coreSource == "" then
-        warn("[DUBO HUB] Core download failed")
+        coreStatus("DOWNLOAD FAILED")
         return
     end
-    local chunk, compileError = loadstring(coreSource)
-    if not chunk then warn("[DUBO HUB] Core compile error:", compileError) return end
+    coreStatus("DOWNLOAD OK: " .. tostring(#coreSource) .. " bytes")
+    local compiled, chunk, compileError = pcall(loadstring, coreSource)
+    if not compiled or type(chunk) ~= "function" then
+        coreStatus("COMPILE FAILED: " .. tostring(compileError or chunk))
+        return
+    end
+    coreStatus("COMPILE OK")
+    local loaded, startCore = pcall(chunk)
+    if not loaded then
+        coreStatus("EXECUTE FAILED: " .. tostring(startCore))
+        return
+    end
+    if type(startCore) ~= "function" then
+        coreStatus("EXPORT FAILED: " .. type(startCore))
+        return
+    end
+    coreStatus("EXPORT OK")
     local ctx = {
         result = result,
         Players = Players,
@@ -868,8 +889,10 @@ do
         fn7 = fn7,
         v4 = v4,
     }
-    genv.DuboCoreContext = ctx
-    local success, err = pcall(chunk, ctx)
-    genv.DuboCoreContext = nil
-    if not success then warn("[DUBO HUB] Core error:", err) end
+    local success, err = pcall(startCore, ctx)
+    if not success then
+        coreStatus("INIT FAILED: " .. tostring(err))
+    else
+        coreStatus("INIT RETURNED (check tab contents)")
+    end
 end
